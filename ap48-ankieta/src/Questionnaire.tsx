@@ -73,7 +73,7 @@ const Questionnaire: React.FC = () => {
           </span>
         </div>
         <img
-          src="http://badania.pro/logotypy/badania_pro.jpg"
+          src="/badania-pro.svg"
           alt="Badania.pro logo"
           style={{
             height: 100,
