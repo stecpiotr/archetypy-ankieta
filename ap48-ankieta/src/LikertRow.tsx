@@ -8,6 +8,8 @@ type LikertRowProps = {
   rowIdx: number;
   hovered: { row: number; col: number } | null;
   setHovered: (val: { row: number; col: number } | null) => void;
+  missing?: boolean;
+  hoveredCol?: number;
 };
 
 const OPTIONS = [1, 2, 3, 4, 5];
@@ -19,11 +21,33 @@ const LikertRow: React.FC<LikertRowProps> = ({
   rowIdx,
   hovered,
   setHovered,
+  missing,
+  hoveredCol
 }) => (
-  <tr className={hovered && hovered.row === rowIdx ? "likert-row hovered" : "likert-row"}>
+  <tr
+    className={
+      "likert-row" +
+      (hovered && hovered.row === rowIdx ? " hovered-row" : "") +
+      (missing ? " missing-row" : "")
+    }
+  >
     <td className="question-cell">{item.text}</td>
     {OPTIONS.map((num, colIdx) => (
-      <td key={num} className="option-cell">
+      <td
+        key={num}
+        className={
+          "option-cell" +
+          (hovered && hovered.col === colIdx ? " hovered-col" : "") +
+          (missing ? " missing-cell" : "")
+        }
+        style={
+          hovered && hovered.col === colIdx
+            ? { background: "#cbffe2" } // zielone podświetlenie!
+            : missing
+            ? { background: "#ffeded" }
+            : undefined
+        }
+      >
         <label
           className={hovered && hovered.col === colIdx ? "option-label hovered" : "option-label"}
           style={{

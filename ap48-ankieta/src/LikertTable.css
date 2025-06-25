@@ -117,3 +117,38 @@
     font-size: 0.95em;
   }
 }
+
+/* --- DODAJ TO NA KOŃCU --- */
+.missing-row td,
+.missing-row .question-cell {
+  background: #ffeded !important;
+  transition: background 0.2s;
+}
+.option-cell.missing-cell {
+  background: #ffeded !important;
+}
+.likert-row.hovered-row td,
+.likert-row td.hovered-col,
+.option-cell.hovered-col {
+  background: #e3f3ff !important;
+  transition: background 0.2s;
+}
+/* --- Krzyżowe (nagłówek/wiersz/kolumna) podświetlenie na zielono --- */
+.likert-table .scale-header.hovered,
+.likert-row.hovered-row td,
+.likert-row td.hovered-col,
+.option-cell.hovered-col {
+  background: #c8f7d6 !important;   /* jasny, świeży zielony */
+  transition: background 0.2s;
+  /* #d6fbe7 to bardzo jasna zieleń, możesz ustawić np. #b6f3cf dla mocniejszego efektu albo #40b480 */
+}
+
+/* Jeśli chcesz CIEMNIEJSZY zieleń (np. na testy):
+.likert-table .scale-header.hovered,
+.likert-row.hovered-row td,
+.likert-row td.hovered-col,
+.option-cell.hovered-col {
+  background: #40b480 !important;
+}
+*/
+/* --- KONIEC DODATKU --- */
