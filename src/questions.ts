@@ -41,12 +41,12 @@ export const questions: Ap48Item[] = [
   { id: 30, text: "Uwielbiam zdobywać nowe doświadczenia." },
   { id: 31, text: "Rutyna mnie nudzi — potrzebuję zmienności." },
   { id: 32, text: "Dążę do ciągłego rozwoju i przekraczania granic." },
-  // MAG (33–36)
+  // CZARODZIEJ (33–36)
   { id: 33, text: "Często inspiruję innych do zmiany." },
   { id: 34, text: "Widzę możliwości tam, gdzie inni widzą trudności." },
   { id: 35, text: "Mam w sobie potrzebę transformowania rzeczywistości." },
   { id: 36, text: "Potrafię przekonywać innych do realizacji śmiałych wizji." },
-  // ZWYKŁY (37–40)
+  // TOWARZYSZ (37–40)
   { id: 37, text: "Lubię być częścią większej grupy." },
   { id: 38, text: "Cenię codzienność i proste przyjemności." },
   { id: 39, text: "Z łatwością nawiązuję kontakt z większością ludzi." },
