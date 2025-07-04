@@ -34,13 +34,13 @@ const Questionnaire: React.FC = () => {
 
   return (
     <div style={{
-      maxWidth: 1100,
+      maxWidth: 1080,
       margin: "0 auto",
-      padding: "40px 16px 0 16px",
+      padding: "24px 8px 0 8px",
       fontFamily: "'Roboto', Arial, sans-serif"
     }}>
-      {/* Nagłówek, tekst i logo */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
+      {/* Nagłówek górny */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
         <div style={{ maxWidth: "70%" }}>
           <div style={{
             fontWeight: 600,
@@ -77,17 +77,18 @@ const Questionnaire: React.FC = () => {
           }}
         />
       </div>
-      {/* KONIEC NAGŁÓWKA */}
+      {/* Tabela */}
       <form onSubmit={handleSubmit}>
         <table className="likert-table">
           <thead>
             <tr>
-              <th></th>
+              {/* <<< PUSTY LEWY NAGŁÓWEK >>> */}
+              <th className="th-blank"></th>
               {scaleLabels.map((col, colIdx) => (
                 <th
                   key={colIdx}
                   className={
-                    "scale-header" +
+                    "th-scale" +
                     (hovered.col === colIdx ? " hovered" : "")
                   }
                   style={{ color: col.color }}
