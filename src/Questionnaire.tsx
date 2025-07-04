@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from '@supabase/supabase-js';
 import { questions } from "./questions";
 import LikertRow from "./LikertRow";
@@ -22,6 +22,17 @@ const supabase = createClient(
 );
 
 const Questionnaire: React.FC = () => {
+  const [orientation, setOrientation] = useState(
+  window.innerWidth > window.innerHeight ? "landscape" : "portrait"
+);
+
+useEffect(() => {
+  const handleResize = () => {
+    setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
+  };
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
   const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
   const [submitted, setSubmitted] = useState(false);
   const [hovered, setHovered] = useState<{ row: number; col: number } | null>(null);
@@ -53,6 +64,21 @@ const Questionnaire: React.FC = () => {
 
   if (responses.length === 0) return <div>Brak pytań.</div>;
   if (submitted) return <Thanks />;
+
+const isMobile = window.innerWidth < 800;
+if (isMobile && orientation === "portrait") {
+  return (
+    <div className="orientation-warning">
+      <p>
+        <b>Prosimy, obróć telefon poziomo</b> <br />
+        <span style={{ fontSize: '1.05em' }}>
+          Aby móc wygodnie uzupełnić matrycę pytań, skorzystaj z poziomego ułożenia.<br />
+          <span role="img" aria-label="rotate">🔄</span>
+        </span>
+      </p>
+    </div>
+  );
+}
 
   return (
     <>
@@ -157,7 +183,7 @@ const Questionnaire: React.FC = () => {
             }}
           />
         </div>
-        <table className="likert-table">
+        <table className="matrix-table">
           <thead>
             <tr>
               <th></th>

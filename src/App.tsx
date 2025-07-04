@@ -53,7 +53,7 @@ const App: React.FC = () => {
             </h1>
             <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
           </header>
-          <div style={contentStyle}>
+          <div className="welcome-content">
             <div
               style={{
                 maxWidth: 1100,
