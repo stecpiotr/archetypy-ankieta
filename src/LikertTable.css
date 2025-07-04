@@ -3,77 +3,85 @@
   border-collapse: separate;
   border-spacing: 0 0.3em;
   width: 100%;
-  min-width: 800px;
   background: #fff;
   box-sizing: border-box;
 }
 
-/* Komórki */
-.likert-table th,
-.likert-table td {
-  padding: 10px 24px;
+/* Nagłówki */
+.likert-table th {
+  font-size: 1.06rem;
+  padding: 14px 10px;
+  white-space: normal;
   text-align: center;
-  box-sizing: border-box;
-  font-size: 1.02rem;
-}
-
-/* Pierwsza kolumna nagłówka (biała) */
-.likert-table th:first-child {
-  background: #fff !important;
+  background: #f7f7f7;
   color: #253347;
-  font-weight: 500;
-  border-bottom: 2px solid #ececec;
-}
-
-/* Pozostałe nagłówki (skala, szare tło) */
-.likert-table th:not(:first-child) {
-  background: #f7f7f7 !important;
-  border-bottom: 2px solid #ececec;
   font-weight: 700;
-}
-
-/* Sticky tylko nagłówki skali */
-.likert-table th:not(:first-child) {
   position: sticky;
   top: 0;
   z-index: 2;
+  border-bottom: 2px solid #ececec;
 }
 
-/* TH pod pytaniami - bez sticky */
-.likert-table th:first-child {
-  position: static;
-}
-
-/* Usuwamy wszelkie cienie */
-.likert-table,
-.likert-table th,
-.likert-table tr,
-.likert-table td {
-  box-shadow: none !important;
-  filter: none !important;
-}
-
-.likert-table td {
-  vertical-align: middle;
-  background: #fff;
-}
-
-.likert-table td:first-child {
-  text-align: left;
+.likert-th-question {
+  background: #fff !important;
   min-width: 220px;
-  max-width: 340px;
+  width: 370px;
+  max-width: 460px;
+  position: static !important;
+  border-bottom: 2px solid #ececec;
+}
+.likert-th-scale {
+  background: #f7f7f7 !important;
+  border-bottom: 2px solid #ececec;
+  white-space: normal;
+}
+.scale-label {
+  display: block;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.16;
+  font-weight: 700;
+}
+
+.likert-table td.question-cell {
+  text-align: left;
+  background: #fff;
+  padding: 11px 10px;
+  min-width: 220px;
+  width: 370px;
+  max-width: 460px;
+  /* Zapewnia łamanie długich pytań */
   white-space: normal;
   word-break: break-word;
-  padding-left: 6px;
-  background: #fff;
+  vertical-align: middle;
+  font-size: 1.03rem;
+  color: #253347;
+  font-weight: 500;
 }
 
-/* RADIO - wyśrodkowanie */
+/* Hover podświetlenie */
+.row-hovered td,
+.cell-hovered {
+  background: #f8fcf6 !important;
+  transition: background 0.18s;
+}
+.col-hovered {
+  background: #f8fafd !important;
+  transition: background 0.18s;
+}
+
+/* Odpowiedzi - radio wyśrodkowane */
+.likert-table td.option-cell {
+  text-align: center;
+  background: #fff;
+  vertical-align: middle;
+  padding: 0;
+}
 .option-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
+  height: 38px;
   width: 100%;
 }
 .option-label input[type="radio"] {
@@ -82,8 +90,8 @@
   border: 2px solid #25986d;
   background: #f5f1ec;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
   margin: 0;
@@ -117,17 +125,40 @@
 .likert-row:nth-child(even) td {
   background: #fafbfc;
 }
-/* Responsive tweaks for mobile */
+
+/* Responsywność i łamanie nagłówków */
 @media (max-width: 950px) {
   .likert-table {
     min-width: 600px;
     font-size: 0.95em;
   }
-}
-@media (max-width: 600px) {
-  .likert-table th,
-  .likert-table thead th {
-    font-size: 0.9em !important;
-    padding: 0.35em 0.5em !important;
+  .likert-th-question,
+  .likert-table td.question-cell {
+    min-width: 110px;
+    max-width: 280px;
+    font-size: 0.98rem;
   }
+}
+
+@media (max-width: 650px) {
+  .likert-table th,
+  .likert-table td {
+    font-size: 0.91em !important;
+    padding: 0.35em 0.4em !important;
+  }
+  .likert-th-question,
+  .likert-table td.question-cell {
+    min-width: 79px !important;
+    max-width: 180px !important;
+    font-size: 0.97rem;
+  }
+}
+
+/* Brak żadnych cieni na tabeli ani wokół */
+.likert-table,
+.likert-table th,
+.likert-table tr,
+.likert-table td {
+  box-shadow: none !important;
+  filter: none !important;
 }
