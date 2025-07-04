@@ -27,7 +27,6 @@ const Questionnaire: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Overlay mobile poziomy
   const isMobile = window.innerWidth < 800;
   if (isMobile && orientation === "portrait") {
     return (
@@ -111,16 +110,9 @@ const Questionnaire: React.FC = () => {
         <table className="likert-table">
           <thead>
             <tr>
-              {/* Sticky, biały, lewy górny header */}
               <th
-                className={
-                  "th-blank" +
-                  (hovered.col === null && hovered.row === null ? "" : " active")
-                }
-                style={{
-                  left: 0
-                }}
-                rowSpan={1}
+                className="th-blank"
+                style={{ left: 0 }}
                 aria-label="Pytania"
                 scope="col"
               ></th>
@@ -132,8 +124,6 @@ const Questionnaire: React.FC = () => {
                     (hovered.col === colIdx ? " hovered" : "")
                   }
                   style={{ color: col.color }}
-                  onMouseEnter={() => setHovered({ ...hovered, col: colIdx })}
-                  onMouseLeave={() => setHovered({ ...hovered, col: null })}
                   scope="col"
                 >
                   {col.label}
@@ -149,10 +139,7 @@ const Questionnaire: React.FC = () => {
                   (rowIdx % 2 === 1 ? "even-row" : "") +
                   (hovered.row === rowIdx ? " hovered-row" : "")
                 }
-                onMouseEnter={() => setHovered({ ...hovered, row: rowIdx })}
-                onMouseLeave={() => setHovered({ ...hovered, row: null })}
               >
-                {/* Sticky lewa kolumna pytan! */}
                 <td
                   className="question-cell sticky-col"
                   style={{ textAlign: "left", left: 0 }}
@@ -163,9 +150,12 @@ const Questionnaire: React.FC = () => {
                   <td
                     className={
                       "option-cell" +
-                      (hovered.col === colIdx ? " hovered-col" : "")
+                      (hovered.col === colIdx ? " hovered-col" : "") +
+                      (hovered.row === rowIdx ? " hovered-row" : "")
                     }
                     key={colIdx}
+                    onMouseEnter={() => setHovered({ row: rowIdx, col: colIdx })}
+                    onMouseLeave={() => setHovered({ row: null, col: null })}
                   >
                     <label className="option-label">
                       <input

@@ -42,7 +42,7 @@
   text-align: center;
 }
 
-/* Pytania: sticky lewa kolumna, wyrównane do lewej */
+/* Sticky lewa kolumna — pytania */
 .likert-table td.question-cell,
 .likert-table td.sticky-col {
   position: sticky;
@@ -67,15 +67,19 @@
   background: #fff !important;
 }
 
-/* HOVER: aktywna kolumna, aktywny wiersz */
-.likert-table tbody tr:hover td,
-.likert-table tbody tr.hovered-row td {
+/* Podświetlenie hover na komórce: kolumna i wiersz aktywny */
+.likert-table td.option-cell.hovered-col,
+.likert-table td.option-cell.hovered-row,
+.likert-table td.option-cell:hover {
   background: #e3f7df !important;
   transition: background 0.18s;
 }
-.likert-table th.th-scale.hovered,
-.likert-table td.option-cell:hover,
-.likert-table tbody td.hovered-col {
+.likert-table th.th-scale.hovered {
+  background: #e3f7df !important;
+  transition: background 0.18s;
+}
+.likert-table tbody tr.hovered-row td,
+.likert-table tbody tr:hover td {
   background: #e3f7df !important;
   transition: background 0.18s;
 }
