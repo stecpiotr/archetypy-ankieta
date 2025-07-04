@@ -26,7 +26,7 @@
   padding-left: 6px;
 }
 
-/* Zmiana: Flat/sticky header, USUŃ CIEŃ, ustaw idealne tło! */
+/* Flat sticky header */
 .likert-table thead th {
   position: sticky;
   top: 0;
@@ -34,14 +34,13 @@
   z-index: 2;
   border-bottom: 2px solid #ececec;
   font-weight: 700;
-  transition: none;
   white-space: normal;
   word-break: break-word;
-  box-shadow: none;
+  box-shadow: none;  /* USUNIĘTO CIEŃ! */
   filter: none;
 }
 
-/* Wyśrodkowane radio - 100% flex center w opakowaniu */
+/* Radio idealnie na środku komórki */
 .likert-table td.option-cell {
   text-align: center;
   background: #fff;
@@ -103,7 +102,7 @@
   border-radius: 50%;
 }
 
-/* Wyrównanie treści i efekt hover/aktywny bez dodatkowego box-shadow/cienia */
+/* Hover & focus states - flat effect */
 .likert-table .scale-header.hovered,
 .likert-row.hovered .question-cell {
   background: #e1f1ed !important;
@@ -130,7 +129,7 @@
   }
 }
 
-/* Pozostałe, jeśli dalej potrzebne */
+/* Missing/hovered stylings (opcjonalnie dla Twoich logik) */
 .missing-row td,
 .missing-row .question-cell {
   background: #ffeded !important;
