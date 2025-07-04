@@ -31,7 +31,7 @@ const App: React.FC = () => {
           <header
             style={{
               width: "100%",
-              maxWidth: 1100,
+              maxWidth: 1000,
               margin: "35px auto 0 auto",
               padding: "0 24px",
               boxSizing: "border-box",

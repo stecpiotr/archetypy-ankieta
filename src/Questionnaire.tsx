@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { questions } from "./questions";
 import "./LikertTable.css";
+import Thanks from "./Thanks";
 
-// --- SUPABASE CONFIG ---
+// SUPABASE setup – upewnij się, że klucze masz w .env lub wpisz ręcznie
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
 const scaleLabels = [
-  { label: "Zdecydowanie nie", color: "#d32f2f" },
-  { label: "Raczej nie", color: "#f9a825" },
-  { label: "Ani tak, ani nie", color: "#388e3c" },
-  { label: "Raczej tak", color: "#4fc3f7" },
-  { label: "Zdecydowanie tak", color: "#1976d2" }
+  { label: "zdecydowanie nie", color: "#d32f2f" },
+  { label: "raczej nie", color: "#f9a825" },
+  { label: "ani tak, ani nie", color: "#388e3c" },
+  { label: "raczej tak", color: "#4fc3f7" },
+  { label: "zdecydowanie tak", color: "#1976d2" }
 ];
 
 const Questionnaire: React.FC = () => {
@@ -24,6 +25,7 @@ const Questionnaire: React.FC = () => {
   const [error, setError] = useState(false);
   const [apiError, setApiError] = useState("");
   const [missingRows, setMissingRows] = useState<number[]>([]);
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const [orientation, setOrientation] = useState(
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
@@ -65,16 +67,33 @@ const Questionnaire: React.FC = () => {
     const missing = responses
       .map((v, idx) => (v === 0 ? idx : -1))
       .filter(idx => idx !== -1);
+
     if (missing.length > 0) {
       setError(true);
       setMissingRows(missing);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setApiError("");
+      // Scroluje do pierwszego NIEWYPEŁNIONEGO wiersza pod sticky error msg
+      setTimeout(() => {
+        const firstIdx = missing[0];
+        const stickyMsg = document.querySelector('.sticky-error-msg');
+        let offset = 80;
+        if (stickyMsg) {
+          offset = (stickyMsg as HTMLElement).offsetHeight + 10;
+        }
+        if (rowRefs.current[firstIdx]) {
+          const elementOffset = rowRefs.current[firstIdx]!.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({
+            top: elementOffset - offset,
+            behavior: "smooth"
+          });
+        }
+      }, 60);
       return;
     }
     setError(false);
     setMissingRows([]);
     setApiError("");
-    // Save to Supabase
+    // Supabase submit
     try {
       const { error } = await supabase
         .from("ap48_responses")
@@ -91,18 +110,9 @@ const Questionnaire: React.FC = () => {
     }
   };
 
-  if (submitted) {
-    return (
-      <div style={{
-        maxWidth: 520, margin: "100px auto",
-        textAlign: "center", color: "#18796d", fontWeight: 600, fontSize: "1.4rem"
-      }}>
-        Dziękujemy za udział w ankiecie!<br />
-        Twoje odpowiedzi zostały zapisane.<br /><br />
-        <span style={{ fontSize: "2.1rem" }}>🙏</span>
-      </div>
-    );
-  }
+if (submitted) {
+  return <Thanks />;
+}
 
   return (
     <div style={{
@@ -111,17 +121,11 @@ const Questionnaire: React.FC = () => {
       padding: "28px 12px 0 12px",
       fontFamily: "'Roboto', Arial, sans-serif"
     }}>
-      {/* Sticky komunikaty o błędzie */}
+      {/* Komunikat sticky always on top */}
       {(error || apiError) && (
         <div className="sticky-error-msg">
-          {error && (
-            <div>
-              Proszę udzielić odpowiedzi w każdym wierszu.
-            </div>
-          )}
-          {apiError && (
-            <div>{apiError}</div>
-          )}
+          {error && (<div>Proszę udzielić odpowiedzi w każdym wierszu.</div>)}
+          {apiError && (<div>{apiError}</div>)}
         </div>
       )}
       {/* Nagłówek i logo */}
@@ -164,7 +168,6 @@ const Questionnaire: React.FC = () => {
           }}
         />
       </div>
-
       {/* TABELA */}
       <form onSubmit={handleSubmit}>
         <table className="likert-table">
@@ -192,11 +195,8 @@ const Questionnaire: React.FC = () => {
               return (
                 <tr
                   key={item.id}
-                  className={
-                    (rowIdx % 2 === 1 ? "even-row " : "") +
-                    (missing ? "missing-row " : "") +
-                    (hovered.row === rowIdx ? "hovered-row " : "")
-                  }
+                  ref={el => rowRefs.current[rowIdx] = el}
+                  className={missing ? "missing-row" : hovered.row === rowIdx ? "hovered-row" : ""}
                 >
                   <td
                     className={
@@ -232,7 +232,7 @@ const Questionnaire: React.FC = () => {
                     </td>
                   ))}
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>

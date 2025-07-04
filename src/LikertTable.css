@@ -55,12 +55,11 @@
   word-break: break-word;
   white-space: normal;
   padding-left: 8px;
+  font-weight: 500;
 }
 
-/* Wiersze parzyste jasno szare */
-.likert-table tbody tr.even-row td {
-  background: #fafbfc !important;
-}
+/* Wiersze parzyste jasno szare (wszystkie td w parzystym tr) */
+.likert-table tbody tr.even-row td,
 .likert-table tbody tr.even-row .question-cell,
 .likert-table tbody tr.even-row .sticky-col {
   background: #fafbfc !important;
@@ -80,8 +79,17 @@
   transition: background 0.18s;
 }
 .likert-table .col-hover-bg {
-  /* Dla sticky pytania na hover kolumny! */
   background: #e3f7df !important;
+}
+
+/* Podświetlenie wierszy z błędem */
+.likert-table tr.missing-row td,
+.likert-table td.missing-cell,
+.likert-table tr.missing-row .sticky-col {
+  background: #fae8e6 !important;
+  animation: shake-row .11s 1;
+  color: #b00020;
+  font-weight: 500;
 }
 
 /* RADIO - idealnie wyśrodkowane */
@@ -128,10 +136,19 @@
   transform: translate(-50%, -50%);
 }
 
+/* Animacja shake */
+@keyframes shake-row {
+  0%   { transform: translateX(0px);}
+  25%  { transform: translateX(-2px);}
+  50%  { transform: translateX(2px);}
+  75%  { transform: translateX(-2px);}
+  100% { transform: translateX(0px);}
+}
+
 /* RESPONSYWNOŚĆ */
 @media (max-width: 950px) {
   .likert-table {
-    min-width: 600px;
+    min-width: 500px;
     font-size: 0.95em;
   }
   .likert-table th.th-blank,
@@ -143,7 +160,7 @@
     padding-left: 4px;
   }
 }
-@media (max-width: 600px) {
+@media (max-width: 500px) {
   .likert-table th,
   .likert-table td {
     font-size: 0.87em !important;
@@ -158,21 +175,41 @@
     padding-left: 0;
   }
 }
-/* Podświetlenie wierszy z błędem */
+.sticky-error-msg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  z-index: 9999;
+  background: #fae8e6;
+  color: #b00020;
+  font-weight: 700;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 7px 32px 0 rgba(220,38,38,0.05);
+  border-bottom: 2px solid #f7b8b1;
+  font-size: 1.18rem;
+  padding: 17px 18px 13px 18px;
+  text-align: center;
+  margin: 0;
+  pointer-events: none;
+  user-select: none;
+}
+@media (max-width: 500px) {
+  .sticky-error-msg {
+    font-size: 1.03rem;
+    padding: 12px 2vw 8px 2vw;
+    border-radius: 0 0 8px 8px;
+  }
+}
+/* CAŁY wiersz na czerwono – wszystkie td na różowo */
 .likert-table tr.missing-row td,
-.likert-table td.missing-cell,
 .likert-table tr.missing-row .sticky-col {
   background: #fae8e6 !important;
-  animation: shake-row .11s 1;
   color: #b00020;
   font-weight: 500;
+  animation: shake-row .11s 1;
 }
-
-/* Opcjonalnie animacja shake (lekki efekt ostrzeżenia) */
-@keyframes shake-row {
-  0%   { transform: translateX(0px);}
-  25%  { transform: translateX(-2px);}
-  50%  { transform: translateX(2px);}
-  75%  { transform: translateX(-2px);}
-  100% { transform: translateX(0px);}
+/* Bonus: oznaczenie radio w brakującym wierszu */
+.likert-table tr.missing-row input[type="radio"] {
+  border-color: #b00020;
 }
