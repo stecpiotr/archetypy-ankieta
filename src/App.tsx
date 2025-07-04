@@ -10,19 +10,40 @@ const wrapperStyle: React.CSSProperties = {
   fontFamily: "'Roboto', Arial, sans-serif",
 };
 
-const contentStyle: React.CSSProperties = {
+const contentStyleMobile: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
+  justifyContent: "center",
   width: "100%",
-  maxWidth: 1100,
+  maxWidth: 900,
   margin: "0 auto",
-  minHeight: "70vh",
+  minHeight: "calc(100vh - 120px)",
   flex: 1,
+  boxSizing: "border-box",
+  padding: "32px 10px 28px 10px",
+};
+
+const contentStyleDesktop: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "100%",
+  maxWidth: 900,
+  margin: "0 auto",
+  minHeight: "calc(100vh - 150px)",
+  flex: 1,
+  boxSizing: "border-box",
+  padding: "56px 24px 48px 24px",
 };
 
 const App: React.FC = () => {
   const [started, setStarted] = useState(false);
+
+  // Małe helpery do detekcji mobile
+  const isMobile = window.innerWidth < 600;
+  const contentStyle = isMobile ? contentStyleMobile : contentStyleDesktop;
 
   return (
     <div style={wrapperStyle}>
@@ -32,7 +53,7 @@ const App: React.FC = () => {
             style={{
               width: "100%",
               maxWidth: 1100,
-              margin: "35px auto 0 auto",
+              margin: isMobile ? "8px auto 0 auto" : "35px auto 0 auto",
               padding: "0 24px",
               boxSizing: "border-box",
             }}
@@ -43,7 +64,7 @@ const App: React.FC = () => {
                 fontWeight: 700,
                 fontSize: "2.1rem",
                 color: "#2c3e50",
-                textAlign: "left",
+                textAlign: "center",
                 margin: "0 0 30px 0",
                 letterSpacing: 1,
                 lineHeight: 1.13,
@@ -51,18 +72,19 @@ const App: React.FC = () => {
             >
               Badanie wizerunku i postrzegania Krzysztofa Hetmana
             </h1>
-            <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
+            <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0, width: "96%" }} />
           </header>
-          <div className="welcome-content">
+
+          <div style={contentStyle}>
             <div
               style={{
-                maxWidth: 1100,
+                maxWidth: 700,
                 width: "100%",
-                margin: "64px 0 28px 0",
-                fontSize: "1.10rem",
-                textAlign: "left",
-                fontStyle: "italic", // KURSYWA!
+                margin: "0 0 32px 0",
+                fontSize: "1.12rem",
+                textAlign: "center",
                 lineHeight: 1.7,
+                color: "#213547",
               }}
             >
               Witaj!<br /><br />
@@ -70,13 +92,12 @@ const App: React.FC = () => {
               Chcielibyśmy, abyś spróbował(a) wcielić się w samego Krzysztofa Hetmana i odpowiedział(a) z jego perspektywy na kilka pytań dotyczących postrzegania, przekonań i stylu działania.<br /><br />
               Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak Krzysztof Hetman może być postrzegany przez innych. To dla nas i dla niego strategicznie ważne – dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.<br /><br />
               Prosimy, postaraj się udzielać odpowiedzi jak najbardziej szczerze, na podstawie swoich obserwacji i wyobrażenia o tej postaci.<br /><br />
-              Gdy będziesz gotowy(a), kliknij przycisk poniżej, aby rozpocząć badanie.<br /><br />
-              <span style={{ display: "block", textAlign: "right", fontStyle: "normal", marginTop: 30 }}>
+              Gdy będziesz gotowy(a), kliknij przycisk poniżej, aby rozpocząć badanie.<br /><br              <span style={{ display: "block", textAlign: "right", fontStyle: "normal", marginTop: 30 }}>
                 Dziękujemy za Twoją pomoc!<br />
                 Hetman Team&nbsp;💪
               </span>
             </div>
-            <div style={{ width: 300, marginTop: 36, marginBottom: 70 }}> {/* większy odstęp */}
+            <div style={{ width: 300, marginTop: 36, marginBottom: isMobile ? 26 : 60 }}>
               <button
                 style={{
                   width: "100%",
@@ -99,12 +120,11 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
-          {/* SZARA LINIA PRZED STOPKĄ */}
           <hr style={{ border: 0, borderTop: "1.5px solid #ececec", width: "100%", margin: "0 0 0 0" }} />
           <footer
             style={{
               marginTop: 0,
-              padding: "32px 0 54px 0",
+              padding: isMobile ? "20px 0 32px 0" : "32px 0 54px 0",
               color: "#7c8c9a",
               textAlign: "center",
               fontSize: "1.02rem",

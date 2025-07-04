@@ -1,42 +1,82 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+.welcome-layout {
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 56px 24px 44px 24px;
+  width: 100vw;
+}
+@media (max-width: 600px) {
+  .welcome-layout {
+    padding: 28px 12px 24px 12px !important; /* marginesy na mobile: góra, prawo, dół, lewo */
+  }
+}
+.welcome-title {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 2.1rem;
+  color: #2c3e50;
   text-align: center;
+  margin: 0 0 30px 0;
+  letter-spacing: 1px;
+  line-height: 1.13;
 }
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+.welcome-line {
+  border: 0;
+  border-top: 1.5px solid #ececec;
+  margin: 0 0 18px 0;
+  width: 96%;
+  max-width: 1100px;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+.welcome-text {
+  max-width: 700px;
+  margin: 0 auto 36px auto;
+  font-size: 1.12rem;
+  text-align: center;
+  line-height: 1.67;
+  color: #213547;
 }
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.welcome-thanks {
+  display: block;
+  text-align: right;
+  font-style: normal;
+  margin-top: 26px;
+  color: #2c3e50;
+  font-size: 1em;
 }
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.welcome-btn-wrap {
+  width: 300px;
+  margin-bottom: 36px;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.welcome-btn {
+  width: 100%;
+  background: #06b09c;
+  color: #fff;
+  font-weight: 700;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 1.12rem;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75em 0;
+  box-shadow: 0 2px 8px #ececec;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.2s;
 }
-
-.card {
-  padding: 2em;
+.footer {
+  padding: 32px 0 54px 0;
+  color: #7c8c9a;
+  text-align: center;
+  font-size: 1.02rem;
+  letter-spacing: .015em;
+  width: 100%;
 }
-
-.read-the-docs {
-  color: #888;
+.footer-sub {
+  font-size: 0.76rem;
+  color: #8a9bab;
+  margin-top: 11px;
+  line-height: 1.35;
 }

@@ -26,29 +26,38 @@
   padding-left: 6px;
 }
 
-.likert-table .question-cell {
-  color: #222;
+/* Zmiana: Flat/sticky header, USUŃ CIEŃ, ustaw idealne tło! */
+.likert-table thead th {
+  position: sticky;
+  top: 0;
   background: #f7f7f7;
+  z-index: 2;
+  border-bottom: 2px solid #ececec;
+  font-weight: 700;
+  transition: none;
+  white-space: normal;
+  word-break: break-word;
+  box-shadow: none;
+  filter: none;
 }
 
+/* Wyśrodkowane radio - 100% flex center w opakowaniu */
 .likert-table td.option-cell {
   text-align: center;
   background: #fff;
   height: 52px;
   min-width: 56px;
   vertical-align: middle;
+  padding: 0;
 }
-
 .option-label {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  height: 44px;
   min-height: 44px;
   width: 100%;
 }
-
-/* --- RADIOS --- */
 .option-label input[type="radio"] {
   appearance: none;
   -webkit-appearance: none;
@@ -66,12 +75,10 @@
   vertical-align: middle;
   display: inline-block;
 }
-
 .option-label input[type="radio"]:checked {
   border: 2.8px solid #25986d;
   background: #f5f1ec;
 }
-
 .option-label input[type="radio"]:checked:after {
   content: '';
   display: block;
@@ -84,39 +91,22 @@
   top: 50%;
   transform: translate(-50%, -50%);
 }
-
 .option-label input[type="radio"]:hover,
 .option-label input[type="radio"]:focus {
   border: 2.8px solid #34c88a;
   background: #e3fbf1;
   outline: none;
 }
-
 .option-label.hovered,
 .likert-row.hovered .option-label {
   background: #f5f5f2;
   border-radius: 50%;
 }
 
-/* Sticky header */
-.likert-table thead th {
-  position: sticky;
-  top: 0;
-  background: #f7f7f7;
-  z-index: 2;
-  border-bottom: 2px solid #eee;
-  font-weight: 700;
-  transition: background 0.15s;
-  white-space: normal;
-  word-break: break-word;
-  box-shadow: 0 2px 7px -4px #bbb;
-}
-
-/* Hover & focus states */
+/* Wyrównanie treści i efekt hover/aktywny bez dodatkowego box-shadow/cienia */
 .likert-table .scale-header.hovered,
 .likert-row.hovered .question-cell {
   background: #e1f1ed !important;
-  transition: background 0.15s;
 }
 
 .likert-row:nth-child(even) td {
@@ -140,29 +130,25 @@
   }
 }
 
-/* Missing/hovered stylings (opcjonalnie dla Twoich logik) */
+/* Pozostałe, jeśli dalej potrzebne */
 .missing-row td,
 .missing-row .question-cell {
   background: #ffeded !important;
   transition: background 0.2s;
 }
-
 .option-cell.missing-cell {
   background: #ffeded !important;
 }
-
 .likert-row.hovered-row td,
 .likert-row td.hovered-col,
 .option-cell.hovered-col {
   background: #e3f3ff !important;
   transition: background 0.2s;
 }
-
 /* Zielony akcent podświetlenia krzyżowego */
 .likert-table .scale-header.hovered,
 .likert-row.hovered-row td,
 .likert-row td.hovered-col,
 .option-cell.hovered-col {
   background: #c8f7d6 !important;
-  transition: background 0.2s;
 }
