@@ -1,54 +1,78 @@
 .likert-table {
+  font-family: 'Roboto', Arial, sans-serif;
+  border-collapse: separate;
+  border-spacing: 0 0.3em;
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
-  border-collapse: separate;
-  border-spacing: 0 0.3em;
-  font-family: 'Roboto', Arial, sans-serif;
   background: #fff;
   box-sizing: border-box;
 }
+
 .likert-table th,
 .likert-table td {
   padding: 10px 22px;
   font-size: 1.02rem;
-  text-align: center;
   box-sizing: border-box;
 }
-.likert-table thead tr {
-  /* Bez stylu — poszczególne th będą osobno */
-}
-.th-blank {
-  /* Pierwsza komórka nagłówka — pytania */
+
+/* L E W Y  G Ó R N Y  NAGŁÓWEK ― białe pole nad pytaniami */
+.likert-table th.th-blank {
   background: #fff !important;
   min-width: 250px;
   max-width: 380px;
-  position: sticky;
-  left: 0;
-  z-index: 3;
-  border-bottom: 2px solid #ececec;
-  white-space: normal;
-  box-shadow: none;
+  position: static !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
 }
-.th-scale {
-  background: #f7f7f7 !important; /* Jasnoszary jak na screenie */
+
+/* S T I C K Y  header dla skali */
+.likert-table th.th-scale {
+  background: #f7f7f7 !important;
   font-weight: 700;
   border-bottom: 2px solid #ececec;
-  white-space: normal;
   position: sticky;
   top: 0;
   z-index: 2;
   box-shadow: none;
+  white-space: normal;
+  text-align: center;
 }
-.question-cell {
-  text-align: left;
+
+/* Reszta komórek pytań ― zawsze do LEWEJ */
+.likert-table td.question-cell {
+  text-align: left !important;
   background: #fff;
   font-size: 1.04rem;
   min-width: 250px;
   max-width: 380px;
-  white-space: normal;
   word-break: break-word;
+  white-space: normal;
+  padding-left: 8px;
 }
+
+/* Wiersze parzyste — jasno szare jak na wzorze */
+.likert-table tbody tr:nth-child(even) {
+  background: #fafbfc !important;
+}
+.likert-table tbody tr:nth-child(odd) {
+  background: #fff !important;
+}
+
+/* P O D Ś W I E T L E N I A — hover kolumny i wiersza */
+.likert-table tbody tr:hover td,
+.likert-table tbody tr.hovered-row td {
+  background: #e3f7df !important;
+  transition: background 0.18s;
+}
+.likert-table th.th-scale.hovered,
+.likert-table td.option-cell:hover,
+.likert-table tbody td.hovered-col {
+  background: #e3f7df !important;
+  transition: background 0.18s;
+}
+
+/* RADIO center (flex) */
 .likert-table td.option-cell {
   text-align: center;
   background: #fff;
@@ -91,21 +115,31 @@
   top: 50%;
   transform: translate(-50%, -50%);
 }
-.likert-table th.th-blank {
-  background: #fff !important;
-  min-width: 250px;
-  max-width: 380px;
-  position: static;
-  border-bottom: 2px solid #ececec;
-  box-shadow: none;
+
+/* RESPONSYWNOŚĆ: zbija pola na mobile, łamie nagłówki itd. */
+@media (max-width: 950px) {
+  .likert-table {
+    min-width: 600px;
+    font-size: 0.95em;
+  }
+  .likert-table th.th-blank,
+  .likert-table td.question-cell {
+    min-width: 120px;
+    max-width: 230px;
+    font-size: 0.98rem;
+  }
 }
-.likert-table th.th-scale {
-  background: #f7f7f7 !important;
-  font-weight: 700;
-  border-bottom: 2px solid #ececec;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  box-shadow: none;
-  white-space: normal;
+@media (max-width: 600px) {
+  .likert-table th,
+  .likert-table td {
+    font-size: 0.89em !important;
+    padding: 0.25em 0.3em !important;
+  }
+  .likert-table th.th-blank,
+  .likert-table td.question-cell {
+    min-width: 75px !important;
+    max-width: 138px !important;
+    font-size: 0.96rem;
+    padding-left: 0;
+  }
 }

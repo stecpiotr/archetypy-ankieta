@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { questions } from "./questions";
 import "./LikertTable.css";
 
@@ -15,6 +15,33 @@ const Questionnaire: React.FC = () => {
   const [hovered, setHovered] = useState<{ row: number | null, col: number | null }>({ row: null, col: null });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
+  const [orientation, setOrientation] = useState(
+    window.innerWidth > window.innerHeight ? "landscape" : "portrait"
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Overlay mobile poziomy
+  const isMobile = window.innerWidth < 800;
+  if (isMobile && orientation === "portrait") {
+    return (
+      <div className="orientation-warning">
+        <p>
+          <b>Prosimy, obróć telefon poziomo</b> <br />
+          <span style={{ fontSize: "1.08em" }}>
+            Ta tabela działa wygodnie tylko w układzie poziomym.<br />
+            <span role="img" aria-label="rotate">🔄</span>
+          </span>
+        </p>
+      </div>
+    );
+  }
 
   const handleResponse = (row: number, value: number) => {
     const newResponses = [...responses];
@@ -34,29 +61,32 @@ const Questionnaire: React.FC = () => {
 
   return (
     <div style={{
-      maxWidth: 1080,
+      maxWidth: 1100,
       margin: "0 auto",
-      padding: "24px 8px 0 8px",
+      padding: "28px 12px 0 12px",
       fontFamily: "'Roboto', Arial, sans-serif"
     }}>
-      {/* Nagłówek górny */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-        <div style={{ maxWidth: "70%" }}>
+      {/* Nagłówek i logo */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 28
+      }}>
+        <div>
           <div style={{
             fontWeight: 600,
-            fontSize: "1.32rem",
+            fontSize: "1.25rem",
             color: "#253347",
-            lineHeight: 1.25,
-            fontFamily: "'Roboto', Arial, sans-serif"
+            lineHeight: 1.24
           }}>
             Postaraj się wcielić w osobę <b>Krzysztofa Hetmana</b> i odpowiedz na następujące pytania:
           </div>
           <div style={{
-            margin: "7px 0",
-            fontSize: "1.10rem",
+            margin: "6px 0",
+            fontSize: "1.12rem",
             color: "#b00020",
-            fontWeight: 700,
-            fontFamily: "'Roboto', Arial, sans-serif"
+            fontWeight: 700
           }}>
             <span>Pamiętaj! </span>
             <span style={{ color: "#253347", fontWeight: 400 }}>
@@ -72,24 +102,22 @@ const Questionnaire: React.FC = () => {
             width: "auto",
             marginLeft: 24,
             borderRadius: 7,
-            background: "#fff",
-            boxShadow: "none"
+            background: "#fff"
           }}
         />
       </div>
-      {/* Tabela */}
+      {/* TABELA */}
       <form onSubmit={handleSubmit}>
         <table className="likert-table">
           <thead>
             <tr>
-              {/* <<< PUSTY LEWY NAGŁÓWEK >>> */}
+              {/* Lewy górny nagłówek */}
               <th className="th-blank"></th>
               {scaleLabels.map((col, colIdx) => (
                 <th
                   key={colIdx}
                   className={
-                    "th-scale" +
-                    (hovered.col === colIdx ? " hovered" : "")
+                    "th-scale" + (hovered.col === colIdx ? " hovered" : "")
                   }
                   style={{ color: col.color }}
                   onMouseEnter={() => setHovered({ ...hovered, col: colIdx })}
@@ -105,12 +133,15 @@ const Questionnaire: React.FC = () => {
               <tr
                 key={item.id}
                 className={
-                  "likert-row" + (hovered.row === rowIdx ? " hovered-row" : "")
+                  (rowIdx % 2 === 0 ? "even-row" : "") +
+                  (hovered.row === rowIdx ? " hovered-row" : "")
                 }
                 onMouseEnter={() => setHovered({ ...hovered, row: rowIdx })}
                 onMouseLeave={() => setHovered({ ...hovered, row: null })}
               >
-                <td className="question-cell">{item.text}</td>
+                <td className="question-cell" style={{ textAlign: "left" }}>
+                  {item.text}
+                </td>
                 {scaleLabels.map((_, colIdx) => (
                   <td
                     className={
@@ -145,7 +176,7 @@ const Questionnaire: React.FC = () => {
               padding: "21px 24px",
               textAlign: "center",
               fontSize: "1.18rem",
-              maxWidth: 500,
+              maxWidth: 500
             }}
           >
             Proszę udzielić odpowiedzi w każdym wierszu.
