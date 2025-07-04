@@ -15,6 +15,7 @@ const Questionnaire: React.FC = () => {
   const [hovered, setHovered] = useState<{ row: number | null, col: number | null }>({ row: null, col: null });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
+  const [missingRows, setMissingRows] = useState<number[]>([]);
   const [orientation, setOrientation] = useState(
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
@@ -47,14 +48,21 @@ const Questionnaire: React.FC = () => {
     newResponses[row] = value;
     setResponses(newResponses);
     setError(false);
+    setMissingRows([]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (responses.some((v) => v === 0)) {
+    const missing = responses
+      .map((v, idx) => (v === 0 ? idx : -1))
+      .filter(idx => idx !== -1);
+    if (missing.length > 0) {
       setError(true);
+      setMissingRows(missing);
       return;
     }
+    setError(false);
+    setMissingRows([]);
     setSubmitted(true);
   };
 
@@ -105,17 +113,32 @@ const Questionnaire: React.FC = () => {
           }}
         />
       </div>
+
+      {/* BŁĄD NAD TABELĄ */}
+      {error && (
+        <div className="error-msg" style={{
+          margin: "0 auto 20px auto",
+          background: "#fae8e6",
+          color: "#b00020",
+          fontWeight: 700,
+          borderRadius: 10,
+          padding: "16px 24px",
+          textAlign: "center",
+          fontSize: "1.18rem",
+          maxWidth: 500,
+          border: "1.5px solid #f7b8b1",
+          boxShadow: "0px 3px 20px 0 rgba(220,38,38,0.03)"
+        }}>
+          Proszę udzielić odpowiedzi w każdym wierszu.
+        </div>
+      )}
+
       {/* TABELA */}
       <form onSubmit={handleSubmit}>
         <table className="likert-table">
           <thead>
             <tr>
-              <th
-                className="th-blank"
-                style={{ left: 0 }}
-                aria-label="Pytania"
-                scope="col"
-              ></th>
+              <th className="th-blank" style={{ left: 0 }} aria-label="Pytania" scope="col"></th>
               {scaleLabels.map((col, colIdx) => (
                 <th
                   key={colIdx}
@@ -132,63 +155,55 @@ const Questionnaire: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {questions.map((item, rowIdx) => (
-              <tr
-                key={item.id}
-                className={
-                  ((rowIdx % 2 === 1 ? "even-row " : "") +
-                  (hovered.row === rowIdx ? "hovered-row " : "")).trim()
-                }
-              >
-                <td
-                  className={"question-cell sticky-col" + (hovered.col !== null ? " col-hover-bg" : "")}
-                  style={{ textAlign: "left", left: 0 }}
+            {questions.map((item, rowIdx) => {
+              const missing = missingRows.includes(rowIdx);
+              return (
+                <tr
+                  key={item.id}
+                  className={
+                    (rowIdx % 2 === 1 ? "even-row " : "") +
+                    (missing ? "missing-row " : "") +
+                    (hovered.row === rowIdx ? "hovered-row " : "")
+                  }
                 >
-                  {item.text}
-                </td>
-                {scaleLabels.map((_, colIdx) => (
                   <td
                     className={
-                      "option-cell" +
-                      (hovered.col === colIdx ? " hovered-col" : "") +
-                      (hovered.row === rowIdx ? " hovered-row" : "")
+                      "question-cell sticky-col" +
+                      (missing ? " missing-cell" : "") +
+                      (hovered.col !== null ? " col-hover-bg" : "")
                     }
-                    key={colIdx}
-                    onMouseEnter={() => setHovered({ row: rowIdx, col: colIdx })}
-                    onMouseLeave={() => setHovered({ row: null, col: null })}
+                    style={{ textAlign: "left", left: 0 }}
                   >
-                    <label className="option-label">
-                      <input
-                        type="radio"
-                        name={`row-${rowIdx}`}
-                        value={colIdx + 1}
-                        checked={responses[rowIdx] === colIdx + 1}
-                        onChange={() => handleResponse(rowIdx, colIdx + 1)}
-                      />
-                    </label>
+                    {item.text}
                   </td>
-                ))}
-              </tr>
-            ))}
+                  {scaleLabels.map((_, colIdx) => (
+                    <td
+                      className={
+                        "option-cell" +
+                        (missing ? " missing-cell" : "") +
+                        (hovered.col === colIdx ? " hovered-col" : "") +
+                        (hovered.row === rowIdx ? " hovered-row" : "")
+                      }
+                      key={colIdx}
+                      onMouseEnter={() => setHovered({ row: rowIdx, col: colIdx })}
+                      onMouseLeave={() => setHovered({ row: null, col: null })}
+                    >
+                      <label className="option-label">
+                        <input
+                          type="radio"
+                          name={`row-${rowIdx}`}
+                          value={colIdx + 1}
+                          checked={responses[rowIdx] === colIdx + 1}
+                          onChange={() => handleResponse(rowIdx, colIdx + 1)}
+                        />
+                      </label>
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
-        {error && (
-          <div
-            style={{
-              margin: "30px auto 0 auto",
-              background: "rgba(220, 38, 38, 0.13)",
-              color: "#b00020",
-              fontWeight: 600,
-              borderRadius: 10,
-              padding: "21px 24px",
-              textAlign: "center",
-              fontSize: "1.18rem",
-              maxWidth: 500
-            }}
-          >
-            Proszę udzielić odpowiedzi w każdym wierszu.
-          </div>
-        )}
         {!submitted && (
           <div style={{ maxWidth: 380, margin: "42px auto 60px auto" }}>
             <button

@@ -158,3 +158,21 @@
     padding-left: 0;
   }
 }
+/* Podświetlenie wierszy z błędem */
+.likert-table tr.missing-row td,
+.likert-table td.missing-cell,
+.likert-table tr.missing-row .sticky-col {
+  background: #fae8e6 !important;
+  animation: shake-row .11s 1;
+  color: #b00020;
+  font-weight: 500;
+}
+
+/* Opcjonalnie animacja shake (lekki efekt ostrzeżenia) */
+@keyframes shake-row {
+  0%   { transform: translateX(0px);}
+  25%  { transform: translateX(-2px);}
+  50%  { transform: translateX(2px);}
+  75%  { transform: translateX(-2px);}
+  100% { transform: translateX(0px);}
+}

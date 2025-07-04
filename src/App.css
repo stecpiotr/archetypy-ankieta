@@ -12,11 +12,11 @@ body {
   justify-content: center;
   box-sizing: border-box;
   padding: 56px 32px 44px 32px;
-  width: 100vw;
   max-width: 650px;
   margin: 40px auto;
   box-shadow: 0 2px 26px #e2e6ee;
   border-radius: 14px;
+  /* width: 100vw;  ← USUNIĘTE aby padding/mobile działał OK */
 }
 
 /* MOBILE: margines na każdym boku, brak cienia, brak zaokrągleń, padding proporcjonalny */
@@ -26,7 +26,8 @@ body {
     max-width: 99vw;
     border-radius: 0;
     box-shadow: none;
-    padding: 18px 4vw 18px 4vw;
+    padding: 20px 5vw 20px 5vw !important; /* 5vw = elastyczny margines, min. ~16-20px */
+    box-sizing: border-box;
   }
 }
 
@@ -41,7 +42,6 @@ body {
   letter-spacing: 1px;
   line-height: 1.13;
 }
-
 .welcome-line {
   border: 0;
   border-top: 1.5px solid #ececec;
