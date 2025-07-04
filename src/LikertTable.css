@@ -9,14 +9,13 @@
   box-sizing: border-box;
 }
 
-.likert-table th,
-.likert-table td {
+.likert-table th, .likert-table td {
   padding: 10px 22px;
   font-size: 1.02rem;
   box-sizing: border-box;
 }
 
-/* Sticky, BIAŁY lewy górny header */
+/* Sticky, biały lewy górny header */
 .likert-table th.th-blank {
   background: #fff !important;
   min-width: 250px;
@@ -59,15 +58,17 @@
 }
 
 /* Wiersze parzyste jasno szare */
-.likert-table tbody tr.even-row,
-.likert-table tbody tr:nth-child(even) {
+.likert-table tbody tr.even-row td {
   background: #fafbfc !important;
 }
-.likert-table tbody tr:nth-child(odd) {
-  background: #fff !important;
+.likert-table tbody tr.even-row .question-cell,
+.likert-table tbody tr.even-row .sticky-col {
+  background: #fafbfc !important;
 }
 
 /* Podświetlenie hover na komórce: kolumna i wiersz aktywny */
+.likert-table tbody tr:hover td,
+.likert-table tbody tr.hovered-row td,
 .likert-table td.option-cell.hovered-col,
 .likert-table td.option-cell.hovered-row,
 .likert-table td.option-cell:hover {
@@ -78,16 +79,15 @@
   background: #e3f7df !important;
   transition: background 0.18s;
 }
-.likert-table tbody tr.hovered-row td,
-.likert-table tbody tr:hover td {
+.likert-table .col-hover-bg {
+  /* Dla sticky pytania na hover kolumny! */
   background: #e3f7df !important;
-  transition: background 0.18s;
 }
 
-/* RADIO center (flex) */
+/* RADIO - idealnie wyśrodkowane */
 .likert-table td.option-cell {
   text-align: center;
-  background: #fff;
+  background: inherit;
   vertical-align: middle;
   padding: 0;
 }
@@ -135,8 +135,8 @@
     font-size: 0.95em;
   }
   .likert-table th.th-blank,
-  .likert-table td.question-cell,
-  .likert-table td.sticky-col {
+  .likert-table td.sticky-col,
+  .likert-table td.question-cell {
     min-width: 120px;
     max-width: 230px;
     font-size: 0.98rem;
@@ -150,8 +150,8 @@
     padding: 0.22em 0.22em !important;
   }
   .likert-table th.th-blank,
-  .likert-table td.question-cell,
-  .likert-table td.sticky-col {
+  .likert-table td.sticky-col,
+  .likert-table td.question-cell {
     min-width: 65px !important;
     max-width: 120px !important;
     font-size: 0.95rem;

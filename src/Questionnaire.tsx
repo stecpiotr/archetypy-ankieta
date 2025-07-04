@@ -136,12 +136,12 @@ const Questionnaire: React.FC = () => {
               <tr
                 key={item.id}
                 className={
-                  (rowIdx % 2 === 1 ? "even-row" : "") +
-                  (hovered.row === rowIdx ? " hovered-row" : "")
+                  ((rowIdx % 2 === 1 ? "even-row " : "") +
+                  (hovered.row === rowIdx ? "hovered-row " : "")).trim()
                 }
               >
                 <td
-                  className="question-cell sticky-col"
+                  className={"question-cell sticky-col" + (hovered.col !== null ? " col-hover-bg" : "")}
                   style={{ textAlign: "left", left: 0 }}
                 >
                   {item.text}
