@@ -16,17 +16,20 @@
   box-sizing: border-box;
 }
 
-/* L E W Y  G Ó R N Y  NAGŁÓWEK ― białe pole nad pytaniami */
+/* Sticky, BIAŁY lewy górny header */
 .likert-table th.th-blank {
   background: #fff !important;
   min-width: 250px;
   max-width: 380px;
-  position: static !important;
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 3;
   border-bottom: none !important;
   box-shadow: none !important;
 }
 
-/* S T I C K Y  header dla skali */
+/* Sticky header: skala */
 .likert-table th.th-scale {
   background: #f7f7f7 !important;
   font-weight: 700;
@@ -39,19 +42,24 @@
   text-align: center;
 }
 
-/* Reszta komórek pytań ― zawsze do LEWEJ */
-.likert-table td.question-cell {
+/* Pytania: sticky lewa kolumna, wyrównane do lewej */
+.likert-table td.question-cell,
+.likert-table td.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff !important;
+  z-index: 1;
   text-align: left !important;
-  background: #fff;
-  font-size: 1.04rem;
   min-width: 250px;
   max-width: 380px;
+  font-size: 1.04rem;
   word-break: break-word;
   white-space: normal;
   padding-left: 8px;
 }
 
-/* Wiersze parzyste — jasno szare jak na wzorze */
+/* Wiersze parzyste jasno szare */
+.likert-table tbody tr.even-row,
 .likert-table tbody tr:nth-child(even) {
   background: #fafbfc !important;
 }
@@ -59,7 +67,7 @@
   background: #fff !important;
 }
 
-/* P O D Ś W I E T L E N I A — hover kolumny i wiersza */
+/* HOVER: aktywna kolumna, aktywny wiersz */
 .likert-table tbody tr:hover td,
 .likert-table tbody tr.hovered-row td {
   background: #e3f7df !important;
@@ -116,30 +124,33 @@
   transform: translate(-50%, -50%);
 }
 
-/* RESPONSYWNOŚĆ: zbija pola na mobile, łamie nagłówki itd. */
+/* RESPONSYWNOŚĆ */
 @media (max-width: 950px) {
   .likert-table {
     min-width: 600px;
     font-size: 0.95em;
   }
   .likert-table th.th-blank,
-  .likert-table td.question-cell {
+  .likert-table td.question-cell,
+  .likert-table td.sticky-col {
     min-width: 120px;
     max-width: 230px;
     font-size: 0.98rem;
+    padding-left: 4px;
   }
 }
 @media (max-width: 600px) {
   .likert-table th,
   .likert-table td {
-    font-size: 0.89em !important;
-    padding: 0.25em 0.3em !important;
+    font-size: 0.87em !important;
+    padding: 0.22em 0.22em !important;
   }
   .likert-table th.th-blank,
-  .likert-table td.question-cell {
-    min-width: 75px !important;
-    max-width: 138px !important;
-    font-size: 0.96rem;
+  .likert-table td.question-cell,
+  .likert-table td.sticky-col {
+    min-width: 65px !important;
+    max-width: 120px !important;
+    font-size: 0.95rem;
     padding-left: 0;
   }
 }

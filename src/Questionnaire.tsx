@@ -76,7 +76,7 @@ const Questionnaire: React.FC = () => {
         <div>
           <div style={{
             fontWeight: 600,
-            fontSize: "1.25rem",
+            fontSize: "1.33rem",
             color: "#253347",
             lineHeight: 1.24
           }}>
@@ -84,7 +84,7 @@ const Questionnaire: React.FC = () => {
           </div>
           <div style={{
             margin: "6px 0",
-            fontSize: "1.12rem",
+            fontSize: "1.07rem",
             color: "#b00020",
             fontWeight: 700
           }}>
@@ -111,17 +111,30 @@ const Questionnaire: React.FC = () => {
         <table className="likert-table">
           <thead>
             <tr>
-              {/* Lewy górny nagłówek */}
-              <th className="th-blank"></th>
+              {/* Sticky, biały, lewy górny header */}
+              <th
+                className={
+                  "th-blank" +
+                  (hovered.col === null && hovered.row === null ? "" : " active")
+                }
+                style={{
+                  left: 0
+                }}
+                rowSpan={1}
+                aria-label="Pytania"
+                scope="col"
+              ></th>
               {scaleLabels.map((col, colIdx) => (
                 <th
                   key={colIdx}
                   className={
-                    "th-scale" + (hovered.col === colIdx ? " hovered" : "")
+                    "th-scale" +
+                    (hovered.col === colIdx ? " hovered" : "")
                   }
                   style={{ color: col.color }}
                   onMouseEnter={() => setHovered({ ...hovered, col: colIdx })}
                   onMouseLeave={() => setHovered({ ...hovered, col: null })}
+                  scope="col"
                 >
                   {col.label}
                 </th>
@@ -133,13 +146,17 @@ const Questionnaire: React.FC = () => {
               <tr
                 key={item.id}
                 className={
-                  (rowIdx % 2 === 0 ? "even-row" : "") +
+                  (rowIdx % 2 === 1 ? "even-row" : "") +
                   (hovered.row === rowIdx ? " hovered-row" : "")
                 }
                 onMouseEnter={() => setHovered({ ...hovered, row: rowIdx })}
                 onMouseLeave={() => setHovered({ ...hovered, row: null })}
               >
-                <td className="question-cell" style={{ textAlign: "left" }}>
+                {/* Sticky lewa kolumna pytan! */}
+                <td
+                  className="question-cell sticky-col"
+                  style={{ textAlign: "left", left: 0 }}
+                >
                   {item.text}
                 </td>
                 {scaleLabels.map((_, colIdx) => (
