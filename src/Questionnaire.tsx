@@ -23,16 +23,17 @@ const supabase = createClient(
 
 const Questionnaire: React.FC = () => {
   const [orientation, setOrientation] = useState(
-  window.innerWidth > window.innerHeight ? "landscape" : "portrait"
-);
+    window.innerWidth > window.innerHeight ? "landscape" : "portrait"
+  );
 
-useEffect(() => {
-  const handleResize = () => {
-    setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
-  };
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
+  useEffect(() => {
+    const handleResize = () => {
+      setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
   const [submitted, setSubmitted] = useState(false);
   const [hovered, setHovered] = useState<{ row: number; col: number } | null>(null);
@@ -47,38 +48,42 @@ useEffect(() => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (responses.some((v) => v === 0)) {
       setError(true);
       return;
     }
+
     // --- WYSYŁKA DO SUPABASE ---
     const { data, error } = await supabase
       .from('ap48_responses')        // <-- nazwa tabeli w Twojej bazie!
       .insert([{ answers: responses }]); // <-- answers = kolumna jsonb
+
     if (error) {
       alert("Błąd zapisu do bazy: " + JSON.stringify(error, null, 2));
       return;
     }
+
     setSubmitted(true);
   };
 
   if (responses.length === 0) return <div>Brak pytań.</div>;
   if (submitted) return <Thanks />;
 
-const isMobile = window.innerWidth < 800;
-if (isMobile && orientation === "portrait") {
-  return (
-    <div className="orientation-warning">
-      <p>
-        <b>Prosimy, obróć telefon poziomo</b> <br />
-        <span style={{ fontSize: '1.05em' }}>
-          Aby móc wygodnie uzupełnić matrycę pytań, skorzystaj z poziomego ułożenia.<br />
-          <span role="img" aria-label="rotate">🔄</span>
-        </span>
-      </p>
-    </div>
-  );
-}
+  const isMobile = window.innerWidth < 800;
+  if (isMobile && orientation === "portrait") {
+    return (
+      <div className="orientation-warning">
+        <p>
+          <b>Prosimy, obróć telefon poziomo</b> <br />
+          <span style={{ fontSize: '1.05em' }}>
+            Aby móc wygodnie uzupełnić matrycę pytań, skorzystaj z poziomego ułożenia.<br />
+            <span role="img" aria-label="rotate">🔄</span>
+          </span>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -130,7 +135,6 @@ if (isMobile && orientation === "portrait") {
           paddingTop: error ? ALERT_HEIGHT + 36 : 0
         }}
       >
-        {/* Pasek instrukcji z logo */}
         <div
           style={{
             display: "flex",
@@ -183,43 +187,45 @@ if (isMobile && orientation === "portrait") {
             }}
           />
         </div>
-        <table className="matrix-table">
-          <thead>
-            <tr>
-              <th></th>
-              {scaleLabels.map((col, colIdx) => (
-                <th
-                  key={colIdx}
-                  className={
-                    hovered && hovered.col === colIdx ? "scale-header hovered" : "scale-header"
-                  }
-                  style={{
-                    color: col.color,
-                    fontWeight: 700,
-                    transition: "color 0.25s"
-                  }}
-                >
-                  {col.label}
-                </th>
+        <div style={{ maxHeight: "74vh", overflowY: "auto", borderRadius: 10, boxShadow: "0 2px 16px #eee" }}>
+          <table className="likert-table">
+            <thead>
+              <tr>
+                <th></th>
+                {scaleLabels.map((col, colIdx) => (
+                  <th
+                    key={colIdx}
+                    className={
+                      hovered && hovered.col === colIdx ? "scale-header hovered" : "scale-header"
+                    }
+                    style={{
+                      color: col.color,
+                      fontWeight: 700,
+                      transition: "color 0.25s"
+                    }}
+                  >
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {questions.map((item, rowIdx) => (
+                <LikertRow
+                  key={item.id}
+                  item={item}
+                  value={responses[rowIdx]}
+                  onChange={(val) => handleResponse(rowIdx, val)}
+                  rowIdx={rowIdx}
+                  hovered={hovered}
+                  setHovered={setHovered}
+                  missing={error && responses[rowIdx] === 0}
+                  hoveredCol={hovered?.col}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {questions.map((item, rowIdx) => (
-              <LikertRow
-                key={item.id}
-                item={item}
-                value={responses[rowIdx]}
-                onChange={(val) => handleResponse(rowIdx, val)}
-                rowIdx={rowIdx}
-                hovered={hovered}
-                setHovered={setHovered}
-                missing={error && responses[rowIdx] === 0}
-                hoveredCol={hovered?.col}
-              />
-            ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
         <div style={{ maxWidth: 380, margin: "32px auto 0 auto" }}>
           <button
             type="submit"
