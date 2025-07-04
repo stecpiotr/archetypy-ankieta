@@ -8,6 +8,7 @@
   box-sizing: border-box;
 }
 
+/* Komórki */
 .likert-table th,
 .likert-table td {
   padding: 10px 24px;
@@ -16,7 +17,47 @@
   font-size: 1.02rem;
 }
 
-.likert-table th:first-child,
+/* Pierwsza kolumna nagłówka (biała) */
+.likert-table th:first-child {
+  background: #fff !important;
+  color: #253347;
+  font-weight: 500;
+  border-bottom: 2px solid #ececec;
+}
+
+/* Pozostałe nagłówki (skala, szare tło) */
+.likert-table th:not(:first-child) {
+  background: #f7f7f7 !important;
+  border-bottom: 2px solid #ececec;
+  font-weight: 700;
+}
+
+/* Sticky tylko nagłówki skali */
+.likert-table th:not(:first-child) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* TH pod pytaniami - bez sticky */
+.likert-table th:first-child {
+  position: static;
+}
+
+/* Usuwamy wszelkie cienie */
+.likert-table,
+.likert-table th,
+.likert-table tr,
+.likert-table td {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.likert-table td {
+  vertical-align: middle;
+  background: #fff;
+}
+
 .likert-table td:first-child {
   text-align: left;
   min-width: 220px;
@@ -24,37 +65,15 @@
   white-space: normal;
   word-break: break-word;
   padding-left: 6px;
-}
-
-/* Flat sticky header */
-.likert-table thead th {
-  position: sticky;
-  top: 0;
-  background: #f7f7f7;
-  z-index: 2;
-  border-bottom: 2px solid #ececec;
-  font-weight: 700;
-  white-space: normal;
-  word-break: break-word;
-  box-shadow: none;  /* USUNIĘTO CIEŃ! */
-  filter: none;
-}
-
-/* Radio idealnie na środku komórki */
-.likert-table td.option-cell {
-  text-align: center;
   background: #fff;
-  height: 52px;
-  min-width: 56px;
-  vertical-align: middle;
-  padding: 0;
 }
+
+/* RADIO - wyśrodkowanie */
 .option-label {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   height: 44px;
-  min-height: 44px;
   width: 100%;
 }
 .option-label input[type="radio"] {
@@ -65,8 +84,6 @@
   border-radius: 50%;
   width: 28px;
   height: 28px;
-  box-sizing: border-box;
-  outline: none;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
   margin: 0;
@@ -96,22 +113,10 @@
   background: #e3fbf1;
   outline: none;
 }
-.option-label.hovered,
-.likert-row.hovered .option-label {
-  background: #f5f5f2;
-  border-radius: 50%;
-}
-
-/* Hover & focus states - flat effect */
-.likert-table .scale-header.hovered,
-.likert-row.hovered .question-cell {
-  background: #e1f1ed !important;
-}
 
 .likert-row:nth-child(even) td {
   background: #fafbfc;
 }
-
 /* Responsive tweaks for mobile */
 @media (max-width: 950px) {
   .likert-table {
@@ -119,35 +124,10 @@
     font-size: 0.95em;
   }
 }
-
-/* Zmniejsz nagłówki na mobile */
 @media (max-width: 600px) {
   .likert-table th,
   .likert-table thead th {
     font-size: 0.9em !important;
     padding: 0.35em 0.5em !important;
   }
-}
-
-/* Missing/hovered stylings (opcjonalnie dla Twoich logik) */
-.missing-row td,
-.missing-row .question-cell {
-  background: #ffeded !important;
-  transition: background 0.2s;
-}
-.option-cell.missing-cell {
-  background: #ffeded !important;
-}
-.likert-row.hovered-row td,
-.likert-row td.hovered-col,
-.option-cell.hovered-col {
-  background: #e3f3ff !important;
-  transition: background 0.2s;
-}
-/* Zielony akcent podświetlenia krzyżowego */
-.likert-table .scale-header.hovered,
-.likert-row.hovered-row td,
-.likert-row td.hovered-col,
-.option-cell.hovered-col {
-  background: #c8f7d6 !important;
 }

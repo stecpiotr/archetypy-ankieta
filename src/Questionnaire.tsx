@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from '@supabase/supabase-js';
 import { questions } from "./questions";
-import LikertRow from "./LikertRow";
-import Thanks from "./Thanks";
 import "./LikertTable.css";
 
 const scaleLabels = [
@@ -13,9 +11,7 @@ const scaleLabels = [
   { label: "Zdecydowanie tak",  color: "#1976d2" }
 ];
 
-const ALERT_HEIGHT = 90;
-
-// Supabase klient ‒ zmienne środowiskowe muszą być poprawnie ustawione!
+// --- KONFIG SUPABASE ---
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -25,6 +21,9 @@ const Questionnaire: React.FC = () => {
   const [orientation, setOrientation] = useState(
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
+  const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -33,11 +32,6 @@ const Questionnaire: React.FC = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
-  const [submitted, setSubmitted] = useState(false);
-  const [hovered, setHovered] = useState<{ row: number; col: number } | null>(null);
-  const [error, setError] = useState(false);
 
   const handleResponse = (idx: number, value: number) => {
     const newResponses = [...responses];
@@ -54,21 +48,15 @@ const Questionnaire: React.FC = () => {
       return;
     }
 
-    // --- WYSYŁKA DO SUPABASE ---
-    const { data, error } = await supabase
-      .from('ap48_responses')        // <-- nazwa tabeli w Twojej bazie!
-      .insert([{ answers: responses }]); // <-- answers = kolumna jsonb
-
+    const { error } = await supabase
+      .from('ap48_responses')
+      .insert([{ answers: responses }]);
     if (error) {
       alert("Błąd zapisu do bazy: " + JSON.stringify(error, null, 2));
       return;
     }
-
     setSubmitted(true);
   };
-
-  if (responses.length === 0) return <div>Brak pytań.</div>;
-  if (submitted) return <Thanks />;
 
   const isMobile = window.innerWidth < 800;
   if (isMobile && orientation === "portrait") {
@@ -76,197 +64,155 @@ const Questionnaire: React.FC = () => {
       <div className="orientation-warning">
         <p>
           <b>Prosimy, obróć telefon poziomo</b> <br />
-          <span style={{ fontSize: '1.05em' }}>
-            Aby móc wygodnie uzupełnić matrycę pytań, skorzystaj z poziomego ułożenia.<br />
-            <span role="img" aria-label="rotate">🔄</span>
+          <span style={{ fontSize: "1.05em" }}>
+            Aby móc wygodnie uzupełnić matrycę pytań, skorzystaj z poziomego ułożenia.
+            <br />
+            <span role="img" aria-label="rotate">
+              🔄
+            </span>
           </span>
         </p>
       </div>
     );
   }
 
+  if (responses.length === 0) return <div>Brak pytań.</div>;
+  if (submitted) return (
+    <div style={{
+      maxWidth: 500, margin: "60px auto", fontSize: "1.25rem", textAlign: "center",
+      color: "#18796d", fontWeight: 600
+    }}>
+      <div>Dziękujemy za wypełnienie ankiety! 🙏</div>
+    </div>
+  );
+
   return (
-    <>
+    <form onSubmit={handleSubmit} style={{ margin: "40px auto 0 auto", maxWidth: 1100 }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: error ? 54 : 30,
+        gap: 16
+      }}>
+        <div style={{
+          fontWeight: 500,
+          fontSize: "1.25rem",
+          color: "#253347",
+          lineHeight: 1.3,
+          fontFamily: "'Roboto', Arial, sans-serif",
+          maxWidth: "80%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10
+        }}>
+          <span>
+            Postaraj się wcielić w osobę <b>Krzysztofa Hetmana</b> i odpowiedz na następujące pytania:
+          </span>
+          <span style={{
+            fontSize: "1rem",
+            fontWeight: 400,
+            color: "#b00020"
+          }}>
+            <b>Pamiętaj! </b>
+            <span style={{ color: "#253347" }}>
+              Odpowiadasz jakbyś był/a Krzysztofem Hetmanem :)
+            </span>
+          </span>
+        </div>
+        <img
+          src="/BadaniaPRO(r).png"
+          alt="Badania.pro logo"
+          style={{
+            height: 45,
+            width: "auto",
+            marginLeft: 20,
+            borderRadius: 7,
+            background: "#fff",
+            display: "block"
+          }}
+        />
+      </div>
+      {/* --- TABELA --- */}
+      <table className="likert-table">
+        <thead>
+          <tr>
+            <th></th>
+            {scaleLabels.map((col, colIdx) => (
+              <th
+                key={colIdx}
+                style={{
+                  color: col.color,
+                }}
+              >
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {questions.map((item, rowIdx) => (
+            <tr key={item.id}>
+              <td>{item.question}</td>
+              {scaleLabels.map((_, colIdx) => (
+                <td key={colIdx} className="option-cell">
+                  <label className="option-label">
+                    <input
+                      type="radio"
+                      name={`row-${rowIdx}`}
+                      value={colIdx + 1}
+                      checked={responses[rowIdx] === (colIdx + 1)}
+                      onChange={() => handleResponse(rowIdx, colIdx + 1)}
+                    />
+                  </label>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {/* ERROR */}
       {error && (
         <div
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            zIndex: 2000,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: `${ALERT_HEIGHT}px`,
-            pointerEvents: "none"
+            margin: "30px auto 0 auto",
+            background: "rgba(220, 38, 38, 0.13)",
+            color: "#b00020",
+            fontWeight: 600,
+            borderRadius: 10,
+            padding: "21px 24px",
+            textAlign: "center",
+            fontSize: "1.18rem",
+            maxWidth: 500,
           }}
         >
-          <div
-            style={{
-              background: "rgba(220, 38, 38, 0.93)",
-              color: "#fff",
-              padding: "27px 48px",
-              borderRadius: 20,
-              fontWeight: 700,
-              fontSize: "1.53rem",
-              textAlign: "center",
-              boxShadow: "0 6px 34px #0003",
-              marginTop: 16,
-              letterSpacing: ".01em",
-              minWidth: 430,
-              maxWidth: "96vw",
-              pointerEvents: "auto",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            Proszę udzielić odpowiedzi w każdym wierszu
-          </div>
+          Proszę udzielić odpowiedzi w każdym wierszu.
         </div>
       )}
-
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          margin: "40px auto 0 auto",
-          maxWidth: 1100,
-          paddingTop: error ? ALERT_HEIGHT + 36 : 0
-        }}
-      >
-        <div
+      {/* BUTTON tylko na dole! */}
+      <div style={{ maxWidth: 380, margin: "42px auto 60px auto" }}>
+        <button
+          type="submit"
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: error ? 54 : 30,
-            gap: 16,
-          }}
-        >
-          <div
-            style={{
-              fontWeight: 500,
-              fontSize: "1.3rem",
-              color: "#253347",
-              lineHeight: 1.3,
-              fontFamily: "'Roboto', Arial, sans-serif",
-              maxWidth: "80%",
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-          >
-            <span>
-              Postaraj się wcielić w osobę <b>Krzysztofa Hetmana</b> i odpowiedz na następujące pytania:
-            </span>
-            <span
-              style={{
-                fontSize: "1.2rem",
-                fontWeight: 400,
-                color: "#555",
-                marginTop: "4px",
-                marginBottom: "2px",
-              }}
-            >
-              (
-              <b style={{ color: "#b00020", fontWeight: 700 }}>Pamiętaj! </b>
-              Odpowiadasz jakbyś był/a Krzysztofem Hetmanem :) )
-            </span>
-          </div>
-          <img
-            src="/BadaniaPRO(r).png"
-            alt="Badania.pro logo"
-            style={{
-              height: 45,
-              width: "auto",
-              marginLeft: 20,
-              borderRadius: 7,
-              background: "#fff",
-              display: "block",
-            }}
-          />
-        </div>
-        <div style={{ maxHeight: "74vh", overflowY: "auto", borderRadius: 10, boxShadow: "0 2px 16px #eee" }}>
-          <table className="likert-table">
-            <thead>
-              <tr>
-                <th></th>
-                {scaleLabels.map((col, colIdx) => (
-                  <th
-                    key={colIdx}
-                    className={
-                      hovered && hovered.col === colIdx ? "scale-header hovered" : "scale-header"
-                    }
-                    style={{
-                      color: col.color,
-                      fontWeight: 700,
-                      transition: "color 0.25s"
-                    }}
-                  >
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {questions.map((item, rowIdx) => (
-                <LikertRow
-                  key={item.id}
-                  item={item}
-                  value={responses[rowIdx]}
-                  onChange={(val) => handleResponse(rowIdx, val)}
-                  rowIdx={rowIdx}
-                  hovered={hovered}
-                  setHovered={setHovered}
-                  missing={error && responses[rowIdx] === 0}
-                  hoveredCol={hovered?.col}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{ maxWidth: 380, margin: "32px auto 0 auto" }}>
-          <button
-            type="submit"
-            style={{
-              width: "100%",
-              background: "#06b09c",
-              color: "#fff",
-              fontWeight: 700,
-              fontFamily: "'Roboto', Arial, sans-serif",
-              fontSize: "1.1rem",
-              border: "none",
-              borderRadius: 8,
-              padding: "0.75em 0",
-              marginTop: 8,
-              boxShadow: "0 2px 8px #ececec",
-              cursor: "pointer",
-              letterSpacing: "0.5px",
-              transition: "background 0.2s"
-            }}
-          >
-            Wyślij
-          </button>
-        </div>
-        <div
-          style={{
-            margin: "52px auto 0 auto",
-            maxWidth: 900,
-            borderTop: "1px solid #d7d7d7",
-            paddingTop: 18,
-            paddingBottom: 40,
-            color: "#7a7a7a",
-            fontSize: "0.98rem",
-            textAlign: "center",
+            width: "100%",
+            background: "#06b09c",
+            color: "#fff",
+            fontWeight: 700,
             fontFamily: "'Roboto', Arial, sans-serif",
-            letterSpacing: ".01em"
+            fontSize: "1.1rem",
+            border: "none",
+            borderRadius: 8,
+            padding: "0.75em 0",
+            boxShadow: "0 2px 8px #ececec",
+            cursor: "pointer",
+            letterSpacing: "0.5px",
+            transition: "background 0.2s",
           }}
         >
-          opracowanie: Piotr Stec, Badania.pro®      |      &copy; {new Date().getFullYear()}
-        </div>
-      </form>
-    </>
+          Wyślij
+        </button>
+      </div>
+    </form>
   );
 };
 
