@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { questions } from "./questions";
 import "./LikertTable.css";
+
+// --- SUPABASE CONFIG ---
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const scaleLabels = [
   { label: "Zdecydowanie nie", color: "#d32f2f" },
@@ -15,6 +22,7 @@ const Questionnaire: React.FC = () => {
   const [hovered, setHovered] = useState<{ row: number | null, col: number | null }>({ row: null, col: null });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
+  const [apiError, setApiError] = useState("");
   const [missingRows, setMissingRows] = useState<number[]>([]);
   const [orientation, setOrientation] = useState(
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
@@ -49,9 +57,10 @@ const Questionnaire: React.FC = () => {
     setResponses(newResponses);
     setError(false);
     setMissingRows([]);
+    setApiError("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const missing = responses
       .map((v, idx) => (v === 0 ? idx : -1))
@@ -59,12 +68,41 @@ const Questionnaire: React.FC = () => {
     if (missing.length > 0) {
       setError(true);
       setMissingRows(missing);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     setError(false);
     setMissingRows([]);
-    setSubmitted(true);
+    setApiError("");
+    // Save to Supabase
+    try {
+      const { error } = await supabase
+        .from("ap48_responses")
+        .insert([{ answers: responses }]);
+      if (error) {
+        setApiError("Błąd zapisu do bazy ankiet! Spróbuj ponownie.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      setSubmitted(true);
+    } catch (e) {
+      setApiError("Nieoczekiwany błąd sieci podczas zapisu wyników.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
+
+  if (submitted) {
+    return (
+      <div style={{
+        maxWidth: 520, margin: "100px auto",
+        textAlign: "center", color: "#18796d", fontWeight: 600, fontSize: "1.4rem"
+      }}>
+        Dziękujemy za udział w ankiecie!<br />
+        Twoje odpowiedzi zostały zapisane.<br /><br />
+        <span style={{ fontSize: "2.1rem" }}>🙏</span>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -73,6 +111,19 @@ const Questionnaire: React.FC = () => {
       padding: "28px 12px 0 12px",
       fontFamily: "'Roboto', Arial, sans-serif"
     }}>
+      {/* Sticky komunikaty o błędzie */}
+      {(error || apiError) && (
+        <div className="sticky-error-msg">
+          {error && (
+            <div>
+              Proszę udzielić odpowiedzi w każdym wierszu.
+            </div>
+          )}
+          {apiError && (
+            <div>{apiError}</div>
+          )}
+        </div>
+      )}
       {/* Nagłówek i logo */}
       <div style={{
         display: "flex",
@@ -113,25 +164,6 @@ const Questionnaire: React.FC = () => {
           }}
         />
       </div>
-
-      {/* BŁĄD NAD TABELĄ */}
-      {error && (
-        <div className="error-msg" style={{
-          margin: "0 auto 20px auto",
-          background: "#fae8e6",
-          color: "#b00020",
-          fontWeight: 700,
-          borderRadius: 10,
-          padding: "16px 24px",
-          textAlign: "center",
-          fontSize: "1.18rem",
-          maxWidth: 500,
-          border: "1.5px solid #f7b8b1",
-          boxShadow: "0px 3px 20px 0 rgba(220,38,38,0.03)"
-        }}>
-          Proszę udzielić odpowiedzi w każdym wierszu.
-        </div>
-      )}
 
       {/* TABELA */}
       <form onSubmit={handleSubmit}>

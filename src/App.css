@@ -98,3 +98,36 @@ body {
   margin-top: 11px;
   line-height: 1.35;
 }
+.sticky-error-msg {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  width: 100%;
+  background: #fae8e6;
+  color: #b00020;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 18px 18px 14px 18px;
+  text-align: center;
+  font-size: 1.18rem;
+  max-width: 540px;
+  margin: 0 auto 12px auto;
+  border: 1.7px solid #f7b8b1;
+  box-shadow: 0 3px 20px 0 rgba(220,38,38,0.06);
+}
+@media (max-width: 600px) {
+  .sticky-error-msg {
+    font-size: 1.02rem;
+    max-width: 98vw;
+    padding: 12px 6vw 10px 6vw;
+  }
+}
+
+/* Podświetlenie wierszy z brakiem zaznaczenia */
+.likert-table tr.missing-row td,
+.likert-table td.missing-cell,
+.likert-table tr.missing-row .sticky-col {
+  background: #fae8e6 !important;
+  color: #b00020;
+  font-weight: 500;
+}
