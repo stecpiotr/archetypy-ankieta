@@ -2,33 +2,45 @@ import React, { useState, useEffect } from "react";
 import { questions } from "./questions";
 import "./LikertTable.css";
 
+// Skala ocen i kolorów nagłówków
 const scaleLabels = [
   { label: "Zdecydowanie nie", color: "#d32f2f" },
-  { label: "Raczej nie",        color: "#f9a825" },
-  { label: "Ani tak, ani nie",  color: "#388e3c" },
-  { label: "Raczej tak",        color: "#4fc3f7" },
-  { label: "Zdecydowanie tak",  color: "#1976d2" }
+  { label: "Raczej nie", color: "#f9a825" },
+  { label: "Ani tak, ani nie", color: "#388e3c" },
+  { label: "Raczej tak", color: "#4fc3f7" },
+  { label: "Zdecydowanie tak", color: "#1976d2" },
 ];
 
 const Questionnaire: React.FC = () => {
   const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
+  const [hovered, setHovered] = useState<{ row: number | null, col: number | null }>({ row: null, col: null });
+  const [error, setError] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
+  // Przechwyt odpowiedzi
   const handleResponse = (row: number, value: number) => {
     const newResponses = [...responses];
     newResponses[row] = value;
     setResponses(newResponses);
+    setError(false);
   };
 
+  // Obsługa wysłania
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (responses.some((v) => v === 0)) {
+      setError(true);
+      return;
+    }
     setSubmitted(true);
   };
 
   if (submitted) {
-    return <div style={{ textAlign: "center", fontSize: "1.4rem", padding: 60 }}>Dziękuję!</div>;
+    return (
+      <div style={{ textAlign: "center", fontSize: "1.4rem", padding: 60 }}>
+        Dziękujemy za wypełnienie ankiety!
+      </div>
+    );
   }
 
   return (
@@ -36,34 +48,41 @@ const Questionnaire: React.FC = () => {
       <table className="likert-table">
         <thead>
           <tr>
-            <th className="likert-th-question"></th>
+            <th></th>
             {scaleLabels.map((col, colIdx) => (
               <th
                 key={colIdx}
-                className="likert-th-scale"
+                className={
+                  "scale-header" +
+                  (hovered.col === colIdx ? " hovered" : "")
+                }
                 style={{ color: col.color }}
+                onMouseEnter={() => setHovered({ ...hovered, col: colIdx })}
+                onMouseLeave={() => setHovered({ ...hovered, col: null })}
               >
-                <span className="scale-label">{col.label}</span>
+                {col.label}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {questions.map((item, rowIdx) => (
-            <tr key={item.id}
-                className={hoveredRow === rowIdx ? "row-hovered" : ""}
-                onMouseEnter={() => setHoveredRow(rowIdx)}
-                onMouseLeave={() => setHoveredRow(null)}
+            <tr
+              key={item.id}
+              className={
+                "likert-row" + (hovered.row === rowIdx ? " hovered-row" : "")
+              }
+              onMouseEnter={() => setHovered({ ...hovered, row: rowIdx })}
+              onMouseLeave={() => setHovered({ ...hovered, row: null })}
             >
-              <td className={`question-cell${hoveredRow === rowIdx ? " cell-hovered" : ""}`}>
-                {item.text}
-              </td>
+              <td className="question-cell">{item.text}</td>
               {scaleLabels.map((_, colIdx) => (
                 <td
+                  className={
+                    "option-cell" +
+                    (hovered.col === colIdx ? " hovered-col" : "")
+                  }
                   key={colIdx}
-                  className={`option-cell${hoveredCol === colIdx ? " col-hovered" : ""}`}
-                  onMouseEnter={() => setHoveredCol(colIdx)}
-                  onMouseLeave={() => setHoveredCol(null)}
                 >
                   <label className="option-label">
                     <input
@@ -80,7 +99,24 @@ const Questionnaire: React.FC = () => {
           ))}
         </tbody>
       </table>
-      <div style={{ maxWidth: 420, margin: "42px auto 60px auto" }}>
+      {error && (
+        <div
+          style={{
+            margin: "30px auto 0 auto",
+            background: "rgba(220, 38, 38, 0.13)",
+            color: "#b00020",
+            fontWeight: 600,
+            borderRadius: 10,
+            padding: "21px 24px",
+            textAlign: "center",
+            fontSize: "1.18rem",
+            maxWidth: 500,
+          }}
+        >
+          Proszę udzielić odpowiedzi w każdym wierszu.
+        </div>
+      )}
+      <div style={{ maxWidth: 380, margin: "42px auto 60px auto" }}>
         <button
           type="submit"
           style={{

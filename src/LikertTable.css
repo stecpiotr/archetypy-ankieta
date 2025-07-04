@@ -3,95 +3,64 @@
   border-collapse: separate;
   border-spacing: 0 0.3em;
   width: 100%;
+  min-width: 800px;
   background: #fff;
   box-sizing: border-box;
 }
 
-/* Nagłówki */
-.likert-table th {
-  font-size: 1.06rem;
-  padding: 14px 10px;
-  white-space: normal;
+.likert-table th,
+.likert-table td {
+  padding: 10px 24px;
   text-align: center;
-  background: #f7f7f7;
-  color: #253347;
-  font-weight: 700;
+  box-sizing: border-box;
+  font-size: 1.02rem;
+}
+
+.likert-table thead th {
   position: sticky;
   top: 0;
+  background: #f7f7f7;
   z-index: 2;
-  border-bottom: 2px solid #ececec;
-}
-
-.likert-th-question {
-  background: #fff !important;
-  min-width: 220px;
-  width: 370px;
-  max-width: 460px;
-  position: static !important;
-  border-bottom: 2px solid #ececec;
-}
-.likert-th-scale {
-  background: #f7f7f7 !important;
-  border-bottom: 2px solid #ececec;
-  white-space: normal;
-}
-.scale-label {
-  display: block;
-  white-space: normal;
-  word-wrap: break-word;
-  line-height: 1.16;
+  border-bottom: 2px solid #eee;
   font-weight: 700;
-}
-
-.likert-table td.question-cell {
-  text-align: left;
-  background: #fff;
-  padding: 11px 10px;
-  min-width: 220px;
-  width: 370px;
-  max-width: 460px;
-  /* Zapewnia łamanie długich pytań */
+  transition: background 0.15s;
   white-space: normal;
   word-break: break-word;
-  vertical-align: middle;
-  font-size: 1.03rem;
-  color: #253347;
-  font-weight: 500;
 }
 
-/* Hover podświetlenie */
-.row-hovered td,
-.cell-hovered {
-  background: #f8fcf6 !important;
-  transition: background 0.18s;
-}
-.col-hovered {
-  background: #f8fafd !important;
-  transition: background 0.18s;
+.likert-table th:first-child,
+.likert-table td:first-child {
+  text-align: left;
+  min-width: 220px;
+  max-width: 340px;
+  white-space: normal;
+  word-break: break-word;
+  padding-left: 6px;
 }
 
-/* Odpowiedzi - radio wyśrodkowane */
+.likert-table .question-cell {
+  color: #222;
+  background: #f7f7f7;
+}
+
 .likert-table td.option-cell {
   text-align: center;
   background: #fff;
-  vertical-align: middle;
-  padding: 0;
+  height: 52px;
+  min-width: 56px;
 }
-.option-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 38px;
-  width: 100%;
-}
+
+/* Styl radiobuttonów */
 .option-label input[type="radio"] {
   appearance: none;
   -webkit-appearance: none;
   border: 2px solid #25986d;
   background: #f5f1ec;
   border-radius: 50%;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  outline: none;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
   margin: 0;
@@ -121,44 +90,51 @@
   background: #e3fbf1;
   outline: none;
 }
+.option-label.hovered,
+.likert-row.hovered .option-label {
+  background: #f5f5f2;
+  border-radius: 50%;
+}
+
+/* Podświetlenia/hover */
+.likert-table .scale-header.hovered,
+.likert-row.hovered .question-cell {
+  background: #e1f1ed !important;
+  transition: background 0.15s;
+}
 
 .likert-row:nth-child(even) td {
   background: #fafbfc;
 }
 
-/* Responsywność i łamanie nagłówków */
+/* RESPONSYWNOŚĆ */
 @media (max-width: 950px) {
   .likert-table {
     min-width: 600px;
     font-size: 0.95em;
   }
-  .likert-th-question,
-  .likert-table td.question-cell {
-    min-width: 110px;
-    max-width: 280px;
-    font-size: 0.98rem;
-  }
 }
 
-@media (max-width: 650px) {
-  .likert-table th,
-  .likert-table td {
-    font-size: 0.91em !important;
-    padding: 0.35em 0.4em !important;
-  }
-  .likert-th-question,
-  .likert-table td.question-cell {
-    min-width: 79px !important;
-    max-width: 180px !important;
-    font-size: 0.97rem;
-  }
+/* --- DODAJ TO NA KOŃCU --- */
+.missing-row td,
+.missing-row .question-cell {
+  background: #ffeded !important;
+  transition: background 0.2s;
 }
-
-/* Brak żadnych cieni na tabeli ani wokół */
-.likert-table,
-.likert-table th,
-.likert-table tr,
-.likert-table td {
-  box-shadow: none !important;
-  filter: none !important;
+.option-cell.missing-cell {
+  background: #ffeded !important;
+}
+.likert-row.hovered-row td,
+.likert-row td.hovered-col,
+.option-cell.hovered-col {
+  background: #e3f3ff !important;
+  transition: background 0.2s;
+}
+/* --- Krzyżowe podświetlenie na zielono --- */
+.likert-table .scale-header.hovered,
+.likert-row.hovered-row td,
+.likert-row td.hovered-col,
+.option-cell.hovered-col {
+  background: #c8f7d6 !important;
+  transition: background 0.2s;
 }
