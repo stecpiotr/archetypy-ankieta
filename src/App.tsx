@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import Questionnaire from "./Questionnaire";
 
+// Detekcja szerokości - na mobile dajemy wężej
+const isMobile = window.innerWidth <= 600;
+
 const wrapperStyle: React.CSSProperties = {
   minHeight: "100vh",
   width: "100vw",
@@ -57,7 +60,7 @@ const App: React.FC = () => {
           <div style={contentStyle}>
             <div
               style={{
-                maxWidth: 700,
+                maxWidth: isMobile ? 350 : 800,  // węższa ramka tylko na mobile
                 width: "100%",
                 margin: "40px 0 30px 0",
                 fontSize: "1.10rem",
@@ -77,6 +80,7 @@ const App: React.FC = () => {
                 Hetman Team&nbsp;💪
               </span>
             </div>
+
             <div style={{ width: 300, marginTop: 36, marginBottom: 70 }}>
               <button
                 style={{
@@ -100,7 +104,9 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
+
           <hr style={{ border: 0, borderTop: "1.5px solid #ececec", width: "100%", margin: "0 0 0 0" }} />
+
           <footer
             style={{
               marginTop: 0,

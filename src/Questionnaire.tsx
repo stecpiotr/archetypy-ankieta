@@ -138,15 +138,15 @@ if (submitted) {
         <div>
           <div style={{
             fontWeight: 600,
-            fontSize: "1.33rem",
+            fontSize: "1.30rem",
             color: "#253347",
             lineHeight: 1.24
           }}>
             Postaraj się wcielić w osobę <b>Krzysztofa Hetmana</b> i odpowiedz na następujące pytania:
           </div>
           <div style={{
-            margin: "6px 0",
-            fontSize: "1.07rem",
+            margin: "15px 0",
+            fontSize: "1.25rem",
             color: "#b00020",
             fontWeight: 700
           }}>
