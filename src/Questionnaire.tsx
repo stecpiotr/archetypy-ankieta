@@ -152,7 +152,7 @@ if (submitted) {
           }}>
             <span>Pamiętaj! </span>
             <span style={{ color: "#253347", fontWeight: 400 }}>
-              Odpowiadasz jakbyś był/a Krzysztofem Hetmanem :)
+              Odpowiadasz jakbyś był/a Krzysztofem Hetmanem politykiem :)
             </span>
           </div>
         </div>
