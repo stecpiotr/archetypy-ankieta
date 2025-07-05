@@ -229,3 +229,17 @@
 .likert-table tr.missing-row input[type="radio"] {
   border-color: #b00020 !important;
 }
+/* --- FIX NA HOVER/AKTYWNY WIERSZ — sticky question-cell w parzystym hove-row --- */
+.likert-table tbody tr:hover .question-cell,
+.likert-table tbody tr.hovered-row .question-cell,
+.likert-table td.question-cell.hovered-row {
+  background: #e3f7df !important;
+  transition: background 0.18s;
+}
+.likert-table tr.missing-row:hover td,
+.likert-table tr.missing-row:hover th,
+.likert-table tr.missing-row:hover .sticky-col,
+.likert-table tr.missing-row:hover .question-cell {
+  background: #fae8e6 !important;
+  color: #b00020 !important;
+}
