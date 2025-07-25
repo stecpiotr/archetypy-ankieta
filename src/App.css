@@ -104,3 +104,7 @@ body {
     background: #fff !important;
   }
 }
+body, html {
+  color: #213547 !important;
+  background: #f3f6fa !important;
+}
