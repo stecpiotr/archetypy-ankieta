@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import Questionnaire from "./Questionnaire";
+import './index.css';
+import './App.css';
+import './LikertTable.css';
 
 // Detekcja szerokości - na mobile dajemy wężej
 const isMobile = window.innerWidth <= 600;

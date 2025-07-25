@@ -98,3 +98,9 @@ body {
   margin-top: 11px;
   line-height: 1.35;
 }
+@media (prefers-color-scheme: light) {
+  body, html, .welcome-layout, .welcome-title, .welcome-text, .welcome-thanks, .footer, .footer-sub {
+    color: #213547 !important;
+    background: #fff !important;
+  }
+}
