@@ -55,7 +55,7 @@ const App: React.FC = () => {
                 lineHeight: 1.13,
               }}
             >
-              Badanie wizerunku i postrzegania Krzysztofa Hetmana
+              Badanie wizerunku i postrzegania Marcina Gołka
             </h1>
             <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
           </header>
@@ -73,14 +73,14 @@ const App: React.FC = () => {
               }}
             >
               Witaj!<br /><br />
-              To badanie jest realizowane na prośbę Krzysztofa Hetmana.<br /><br />
-              Chcielibyśmy, abyś spróbował(a) wcielić się w samego Krzysztofa Hetmana i odpowiedział(a) z jego perspektywy na kilka pytań dotyczących postrzegania, przekonań i stylu działania.<br /><br />
-              Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak Krzysztof Hetman może być postrzegany przez innych. To dla nas i dla niego strategicznie ważne – dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.<br /><br />
+              To badanie jest realizowane na prośbę Marcina Gołka.<br /><br />
+              Chcielibyśmy, abyś spróbował(a) wcielić się w Marcina Gołka i odpowiedział(a) z jego perspektywy na kilka pytań dotyczących postrzegania, przekonań i stylu działania.<br /><br />
+              Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak Marcin Gołek może być postrzegany przez innych. To dla nas i dla niego strategicznie ważne – dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.<br /><br />
               Prosimy, postaraj się udzielać odpowiedzi jak najbardziej szczerze, na podstawie swoich obserwacji i wyobrażenia o tej postaci.<br /><br />
               Gdy będziesz gotowy(a), kliknij przycisk poniżej, aby rozpocząć badanie.<br /><br />
               <span style={{ display: "block", textAlign: "right", fontStyle: "normal", marginTop: 30 }}>
                 Dziękujemy za Twoją pomoc!<br />
-                Hetman Team&nbsp;💪
+                Gołek Team&nbsp;💪
               </span>
             </div>
 

@@ -96,7 +96,7 @@ const Questionnaire: React.FC = () => {
     // Supabase submit
     try {
       const { error } = await supabase
-        .from("ap48_responses")
+        .from("archetypy_responses")
         .insert([{ answers: responses }]);
       if (error) {
         setApiError("Błąd zapisu do bazy ankiet! Spróbuj ponownie.");
@@ -142,7 +142,7 @@ if (submitted) {
             color: "#253347",
             lineHeight: 1.24
           }}>
-            Postaraj się wcielić w osobę <b>Krzysztofa Hetmana</b> i odpowiedz na następujące pytania:
+            Postaraj się wcielić w osobę <b>Marcina Gołka</b> i odpowiedz na następujące pytania:
           </div>
           <div style={{
             margin: "15px 0",
@@ -152,7 +152,7 @@ if (submitted) {
           }}>
             <span>Pamiętaj! </span>
             <span style={{ color: "#253347", fontWeight: 400 }}>
-              Odpowiadasz jakbyś był/a Krzysztofem Hetmanem politykiem :)
+              Odpowiadasz jakbyś był/a Marcinem Gołkiem politykiem (osobą publiczną) 🙂
             </span>
           </div>
         </div>
