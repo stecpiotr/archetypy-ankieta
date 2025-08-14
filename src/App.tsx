@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Questionnaire from "./Questionnaire";
-import './index.css';
-import './App.css';
-import './LikertTable.css';
+import "./index.css";
+import "./App.css";
+import "./LikertTable.css";
+
+import { getSlugFromUrl, loadStudyBySlug } from "./lib/studies";
+import { buildCases, type Cases } from "./lib/cases";
 
 // Detekcja szerokości - na mobile dajemy wężej
 const isMobile = window.innerWidth <= 600;
@@ -30,6 +33,25 @@ const contentStyle: React.CSSProperties = {
 const App: React.FC = () => {
   const [started, setStarted] = useState(false);
 
+  // —— DYNAMICZNE DANE: imię, nazwisko (M/N), dopełniacz (D/Gen) ——
+  const [cases, setCases] = useState<Cases | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const slug = getSlugFromUrl(); // obsługuje /slug i ?s=slug
+      if (!slug) return; // brak sluga -> zostaną domyślne teksty
+
+      const study = await loadStudyBySlug(slug);
+      if (!study) return; // brak badania -> domyślne teksty
+
+      setCases(buildCases(study));
+    })();
+  }, []);
+
+  // Domyślne wartości = Twoje dotychczasowe teksty
+  const displayFullGen = cases?.displayFullGen ?? "Marcina Gołka";
+  const lastNameNom = cases?.lastNameNom ?? "Gołek";
+
   return (
     <div style={wrapperStyle}>
       {!started ? (
@@ -55,7 +77,7 @@ const App: React.FC = () => {
                 lineHeight: 1.13,
               }}
             >
-              Badanie wizerunku i postrzegania Marcina Gołka
+              {`Badanie wizerunku i postrzegania ${displayFullGen}`}
             </h1>
             <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
           </header>
@@ -63,7 +85,7 @@ const App: React.FC = () => {
           <div style={contentStyle}>
             <div
               style={{
-                maxWidth: isMobile ? 350 : 800,  // węższa ramka tylko na mobile
+                maxWidth: isMobile ? 350 : 800, // węższa ramka tylko na mobile
                 width: "100%",
                 margin: "40px 0 30px 0",
                 fontSize: "1.10rem",
@@ -73,14 +95,14 @@ const App: React.FC = () => {
               }}
             >
               Witaj!<br /><br />
-              To badanie jest realizowane na prośbę Marcina Gołka.<br /><br />
-              Chcielibyśmy, abyś spróbował(a) wcielić się w Marcina Gołka i odpowiedział(a) z jego perspektywy na kilka pytań dotyczących postrzegania, przekonań i stylu działania.<br /><br />
-              Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak Marcin Gołek może być postrzegany przez innych. To dla nas i dla niego strategicznie ważne – dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.<br /><br />
+              {`To badanie jest realizowane na prośbę ${displayFullGen}.`}<br /><br />
+              {`Chcielibyśmy, abyś spróbował(a) wcielić się w ${displayFullGen} i odpowiedział(a) z jego perspektywy na kilka pytań dotyczących postrzegania, przekonań i stylu działania.`}<br /><br />
+              {`Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak ${displayFullGen.replace("Marcina Gołka", "Marcin Gołek")} może być postrzegany przez innych. To dla nas i dla niego strategicznie ważne – dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.`}<br /><br />
               Prosimy, postaraj się udzielać odpowiedzi jak najbardziej szczerze, na podstawie swoich obserwacji i wyobrażenia o tej postaci.<br /><br />
               Gdy będziesz gotowy(a), kliknij przycisk poniżej, aby rozpocząć badanie.<br /><br />
               <span style={{ display: "block", textAlign: "right", fontStyle: "normal", marginTop: 30 }}>
                 Dziękujemy za Twoją pomoc!<br />
-                Gołek Team&nbsp;💪
+                {`${lastNameNom} Team`}&nbsp;💪
               </span>
             </div>
 
@@ -99,7 +121,7 @@ const App: React.FC = () => {
                   boxShadow: "0 2px 8px #ececec",
                   cursor: "pointer",
                   letterSpacing: "0.5px",
-                  transition: "background 0.2s"
+                  transition: "background 0.2s",
                 }}
                 onClick={() => setStarted(true)}
               >
