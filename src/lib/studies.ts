@@ -1,44 +1,74 @@
 // src/lib/studies.ts
 import { supabase } from "../supabaseClient";
 
-export type Study = {
-  id: string;
+export type Gender = "M" | "F";
+
+export interface StudyRow {
   slug: string;
-  person_first_name: string | null;
-  person_last_name: string | null;
-  city_name: string | null;
-  gender: "M" | "K" | null;
-};
+  is_active: boolean;
 
-/**
- * Zwraca slug badania z URL.
- * Obsługuje zarówno /slug jak i ?s=slug.
- */
-export function getSlugFromUrl(): string | null {
-  const url = new URL(window.location.href);
+  first_name_nom: string;
+  first_name_gen: string;
 
-  // Priorytet: query param ?s=...
-  const s = url.searchParams.get("s");
-  if (s && s.trim()) return s.trim();
+  last_name_nom: string;
+  last_name_gen: string;
 
-  // Druga opcja: ścieżka /slug
-  const path = url.pathname.replace(/^\/+/, "").replace(/\/+$/, "");
-  return path ? decodeURIComponent(path) : null;
+  city_nom: string;
+  city_loc: string;
+
+  gender: Gender;
 }
 
 /**
- * Ładuje rekord badania po slugu z tabeli public.studies.
+ * Slug bierzemy z pathname: /golek, /kowalska itp.
+ * Jeżeli ktoś używa starego ?s=... – nadal możemy to obsłużyć jako rezerwę.
  */
-export async function loadStudyBySlug(slug: string): Promise<Study | null> {
+export function getSlugFromUrl(): string | null {
+  try {
+    const url = new URL(window.location.href);
+
+    // 1) preferujemy ścieżkę (/golek)
+    const seg = url.pathname.split("/").filter(Boolean)[0];
+    if (seg) return decodeURIComponent(seg);
+
+    // 2) rezerwa: ?s=legacy
+    const qs = url.searchParams.get("s");
+    return qs ? qs.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ładujemy pojedynczy wiersz badania po slugu.
+ * Zwracamy również kolumny z odmianami.
+ */
+export async function loadStudyBySlug(
+  slug: string
+): Promise<StudyRow | null> {
   const { data, error } = await supabase
     .from("studies")
-    .select("id, slug, person_first_name, person_last_name, city_name, gender")
+    .select(
+      [
+        "slug",
+        "is_active",
+        "first_name_nom",
+        "first_name_gen",
+        "last_name_nom",
+        "last_name_gen",
+        "city_nom",
+        "city_loc",
+        "gender",
+      ].join(",")
+    )
     .eq("slug", slug)
+    .eq("is_active", true)
+    .limit(1)
     .maybeSingle();
 
   if (error) {
     console.error("loadStudyBySlug error:", error);
     return null;
   }
-  return (data as Study) ?? null;
+  return (data as StudyRow) || null;
 }

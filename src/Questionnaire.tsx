@@ -7,7 +7,7 @@ import { supabase } from "./supabaseClient";
 import { getSlugFromUrl, loadStudyBySlug } from "./lib/studies";
 import { buildCases } from "./lib/cases";
 
-// Skala odpowiedzi
+// Skala odpowiedzi – bez zmian
 const scaleLabels = [
   { label: "zdecydowanie nie", color: "#d32f2f" },
   { label: "raczej nie",        color: "#f9a825" },
@@ -15,6 +15,39 @@ const scaleLabels = [
   { label: "raczej tak",        color: "#4fc3f7" },
   { label: "zdecydowanie tak",  color: "#1976d2" },
 ];
+
+// ───────────────── Heurystyka narzędnika (np. „Marcinem Gołkiem”) ─────────────────
+// Nie zmienia wyglądu – tylko wytwarza tekst do wstawienia w Pamiętaj!
+function toInstrName(name: string, gender: "M" | "F"): string {
+  if (gender === "M") {
+    if (name.endsWith("ek")) return name.slice(0, -2) + "kiem";
+    if (name.endsWith("a"))  return name.slice(0, -1) + "ą";
+    return name + "em";
+  } else {
+    if (name.endsWith("a")) return name.slice(0, -1) + "ą";
+    return name;
+  }
+}
+
+function toInstrSurname(sur: string, gender: "M" | "F"): string {
+  if (gender === "M") {
+    if (sur.endsWith("ek")) return sur.slice(0, -2) + "kiem";
+    if (sur.endsWith("a"))  return sur.slice(0, -1) + "ą";
+    return sur + "em";
+  } else {
+    if (sur.endsWith("ska")) return sur.slice(0, -3) + "ską";
+    if (sur.endsWith("cka")) return sur.slice(0, -3) + "cką";
+    if (sur.endsWith("dzka")) return sur.slice(0, -4) + "dzką";
+    if (sur.endsWith("zka")) return sur.slice(0, -3) + "zką";
+    if (sur.endsWith("ka"))  return sur.slice(0, -1) + "ą";
+    if (sur.endsWith("a"))   return sur.slice(0, -1) + "ą";
+    return sur;
+  }
+}
+
+function buildFullInstr(nameNom: string, surNom: string, gender: "M" | "F"): string {
+  return `${toInstrName(nameNom, gender)} ${toInstrSurname(surNom, gender)}`;
+}
 
 const Questionnaire: React.FC = () => {
   const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
@@ -28,19 +61,23 @@ const Questionnaire: React.FC = () => {
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
 
-  // nowość: badanie + odmiany (bez zmiany wyglądu/tekstu)
+  // nowość: ładujemy parametry badania i odmiany
   const [slug, setSlug] = useState<string | null>(null);
-  const [nameGen, setNameGen] = useState<string>("Marcina Gołka");       // dopełniacz
-  const [nameInst, setNameInst] = useState<string>("Marcinem Gołkiem");  // narzędnik (fallback)
+  const [fullNom, setFullNom] = useState<string | null>(null);
+  const [fullGen, setFullGen] = useState<string | null>(null);
+  const [fullAcc, setFullAcc] = useState<string | null>(null);
+  const [fullIns, setFullIns] = useState<string | null>(null);
+  const [surNomOnly, setSurNomOnly] = useState<string | null>(null);
+  const [gender, setGender] = useState<"M" | "F">("M");
 
-  // responsywność
+  // Responsywność – bez zmian
   useEffect(() => {
     const onResize = () => setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // wczytanie /slug -> studies + odmiany imienia/nazwiska
+  // Wczytanie /slug → studies + odmiany
   useEffect(() => {
     (async () => {
       const s = getSlugFromUrl();
@@ -52,14 +89,15 @@ const Questionnaire: React.FC = () => {
         setApiError("Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem.");
         return;
       }
-      const cs = buildCases(study);
-      // dopełniacz z bazy, albo zostaje stały tekst
-      setNameGen(cs.fullGen || "Marcina Gołka");
 
-      // Jeśli w przyszłości dodamy w bazie formę narzędnika (np. cs.fullInst), to ją wykorzystamy.
-      // Póki co bezpieczny fallback, by NIE zmieniać treści:
-      // @ts-ignore – ignorujemy brak pola, bo może pojawić się później
-      setNameInst((cs as any).fullInst || "Marcinem Gołkiem");
+      const c = buildCases(study);
+      setGender(c.gender);
+      setFullNom(c.displayFullNom);
+      setFullGen(c.displayFullGen);
+      setFullAcc(c.displayFullAcc);
+      setSurNomOnly(c.surNom);
+
+      setFullIns(buildFullInstr(c.nameNom, c.surNom, c.gender));
     })();
   }, []);
 
@@ -90,7 +128,6 @@ const Questionnaire: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // walidacja kompletności
     const missing = responses.map((v, i) => (v === 0 ? i : -1)).filter(i => i !== -1);
     if (missing.length) {
       setError(true);
@@ -110,7 +147,7 @@ const Questionnaire: React.FC = () => {
     }
 
     if (!slug) {
-      setApiError("Brak identyfikatora badania (slug). Skontaktuj się z administratorem.");
+      setApiError("Brak identyfikatora badania w linku (użyj adresu /slug, np. /lublin).");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -124,7 +161,6 @@ const Questionnaire: React.FC = () => {
       const rawTotal = null;
       const respondentCode = null;
 
-      // ZAPIS przez RPC (bez zmian w backendzie)
       const { error } = await supabase.rpc("add_response_by_slug", {
         p_slug: slug,
         p_answers: responses,
@@ -149,61 +185,88 @@ const Questionnaire: React.FC = () => {
 
   if (submitted) return <Thanks />;
 
+  // —— Teksty nagłówkowe
+  const title = fullGen ? `Badanie wizerunku i postrzegania ${fullGen}` : "Badanie wizerunku i postrzegania";
+
+const leadBlock = (
+  <>
+    <div
+      style={{
+        fontWeight: 600,
+        fontSize: "1.30rem",
+        color: "#253347",
+        lineHeight: 1.24,
+        marginTop: "40px" // 🔹 dodatkowy odstęp nad tekstem
+      }}
+    >
+      Postaraj się wcielić w <b>{fullAcc ?? "…"}</b> i odpowiedz na następujące pytania:
+    </div>
+
+    <div style={{ margin: "20px 0 15px 0", fontSize: "1.20rem" }}>
+      <span style={{ color: "#c62828", fontWeight: 700 }}>Pamiętaj! </span>
+      <span style={{ color: "#253347", fontWeight: 400 }}>
+        Odpowiadasz jakbyś był(a) <u>{fullIns ?? "…"} politykiem (osobą publiczną)</u>{" "}
+        <span role="img" aria-label="smile">😊</span>
+      </span>
+    </div>
+  </>
+);
+
+
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 12px 0 12px", fontFamily: "'Roboto', Arial, sans-serif" }}>
-      {/* alerty */}
-      {(error || apiError || !slug) && (
+    <div style={{
+      maxWidth: 1100,
+      margin: "0 auto",
+      padding: "28px 12px 0 12px",
+      fontFamily: "'Roboto', Arial, sans-serif"
+    }}>
+      {(error || apiError) && (
         <div className="sticky-error-msg">
-          {!slug && <div>Brak identyfikatora badania w linku (użyj adresu /slug, np. /lublin).</div>}
-          {error && <div>Proszę udzielić odpowiedzi w każdym wierszu.</div>}
-          {apiError && <div>{apiError}</div>}
+          {error && (<div>Proszę udzielić odpowiedzi w każdym wierszu.</div>)}
+          {apiError && (<div>{apiError}</div>)}
         </div>
       )}
 
-      {/* ——— TU ZOSTAWIAMY DOKŁADNIE TWOJE TEKSTY, PODMIENIAMY TYLKO IMIĘ/NAZWISKO ——— */}
+{/* Nagłówek i logo – układ i style zachowane */}
+<div style={{
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: 28
+}}>
+  <div>
+    <div style={{
+      fontWeight: 700,
+      fontSize: "2.1rem",
+      color: "#2c3e50",
+      textAlign: "left",
+      margin: "0 0 18px 0",
+      letterSpacing: 1,
+      lineHeight: 1.13,
+    }}>
+      {title}
+    </div>
 
-      {/* Nagłówek i logo */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 28
-      }}>
-        <div>
-          <div style={{
-            fontWeight: 600,
-            fontSize: "1.30rem",
-            color: "#253347",
-            lineHeight: 1.24
-          }}>
-            Postaraj się wcielić w osobę <b>{nameGen}</b> i odpowiedz na następujące pytania:
-          </div>
-          <div style={{
-            margin: "15px 0",
-            fontSize: "1.25rem",
-            color: "#b00020",
-            fontWeight: 700
-          }}>
-            <span>Pamiętaj! </span>
-            <span style={{ color: "#253347", fontWeight: 400 }}>
-              Odpowiadaszzzzzz jakbyś był/a {nameInst} politykiem (osobą publiczną) 🙂
-            </span>
-          </div>
-        </div>
-        <img
-          src="/BadaniaPRO(r).png"
-          alt="Badania.pro logo"
-          style={{
-            height: 45,
-            width: "auto",
-            marginLeft: 24,
-            borderRadius: 7,
-            background: "#fff"
-          }}
-        />
-      </div>
+    {/* NOWE: linia pod tytułem – jak na ekranie startowym */}
+    <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: "0 0 18px 0" }} />
 
-      {/* Tabela — bez zmian wizualnych */}
+    {leadBlock}
+  </div>
+
+  <img
+    src="/BadaniaPRO(r).png"
+    alt="Badania.pro logo"
+    style={{
+      height: 45,
+      width: "auto",
+      marginLeft: 24,
+      borderRadius: 7,
+      background: "#fff"
+    }}
+  />
+</div>
+
+
       <form onSubmit={handleSubmit}>
         <table className="likert-table">
           <thead>
@@ -223,6 +286,9 @@ const Questionnaire: React.FC = () => {
           </thead>
           <tbody>
             {questions.map((item, rowIdx) => {
+              // >>> JEDYNA ZMIANA W RENDEROWANIU PYTANIA <<<
+              const questionText = gender === "F" ? item.textF : item.textM;
+
               const missing = missingRows.includes(rowIdx);
               return (
                 <tr
@@ -238,7 +304,7 @@ const Questionnaire: React.FC = () => {
                     }
                     style={{ textAlign: "left", left: 0 }}
                   >
-                    {item.text}
+                    {questionText}
                   </td>
                   {scaleLabels.map((_, colIdx) => (
                     <td
@@ -269,28 +335,30 @@ const Questionnaire: React.FC = () => {
           </tbody>
         </table>
 
-        <div style={{ maxWidth: 380, margin: "42px auto 60px auto" }}>
-          <button
-            type="submit"
-            style={{
-              width: "100%",
-              background: "#06b09c",
-              color: "#fff",
-              fontWeight: 700,
-              fontFamily: "'Roboto', Arial, sans-serif",
-              fontSize: "1.1rem",
-              border: "none",
-              borderRadius: 8,
-              padding: "0.75em 0",
-              boxShadow: "0 2px 8px #ececec",
-              cursor: "pointer",
-              letterSpacing: "0.5px",
-              transition: "background 0.2s",
-            }}
-          >
-            Wyślij
-          </button>
-        </div>
+        {!submitted && (
+          <div style={{ maxWidth: 380, margin: "42px auto 60px auto" }}>
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                background: "#06b09c",
+                color: "#fff",
+                fontWeight: 700,
+                fontFamily: "'Roboto', Arial, sans-serif",
+                fontSize: "1.1rem",
+                border: "none",
+                borderRadius: 8,
+                padding: "0.75em 0",
+                boxShadow: "0 2px 8px #ececec",
+                cursor: "pointer",
+                letterSpacing: "0.5px",
+                transition: "background 0.2s"
+              }}
+            >
+              Wyślij
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

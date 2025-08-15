@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Questionnaire from "./Questionnaire";
 import "./index.css";
 import "./App.css";
 import "./LikertTable.css";
 
 import { getSlugFromUrl, loadStudyBySlug } from "./lib/studies";
-import { buildCases, type Cases } from "./lib/cases";
+import { buildCases } from "./lib/cases";
 
-// Detekcja szerokości - na mobile dajemy wężej
+// Detekcja szerokości - na mobile dajemy wężej (bez zmian)
 const isMobile = window.innerWidth <= 600;
 
 const wrapperStyle: React.CSSProperties = {
@@ -33,24 +33,54 @@ const contentStyle: React.CSSProperties = {
 const App: React.FC = () => {
   const [started, setStarted] = useState(false);
 
-  // —— DYNAMICZNE DANE: imię, nazwisko (M/N), dopełniacz (D/Gen) ——
-  const [cases, setCases] = useState<Cases | null>(null);
+  // ───────────── NOWE: spójne zmienne na odmiany ─────────────
+  const [slug, setSlug] = useState<string | null>(null);
+  const [hasStudy, setHasStudy] = useState<boolean | null>(null); // null = loading, true/false = wynik
+
+  const [gender, setGender] = useState<"M" | "F">("M");
+  const [personNom, setPersonNom] = useState<string>("");   // Anna Kowalska / Marcin Gołek
+  const [personGen, setPersonGen] = useState<string>("");   // Anny Kowalskiej / Marcina Gołka
+  const [personAcc, setPersonAcc] = useState<string>("");   // Annę Kowalską / Marcina Gołka
+  const [personInstr, setPersonInstr] = useState<string>(""); // Anną Kowalską / Marcinem Gołkiem
+  const [personLoc, setPersonLoc] = useState<string>(""); // Annie Kowalskiej / Marcinie Gołku
+  const [surnameNom, setSurnameNom] = useState<string>(""); // Kowalska / Gołek
 
   useEffect(() => {
     (async () => {
-      const slug = getSlugFromUrl(); // obsługuje /slug i ?s=slug
-      if (!slug) return; // brak sluga -> zostaną domyślne teksty
+      const s = getSlugFromUrl();
+      setSlug(s);
 
-      const study = await loadStudyBySlug(slug);
-      if (!study) return; // brak badania -> domyślne teksty
+      if (!s) {
+        setHasStudy(false);
+        return;
+      }
 
-      setCases(buildCases(study));
+      const study = await loadStudyBySlug(s);
+      if (!study) {
+        setHasStudy(false);
+        return;
+      }
+
+      const c = buildCases(study);
+      setGender(c.gender);
+      setPersonNom(c.displayFullNom);     // Nom
+      setPersonGen(c.displayFullGen);     // Gen
+      setPersonAcc(c.displayFullAcc);     // Acc
+      setPersonInstr(c.displayFullInstr); // Instr (zważ: buildCases musi zwracać displayFullInstr)
+      setPersonLoc(c.displayFullLoc);     // << DODANE: Loc
+      setSurnameNom(c.surNom);
+
+      setHasStudy(true);
     })();
   }, []);
 
-  // Domyślne wartości = Twoje dotychczasowe teksty
-  const displayFullGen = cases?.displayFullGen ?? "Marcina Gołka";
-  const lastNameNom = cases?.lastNameNom ?? "Gołek";
+  // Dobór końcówki rodzaju do „postrzegany/a”
+  const perceivedWord = gender === "F" ? "postrzegana" : "postrzegany";
+  // NOWE: „dla niego” / „dla niej”
+  const himHer = gender === "F" ? "niej" : "niego";
+
+  // Baner o błędzie sluga / badania (bez zmian stylu)
+  const showBlocker = hasStudy === false;
 
   return (
     <div style={wrapperStyle}>
@@ -77,15 +107,17 @@ const App: React.FC = () => {
                 lineHeight: 1.13,
               }}
             >
-              {`Badanie wizerunku i postrzegania ${displayFullGen}`}
+              {/* tytuł – dopełniacz */}
+              Badanie wizerunku i postrzegania {personGen || "…"}
             </h1>
             <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
           </header>
 
           <div style={contentStyle}>
+            {/* Treść wstępna – zachowany układ i style, tylko poprawione przypadki */}
             <div
               style={{
-                maxWidth: isMobile ? 350 : 800, // węższa ramka tylko na mobile
+                maxWidth: isMobile ? 350 : 800,
                 width: "100%",
                 margin: "40px 0 30px 0",
                 fontSize: "1.10rem",
@@ -94,15 +126,37 @@ const App: React.FC = () => {
                 lineHeight: 1.7,
               }}
             >
-              Witaj!<br /><br />
-              {`To badanie jest realizowane na prośbę ${displayFullGen}.`}<br /><br />
-              {`Chcielibyśmy, abyś spróbował(a) wcielić się w ${displayFullGen} i odpowiedział(a) z jego perspektywy na kilka pytań dotyczących postrzegania, przekonań i stylu działania.`}<br /><br />
-              {`Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak ${displayFullGen.replace("Marcina Gołka", "Marcin Gołek")} może być postrzegany przez innych. To dla nas i dla niego strategicznie ważne – dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.`}<br /><br />
-              Prosimy, postaraj się udzielać odpowiedzi jak najbardziej szczerze, na podstawie swoich obserwacji i wyobrażenia o tej postaci.<br /><br />
-              Gdy będziesz gotowy(a), kliknij przycisk poniżej, aby rozpocząć badanie.<br /><br />
+              Witaj!
+              <br />
+              <br />
+              To badanie jest realizowane na prośbę {personGen || "…"}.
+              <br />
+              <br />
+              {/* wcielić się w … → biernik */}
+              Chcielibyśmy, abyś spróbował(a) wcielić się w {personAcc || "…"} i
+              odpowiedział(a) z {gender === "F" ? "jej" : "jego"} perspektywy na kilka
+              pytań dotyczących postrzegania, przekonań i stylu działania.
+              <br />
+              <br />
+              Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej
+              doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak{" "}
+              {/* TU UŻYWAMY MIANOWNIKA */}
+              {personNom || "…"} może być {perceivedWord} przez innych. Dla nas i dla {himHer} to strategicznie ważne –
+              dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.
+              <br />
+              <br />
+              Prosimy, postaraj się udzielać odpowiedzi jak najbardziej szczerze, na podstawie
+              swoich obserwacji i wyobrażeń o {personLoc || "…"}.
+              <br />
+              <br />
+              Gdy będziesz gotowy(a), kliknij przycisk poniżej, aby rozpocząć badanie.
+              <br />
+              <br />
               <span style={{ display: "block", textAlign: "right", fontStyle: "normal", marginTop: 30 }}>
-                Dziękujemy za Twoją pomoc!<br />
-                {`${lastNameNom} Team`}&nbsp;💪
+                Dziękujemy za Twoją pomoc!
+                <br />
+                {/* nazwisko w mianowniku + „Team” */}
+                {surnameNom ? `${surnameNom} Team` : "—"} &nbsp;💪
               </span>
             </div>
 
@@ -119,11 +173,18 @@ const App: React.FC = () => {
                   borderRadius: 8,
                   padding: "0.75em 0",
                   boxShadow: "0 2px 8px #ececec",
-                  cursor: "pointer",
+                  cursor: showBlocker ? "not-allowed" : "pointer",
                   letterSpacing: "0.5px",
                   transition: "background 0.2s",
+                  opacity: showBlocker ? 0.65 : 1,
                 }}
-                onClick={() => setStarted(true)}
+                onClick={() => !showBlocker && setStarted(true)}
+                disabled={showBlocker}
+                title={
+                  showBlocker
+                    ? "Brak identyfikatora badania lub badanie nie istnieje."
+                    : "Rozpocznij badanie"
+                }
               >
                 Zaczynamy
               </button>
@@ -145,8 +206,8 @@ const App: React.FC = () => {
           >
             opracowanie: Piotr Stec, Badania.pro® | © {new Date().getFullYear()}
             <div style={{ fontSize: "0.76rem", color: "#8a9bab", marginTop: 11, lineHeight: 1.35 }}>
-              Jeśli pojawiły się jakieś wątpliwości lub masz pytania proszę o kontakt: Piotr Stec, Badania.pro,&nbsp;
-              e-mail:{" "}
+              Jeśli pojawiły się jakieś wątpliwości lub masz pytania proszę o kontakt: Piotr Stec,
+              Badania.pro,&nbsp;
               <a
                 href="mailto:piotr.stec@badania.pro"
                 style={{ color: "#09a", textDecoration: "underline" }}
@@ -156,6 +217,27 @@ const App: React.FC = () => {
               , tel.:500-121-141
             </div>
           </footer>
+
+          {/* Baner blokujący start, gdy brak sluga / badania w bazie */}
+          {showBlocker && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                background: "#fbe9e7",
+                color: "#b71c1c",
+                fontWeight: 600,
+                padding: "10px 16px",
+                borderBottom: "1px solid #ffccbc",
+                textAlign: "center",
+                zIndex: 9999,
+              }}
+            >
+              Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem.
+            </div>
+          )}
         </>
       ) : (
         <Questionnaire />
