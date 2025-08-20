@@ -1,38 +1,49 @@
 // src/lib/studies.ts
 import { supabase } from "../supabaseClient";
 
-/** Płeć w bazie */
+/** Rodzaj */
 export type Gender = "M" | "F";
 
-/** Minimalny rekord z tabeli `studies`, którego potrzebuje ankieta */
+/** Minimalny rekord badania – z odmianami, jeśli są w bazie */
 export interface StudyRow {
   slug: string;
   is_active: boolean;
 
-  // mianownik
-  first_name_nom: string | null;
-  last_name_nom: string | null;
-
-  // dopełniacz
-  first_name_gen: string | null;
-  last_name_gen: string | null;
-
-  // miejscownik
-  first_name_loc: string | null;
-  last_name_loc: string | null;
-
-  // narzędnik
-  first_name_ins: string | null;
-  last_name_ins: string | null;
-
-  // nazwa JST (opcjonalnie)
-  city_nom?: string | null;
-  city_loc?: string | null;
-
+  first_name: string;   // historyczne
+  last_name: string;    // historyczne
+  city: string | null;
   gender: Gender;
+
+  // Mianownik (jeżeli przechowujesz)
+  first_name_nom?: string | null;
+  last_name_nom?: string | null;
+
+  // Dopełniacz
+  first_name_gen?: string | null;
+  last_name_gen?: string | null;
+
+  // Celownik
+  first_name_dat?: string | null;
+  last_name_dat?: string | null;
+
+  // Biernik
+  first_name_acc?: string | null;
+  last_name_acc?: string | null;
+
+  // Narzędnik
+  first_name_ins?: string | null;
+  last_name_ins?: string | null;
+
+  // Miejscownik
+  first_name_loc?: string | null;
+  last_name_loc?: string | null;
+
+  // Wołacz
+  first_name_voc?: string | null;
+  last_name_voc?: string | null;
 }
 
-/** Pobierz slug z URL-a: preferuj /slug, awaryjnie ?s=... */
+/** Z path: preferujemy /slug, a w rezerwie ?s=... */
 export function getSlugFromUrl(): string | null {
   try {
     const url = new URL(window.location.href);
@@ -45,7 +56,7 @@ export function getSlugFromUrl(): string | null {
   }
 }
 
-/** Wczytaj rekord badania po slugu (tylko aktywne). */
+/** Ładowanie rekordu badania po slugu */
 export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
   const { data, error } = await supabase
     .from("studies")
@@ -53,23 +64,18 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
       [
         "slug",
         "is_active",
-        "gender",
-
         "first_name",
         "last_name",
         "city",
+        "gender",
 
-        "first_name_nom",
-        "last_name_nom",
-
-        "first_name_gen",
-        "last_name_gen",
-
-        "first_name_loc",
-        "last_name_loc",
-
-        "first_name_ins",
-        "last_name_ins",
+        "first_name_nom", "last_name_nom",
+        "first_name_gen", "last_name_gen",
+        "first_name_dat", "last_name_dat",
+        "first_name_acc", "last_name_acc",
+        "first_name_ins", "last_name_ins",
+        "first_name_loc", "last_name_loc",
+        "first_name_voc", "last_name_voc",
       ].join(",")
     )
     .eq("slug", slug)
@@ -81,141 +87,137 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
     console.error("loadStudyBySlug error:", error);
     return null;
   }
-  // Typy z Supabase bywają luźne – zwracamy jako StudyRow
-  return (data as unknown) as StudyRow;
+  return (data as StudyRow) || null;
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   HEURYSTYKI – tylko gdy w bazie brakuje danej odmiany
-   (są celowo bardzo proste i bezpieczne).
-──────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────── Heurystyki awaryjne (tylko gdy w DB brak) ───────────────────────── */
 
-function accFirst(nameNom: string, g: Gender): string {
-  const n = nameNom || "";
-  if (!n) return n;
+function trimOrEmpty(v?: string | null): string {
+  return (v ?? "").trim();
+}
 
-  if (g === "M") {
-    // Kuba → Kubę, Emil → Emila, Marcin → Marcina, Marek → Marka
-    if (n.endsWith("ek")) return n.slice(0, -2) + "ka";
-    if (n.endsWith("a")) return n.slice(0, -1) + "ę";
-    return n + "a";
+function nomFirst(study: StudyRow): string {
+  return trimOrEmpty(study.first_name_nom) || trimOrEmpty(study.first_name);
+}
+
+function nomLast(study: StudyRow): string {
+  return trimOrEmpty(study.last_name_nom) || trimOrEmpty(study.last_name);
+}
+
+/** Biernik imienia – fallback gdy w DB brak */
+function guessAccFirst(nom: string, gender: Gender, genFromDb?: string | null): string {
+  const gen = trimOrEmpty(genFromDb);
+  // U mężczyzn biernik = dopełniacz (osoba żywotna): Marcin→Marcina, Piotr→Piotra, Paweł→Pawła
+  if (gender === "M") return gen || nom;
+  // Kobiety: zwykle -a → -ę (Anna→Annę), inaczej bez zmiany
+  if (nom.endsWith("a")) return nom.slice(0, -1) + "ę";
+  return nom;
+}
+
+/** Biernik nazwiska – fallback gdy w DB brak */
+function guessAccLast(nom: string, gender: Gender, genFromDb?: string | null): string {
+  const gen = trimOrEmpty(genFromDb);
+
+  if (gender === "M") {
+    // typowe wzorce męskie:
+    if (nom.endsWith("ek")) return nom.slice(0, -2) + "ka";   // Gołek→Gołka
+    if (nom.endsWith("eł")) return nom.slice(0, -1) + "ła";   // (rzadziej spotykane)
+    if (nom.endsWith("a"))  return nom.slice(0, -1) + "ę";    // Batyra→Batyrę (kluczowa poprawka)
+    // wiele nazwisk męskich ma biernik = dopełniacz (Kowalski→Kowalskiego, Nowak→Nowaka, itd.)
+    return gen || nom;
   } else {
-    // Anna → Annę
-    if (n.endsWith("a")) return n.slice(0, -1) + "ę";
-    return n;
+    // wzorce żeńskie: -ska/-cka/-dzka/-zka/-ka/-a → końcówka z „ą”
+    if (nom.endsWith("ska")) return nom.slice(0, -3) + "ską";
+    if (nom.endsWith("cka")) return nom.slice(0, -3) + "cką";
+    if (nom.endsWith("dzka")) return nom.slice(0, -4) + "dzką";
+    if (nom.endsWith("zka")) return nom.slice(0, -3) + "zką";
+    if (nom.endsWith("ka"))  return nom.slice(0, -1) + "ą";
+    if (nom.endsWith("a"))   return nom.slice(0, -1) + "ą";
+    return nom;
   }
 }
 
-function accLast(surNom: string, g: Gender): string {
-  const s = surNom || "";
-  if (!s) return s;
-
-  if (g === "M") {
-    // Gołek → Gołka, Stec → Steca, Kowalski → Kowalskiego (tu ostrożnie: dajemy -a jako bezpieczny wariant)
-    if (s.endsWith("ek")) return s.slice(0, -2) + "ka";
-    // większość męskich nazwisk zakończonych spółgłoską dostaje -a
-    if (/[bcćdfghjklłmnńprsśtwzźż]$/i.test(s)) return s + "a";
-    return s;
+/** Narzędnik imienia – fallback */
+function guessInsFirst(nom: string, gender: Gender): string {
+  if (gender === "M") {
+    if (nom.endsWith("ek")) return nom.slice(0, -2) + "kiem";
+    if (nom.endsWith("a"))  return nom.slice(0, -1) + "ą";
+    return nom + "em"; // Marcinem, Piotrem (tu idea fix – Piotr→Piotrem zrobi baza; heurystyka zostaje neutralna)
   } else {
-    // Kowalska → Kowalską, Nowacka → Nowacką, Kuźbicka → Kuźbicką
-    if (s.endsWith("ska")) return s.slice(0, -3) + "ską";
-    if (s.endsWith("cka")) return s.slice(0, -3) + "cką";
-    if (s.endsWith("dzka")) return s.slice(0, -4) + "dzką";
-    if (s.endsWith("zka")) return s.slice(0, -3) + "zką";
-    if (s.endsWith("ka")) return s.slice(0, -1) + "ą";
-    if (s.endsWith("a")) return s.slice(0, -1) + "ą";
-    return s;
+    if (nom.endsWith("a")) return nom.slice(0, -1) + "ą";
+    return nom;
   }
 }
 
-function insFirst(nameNom: string, g: Gender): string {
-  const n = nameNom || "";
-  if (!n) return n;
-
-  if (g === "M") {
-    // Marek → Markiem, Emil → Emilem, Marcin → Marcinem
-    if (n.endsWith("ek")) return n.slice(0, -2) + "kiem";
-    if (n.endsWith("a")) return n.slice(0, -1) + "ą";
-    return n + "em";
+/** Narzędnik nazwiska – fallback */
+function guessInsLast(nom: string, gender: Gender): string {
+  if (gender === "M") {
+    if (nom.endsWith("ek")) return nom.slice(0, -2) + "kiem"; // Gołkiem
+    if (nom.endsWith("a"))  return nom.slice(0, -1) + "ą";    // Batyrą
+    return nom + "em";                                        // Kowalskim
   } else {
-    // Anna → Anną
-    if (n.endsWith("a")) return n.slice(0, -1) + "ą";
-    return n;
+    if (nom.endsWith("ska")) return nom.slice(0, -3) + "ską";
+    if (nom.endsWith("cka")) return nom.slice(0, -3) + "cką";
+    if (nom.endsWith("dzka")) return nom.slice(0, -4) + "dzką";
+    if (nom.endsWith("zka")) return nom.slice(0, -3) + "zką";
+    if (nom.endsWith("ka"))  return nom.slice(0, -1) + "ą";
+    if (nom.endsWith("a"))   return nom.slice(0, -1) + "ą";
+    return nom;
   }
 }
 
-function insLast(surNom: string, g: Gender): string {
-  const s = surNom || "";
-  if (!s) return s;
-
-  if (g === "M") {
-    // Gołek → Gołkiem, Stec → Stecem/Stecem (bezpiecznie +em)
-    if (s.endsWith("ek")) return s.slice(0, -2) + "kiem";
-    if (s.endsWith("a")) return s.slice(0, -1) + "ą";
-    return s + "em";
-  } else {
-    if (s.endsWith("ska")) return s.slice(0, -3) + "ską";
-    if (s.endsWith("cka")) return s.slice(0, -3) + "cką";
-    if (s.endsWith("dzka")) return s.slice(0, -4) + "dzką";
-    if (s.endsWith("zka")) return s.slice(0, -3) + "zką";
-    if (s.endsWith("ka")) return s.slice(0, -1) + "ą";
-    if (s.endsWith("a")) return s.slice(0, -1) + "ą";
-    return s;
-  }
+/** Miejscownik pełny – fallback */
+function guessLocFull(firstNom: string, lastNom: string): string {
+  // Bez zabawy – jeśli nie mamy z DB, wpisujemy „o {Nom} {Nom}”
+  return `o ${firstNom} ${lastNom}`.trim();
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   ZBUDUJ WYŚWIETLANE FRAZY
-   (Mianownik, Dopełniacz, Biernik, Narzędnik, Miejscownik)
-──────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────── Builder używany przez App/Questionnaire/Thanks ───────────────────────── */
 
 export interface BuiltDisplay {
   gender: Gender;
-  surNom: string;       // nazwisko w mianowniku
-  fullNom: string;      // „Emil Stec”
-  fullGen: string;      // „Emila Steca”
-  fullAcc: string;      // „Emila Steca” (biernik; w męskich zwykle = dopełniacz)
-  fullIns: string;      // „Emilem Stecem” / „Anną Kowalską”
-  fullLoc: string;      // „o Emilu Stecu” / „o Annie Kowalskiej”
+  surNom: string;      // nazwisko w mianowniku (do „Kowalska Team”)
+  fullNom: string;     // Marcin Gołek
+  fullGen: string;     // Marcina Gołka
+  fullAcc: string;     // Marcina Gołka / Annę Kowalską / Pawła Batyrę
+  fullIns: string;     // Marcinem Gołkiem / Anną Kowalską
+  fullLoc: string;     // Marcinie Gołku / Annie Kowalskiej / Emilu Stecu...
 }
 
-/** Główna funkcja do używania w UI. Czyta z bazy, a braki uzupełnia heurystyką. */
+/** Składanie fraz z przewagą danych z bazy. Heurystyki tylko gdy w DB brak. */
 export function buildDisplayFromStudy(study: StudyRow): BuiltDisplay {
-  const g: Gender = study.gender || "M";
+  const gender = study.gender;
 
-  // Mianownik (preferuj *_nom, a jak brak – first_name/last_name)
-  const firstNom = (study.first_name_nom ?? (study as any).first_name ?? "").trim();
-  const lastNom  = (study.last_name_nom  ?? (study as any).last_name  ?? "").trim();
+  // mianownik
+  const fnNom = nomFirst(study);
+  const lnNom = nomLast(study);
 
-  const fullNom = `${firstNom} ${lastNom}`.trim();
+  // dopełniacz
+  const fnGen = trimOrEmpty(study.first_name_gen) || fnNom;
+  const lnGen = trimOrEmpty(study.last_name_gen) || lnNom;
 
-  // Dopełniacz – najpierw spróbuj z bazy, w razie braku użyj prostych reguł
-  const firstGen = (study.first_name_gen ?? "").trim() || (g === "M" ? firstNom + "a" : (firstNom.endsWith("a") ? firstNom.slice(0, -1) + "y" : firstNom));
-  const lastGen  = (study.last_name_gen  ?? "").trim() || (g === "M" ? (lastNom.endsWith("ek") ? lastNom.slice(0, -2) + "ka" : lastNom + "a") : lastNom);
-  const fullGen  = `${firstGen} ${lastGen}`.trim();
+  // biernik (KLUCZOWE)
+  const fnAcc = trimOrEmpty(study.first_name_acc) || guessAccFirst(fnNom, gender, study.first_name_gen);
+  const lnAcc = trimOrEmpty(study.last_name_acc) || guessAccLast(lnNom, gender, study.last_name_gen);
 
-  // Biernik – w męskich osobowych zwykle = dopełniacz; dla K → końcówki „ę/ą”
-  const firstAcc = accFirst(firstNom, g);
-  const lastAcc  = accLast(lastNom, g);
-  const fullAcc  = `${firstAcc} ${lastAcc}`.trim();
+  // narzędnik
+  const fnIns = trimOrEmpty(study.first_name_ins) || guessInsFirst(fnNom, gender);
+  const lnIns = trimOrEmpty(study.last_name_ins) || guessInsLast(lnNom, gender);
 
-  // Narzędnik – z bazy lub heurystyka
-  const firstIns = (study.first_name_ins ?? "").trim() || insFirst(firstNom, g);
-  const lastIns  = (study.last_name_ins  ?? "").trim() || insLast(lastNom, g);
-  const fullIns  = `${firstIns} ${lastIns}`.trim();
-
-  // Miejscownik – tylko jeśli obie części są w bazie; w przeciwnym razie bezpiecznie „o {Nom}”
-  const locFirst = (study.first_name_loc ?? "").trim();
-  const locLast  = (study.last_name_loc  ?? "").trim();
-  const fullLoc  = (locFirst && locLast) ? `${locFirst} ${locLast}` : `o ${fullNom}`;
+  // miejscownik
+  let fullLoc = "";
+  const fnLoc = trimOrEmpty(study.first_name_loc);
+  const lnLoc = trimOrEmpty(study.last_name_loc);
+  if (fnLoc && lnLoc) fullLoc = `${fnLoc} ${lnLoc}`;
+  else fullLoc = guessLocFull(fnNom, lnNom);
 
   return {
-    gender: g,
-    surNom: lastNom,
-    fullNom,
-    fullGen,
-    fullAcc,
-    fullIns,
+    gender,
+    surNom: lnNom,
+    fullNom: `${fnNom} ${lnNom}`.trim(),
+    fullGen: `${fnGen} ${lnGen}`.trim(),
+    fullAcc: `${fnAcc} ${lnAcc}`.trim(),
+    fullIns: `${fnIns} ${lnIns}`.trim(),
     fullLoc,
   };
 }
