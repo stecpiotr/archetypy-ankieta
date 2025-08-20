@@ -2,10 +2,8 @@ import React, { useRef, useState, useEffect } from "react";
 import "./LikertTable.css";
 import Thanks from "./Thanks";
 import { questions } from "./questions";
-
 import { supabase } from "./supabaseClient";
-import { getSlugFromUrl, loadStudyBySlug } from "./lib/studies";
-import { buildCases } from "./lib/cases";
+import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
 
 const scaleLabels = [
   { label: "zdecydowanie nie", color: "#d32f2f" },
@@ -14,29 +12,6 @@ const scaleLabels = [
   { label: "raczej tak",        color: "#4fc3f7" },
   { label: "zdecydowanie tak",  color: "#1976d2" },
 ];
-
-function buildFullInstr(nameNom: string, surNom: string, gender: "M" | "F"): string {
-  const n = nameNom.trim();
-  const s = surNom.trim();
-
-  const first =
-    gender === "M"
-      ? (n.endsWith("ek") ? n.slice(0, -2) + "kiem" : n.endsWith("a") ? n.slice(0, -1) + "ą" : n + "em")
-      : (n.endsWith("a") ? n.slice(0, -1) + "ą" : n);
-
-  const last =
-    gender === "M"
-      ? (s.endsWith("ek") ? s.slice(0, -2) + "kiem" : s.endsWith("a") ? s.slice(0, -1) + "ą" : s + "em")
-      : (s.endsWith("ska") ? s.slice(0, -3) + "ską"
-        : s.endsWith("cka") ? s.slice(0, -3) + "cką"
-        : s.endsWith("dzka") ? s.slice(0, -4) + "dzką"
-        : s.endsWith("zka") ? s.slice(0, -3) + "zką"
-        : s.endsWith("ka") ? s.slice(0, -1) + "ą"
-        : s.endsWith("a") ? s.slice(0, -1) + "ą"
-        : s);
-
-  return `${first} ${last}`.trim();
-}
 
 const Questionnaire: React.FC = () => {
   const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
@@ -51,12 +26,12 @@ const Questionnaire: React.FC = () => {
   );
 
   const [slug, setSlug] = useState<string | null>(null);
+  const [fullNom, setFullNom] = useState<string | null>(null);
   const [fullGen, setFullGen] = useState<string | null>(null);
   const [fullAcc, setFullAcc] = useState<string | null>(null);
   const [fullIns, setFullIns] = useState<string | null>(null);
+  const [surNomOnly, setSurNomOnly] = useState<string | null>(null);
   const [gender, setGender] = useState<"M" | "F">("M");
-  const [nameNom, setNameNom] = useState<string>("");
-  const [surNom, setSurNom] = useState<string>("");
 
   useEffect(() => {
     const onResize = () => setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
@@ -75,15 +50,13 @@ const Questionnaire: React.FC = () => {
         setApiError("Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem.");
         return;
       }
-
-      const c = buildCases(study);
+      const c = buildDisplayFromStudy(study);
       setGender(c.gender);
-      setFullGen(c.displayFullGen);
-      setFullAcc(c.displayFullAcc);
-      setNameNom(c.nameNom);
-      setSurNom(c.surNom);
-
-      setFullIns(buildFullInstr(c.nameNom, c.surNom, c.gender));
+      setFullNom(c.fullNom);
+      setFullGen(c.fullGen);
+      setFullAcc(c.fullAcc);
+      setSurNomOnly(c.surNom);
+      setFullIns(c.fullIns);
     })();
   }, []);
 
@@ -181,7 +154,7 @@ const Questionnaire: React.FC = () => {
           fontSize: "1.30rem",
           color: "#253347",
           lineHeight: 1.24,
-          marginTop: "40px",
+          marginTop: "40px"
         }}
       >
         Postaraj się wcielić w <b>{fullAcc ?? "…"}</b> i odpowiedz na następujące pytania:
@@ -268,7 +241,6 @@ const Questionnaire: React.FC = () => {
           <tbody>
             {questions.map((item, rowIdx) => {
               const questionText = gender === "F" ? item.textF : item.textM;
-
               const missing = missingRows.includes(rowIdx);
               return (
                 <tr
@@ -304,11 +276,7 @@ const Questionnaire: React.FC = () => {
                           name={`row-${rowIdx}`}
                           value={colIdx + 1}
                           checked={responses[rowIdx] === colIdx + 1}
-                          onChange={() => setResponses(prev => {
-                            const next = [...prev];
-                            next[rowIdx] = colIdx + 1;
-                            return next;
-                          })}
+                          onChange={() => handleResponse(rowIdx, colIdx + 1)}
                         />
                       </label>
                     </td>

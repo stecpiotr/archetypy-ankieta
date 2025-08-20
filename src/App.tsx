@@ -1,11 +1,11 @@
+// src/App.tsx
 import React, { useState, useEffect } from "react";
 import Questionnaire from "./Questionnaire";
 import "./index.css";
 import "./App.css";
 import "./LikertTable.css";
 
-import { getSlugFromUrl, loadStudyBySlug } from "./lib/studies";
-import { buildCases } from "./lib/cases";
+import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
 
 const isMobile = window.innerWidth <= 600;
 
@@ -55,13 +55,13 @@ const App: React.FC = () => {
         return;
       }
 
-      const c = buildCases(study);
+      const c = buildDisplayFromStudy(study);
       setGender(c.gender);
-      setPersonNom(c.displayFullNom);
-      setPersonGen(c.displayFullGen);
-      setPersonAcc(c.displayFullAcc);
-      setPersonInstr(c.displayFullInstr);
-      setPersonLoc(c.displayFullLoc);
+      setPersonNom(c.fullNom);
+      setPersonGen(c.fullGen);
+      setPersonAcc(c.fullAcc);
+      setPersonInstr(c.fullIns);
+      setPersonLoc(c.fullLoc);
       setSurnameNom(c.surNom);
 
       setHasStudy(true);
@@ -120,6 +120,7 @@ const App: React.FC = () => {
               To badanie jest realizowane na prośbę {personGen || "…"}.
               <br />
               <br />
+              {/* wcielić się w … → BIERNIK */}
               Chcielibyśmy, abyś spróbował(a) wcielić się w {personAcc || "…"} i
               odpowiedział(a) z {gender === "F" ? "jej" : "jego"} perspektywy na kilka
               pytań dotyczących postrzegania, przekonań i stylu działania.
