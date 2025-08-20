@@ -7,7 +7,6 @@ import "./LikertTable.css";
 import { getSlugFromUrl, loadStudyBySlug } from "./lib/studies";
 import { buildCases } from "./lib/cases";
 
-// Detekcja szerokości - na mobile dajemy wężej (bez zmian)
 const isMobile = window.innerWidth <= 600;
 
 const wrapperStyle: React.CSSProperties = {
@@ -33,23 +32,18 @@ const contentStyle: React.CSSProperties = {
 const App: React.FC = () => {
   const [started, setStarted] = useState(false);
 
-  // ───────────── NOWE: spójne zmienne na odmiany ─────────────
-  const [slug, setSlug] = useState<string | null>(null);
-  const [hasStudy, setHasStudy] = useState<boolean | null>(null); // null = loading, true/false = wynik
-
+  const [hasStudy, setHasStudy] = useState<boolean | null>(null);
   const [gender, setGender] = useState<"M" | "F">("M");
-  const [personNom, setPersonNom] = useState<string>("");   // Anna Kowalska / Marcin Gołek
-  const [personGen, setPersonGen] = useState<string>("");   // Anny Kowalskiej / Marcina Gołka
-  const [personAcc, setPersonAcc] = useState<string>("");   // Annę Kowalską / Marcina Gołka
-  const [personInstr, setPersonInstr] = useState<string>(""); // Anną Kowalską / Marcinem Gołkiem
-  const [personLoc, setPersonLoc] = useState<string>(""); // Annie Kowalskiej / Marcinie Gołku
-  const [surnameNom, setSurnameNom] = useState<string>(""); // Kowalska / Gołek
+  const [personNom, setPersonNom] = useState<string>("");
+  const [personGen, setPersonGen] = useState<string>("");
+  const [personAcc, setPersonAcc] = useState<string>("");
+  const [personInstr, setPersonInstr] = useState<string>("");
+  const [personLoc, setPersonLoc] = useState<string>("");
+  const [surnameNom, setSurnameNom] = useState<string>("");
 
   useEffect(() => {
     (async () => {
       const s = getSlugFromUrl();
-      setSlug(s);
-
       if (!s) {
         setHasStudy(false);
         return;
@@ -63,23 +57,19 @@ const App: React.FC = () => {
 
       const c = buildCases(study);
       setGender(c.gender);
-      setPersonNom(c.displayFullNom);     // Nom
-      setPersonGen(c.displayFullGen);     // Gen
-      setPersonAcc(c.displayFullAcc);     // Acc
-      setPersonInstr(c.displayFullInstr); // Instr (zważ: buildCases musi zwracać displayFullInstr)
-      setPersonLoc(c.displayFullLoc);     // << DODANE: Loc
+      setPersonNom(c.displayFullNom);
+      setPersonGen(c.displayFullGen);
+      setPersonAcc(c.displayFullAcc);
+      setPersonInstr(c.displayFullInstr);
+      setPersonLoc(c.displayFullLoc);
       setSurnameNom(c.surNom);
 
       setHasStudy(true);
     })();
   }, []);
 
-  // Dobór końcówki rodzaju do „postrzegany/a”
   const perceivedWord = gender === "F" ? "postrzegana" : "postrzegany";
-  // NOWE: „dla niego” / „dla niej”
   const himHer = gender === "F" ? "niej" : "niego";
-
-  // Baner o błędzie sluga / badania (bez zmian stylu)
   const showBlocker = hasStudy === false;
 
   return (
@@ -107,14 +97,12 @@ const App: React.FC = () => {
                 lineHeight: 1.13,
               }}
             >
-              {/* tytuł – dopełniacz */}
               Badanie wizerunku i postrzegania {personGen || "…"}
             </h1>
             <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
           </header>
 
           <div style={contentStyle}>
-            {/* Treść wstępna – zachowany układ i style, tylko poprawione przypadki */}
             <div
               style={{
                 maxWidth: isMobile ? 350 : 800,
@@ -132,7 +120,6 @@ const App: React.FC = () => {
               To badanie jest realizowane na prośbę {personGen || "…"}.
               <br />
               <br />
-              {/* wcielić się w … → biernik */}
               Chcielibyśmy, abyś spróbował(a) wcielić się w {personAcc || "…"} i
               odpowiedział(a) z {gender === "F" ? "jej" : "jego"} perspektywy na kilka
               pytań dotyczących postrzegania, przekonań i stylu działania.
@@ -140,7 +127,6 @@ const App: React.FC = () => {
               <br />
               Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej
               doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak{" "}
-              {/* TU UŻYWAMY MIANOWNIKA */}
               {personNom || "…"} może być {perceivedWord} przez innych. Dla nas i dla {himHer} to strategicznie ważne –
               dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.
               <br />
@@ -149,13 +135,9 @@ const App: React.FC = () => {
               swoich obserwacji i wyobrażeń o {personLoc || "…"}.
               <br />
               <br />
-              Gdy będziesz gotowy(a), kliknij przycisk poniżej, aby rozpocząć badanie.
-              <br />
-              <br />
               <span style={{ display: "block", textAlign: "right", fontStyle: "normal", marginTop: 30 }}>
                 Dziękujemy za Twoją pomoc!
                 <br />
-                {/* nazwisko w mianowniku + „Team” */}
                 {surnameNom ? `${surnameNom} Team` : "—"} &nbsp;💪
               </span>
             </div>
@@ -191,7 +173,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <hr style={{ border: 0, borderTop: "1.5px solid #ececec", width: "100%", margin: "0 0 0 0" }} />
+          <hr style={{ border: 0, borderTop: "1.5px solid #ececec", width: "100%", margin: 0 }} />
 
           <footer
             style={{
@@ -218,7 +200,6 @@ const App: React.FC = () => {
             </div>
           </footer>
 
-          {/* Baner blokujący start, gdy brak sluga / badania w bazie */}
           {showBlocker && (
             <div
               style={{

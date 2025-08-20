@@ -7,7 +7,6 @@ import { supabase } from "./supabaseClient";
 import { getSlugFromUrl, loadStudyBySlug } from "./lib/studies";
 import { buildCases } from "./lib/cases";
 
-// Skala odpowiedzi – bez zmian
 const scaleLabels = [
   { label: "zdecydowanie nie", color: "#d32f2f" },
   { label: "raczej nie",        color: "#f9a825" },
@@ -16,37 +15,27 @@ const scaleLabels = [
   { label: "zdecydowanie tak",  color: "#1976d2" },
 ];
 
-// ───────────────── Heurystyka narzędnika (np. „Marcinem Gołkiem”) ─────────────────
-// Nie zmienia wyglądu – tylko wytwarza tekst do wstawienia w Pamiętaj!
-function toInstrName(name: string, gender: "M" | "F"): string {
-  if (gender === "M") {
-    if (name.endsWith("ek")) return name.slice(0, -2) + "kiem";
-    if (name.endsWith("a"))  return name.slice(0, -1) + "ą";
-    return name + "em";
-  } else {
-    if (name.endsWith("a")) return name.slice(0, -1) + "ą";
-    return name;
-  }
-}
-
-function toInstrSurname(sur: string, gender: "M" | "F"): string {
-  if (gender === "M") {
-    if (sur.endsWith("ek")) return sur.slice(0, -2) + "kiem";
-    if (sur.endsWith("a"))  return sur.slice(0, -1) + "ą";
-    return sur + "em";
-  } else {
-    if (sur.endsWith("ska")) return sur.slice(0, -3) + "ską";
-    if (sur.endsWith("cka")) return sur.slice(0, -3) + "cką";
-    if (sur.endsWith("dzka")) return sur.slice(0, -4) + "dzką";
-    if (sur.endsWith("zka")) return sur.slice(0, -3) + "zką";
-    if (sur.endsWith("ka"))  return sur.slice(0, -1) + "ą";
-    if (sur.endsWith("a"))   return sur.slice(0, -1) + "ą";
-    return sur;
-  }
-}
-
 function buildFullInstr(nameNom: string, surNom: string, gender: "M" | "F"): string {
-  return `${toInstrName(nameNom, gender)} ${toInstrSurname(surNom, gender)}`;
+  const n = nameNom.trim();
+  const s = surNom.trim();
+
+  const first =
+    gender === "M"
+      ? (n.endsWith("ek") ? n.slice(0, -2) + "kiem" : n.endsWith("a") ? n.slice(0, -1) + "ą" : n + "em")
+      : (n.endsWith("a") ? n.slice(0, -1) + "ą" : n);
+
+  const last =
+    gender === "M"
+      ? (s.endsWith("ek") ? s.slice(0, -2) + "kiem" : s.endsWith("a") ? s.slice(0, -1) + "ą" : s + "em")
+      : (s.endsWith("ska") ? s.slice(0, -3) + "ską"
+        : s.endsWith("cka") ? s.slice(0, -3) + "cką"
+        : s.endsWith("dzka") ? s.slice(0, -4) + "dzką"
+        : s.endsWith("zka") ? s.slice(0, -3) + "zką"
+        : s.endsWith("ka") ? s.slice(0, -1) + "ą"
+        : s.endsWith("a") ? s.slice(0, -1) + "ą"
+        : s);
+
+  return `${first} ${last}`.trim();
 }
 
 const Questionnaire: React.FC = () => {
@@ -61,23 +50,20 @@ const Questionnaire: React.FC = () => {
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
 
-  // nowość: ładujemy parametry badania i odmiany
   const [slug, setSlug] = useState<string | null>(null);
-  const [fullNom, setFullNom] = useState<string | null>(null);
   const [fullGen, setFullGen] = useState<string | null>(null);
   const [fullAcc, setFullAcc] = useState<string | null>(null);
   const [fullIns, setFullIns] = useState<string | null>(null);
-  const [surNomOnly, setSurNomOnly] = useState<string | null>(null);
   const [gender, setGender] = useState<"M" | "F">("M");
+  const [nameNom, setNameNom] = useState<string>("");
+  const [surNom, setSurNom] = useState<string>("");
 
-  // Responsywność – bez zmian
   useEffect(() => {
     const onResize = () => setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Wczytanie /slug → studies + odmiany
   useEffect(() => {
     (async () => {
       const s = getSlugFromUrl();
@@ -92,10 +78,10 @@ const Questionnaire: React.FC = () => {
 
       const c = buildCases(study);
       setGender(c.gender);
-      setFullNom(c.displayFullNom);
       setFullGen(c.displayFullGen);
       setFullAcc(c.displayFullAcc);
-      setSurNomOnly(c.surNom);
+      setNameNom(c.nameNom);
+      setSurNom(c.surNom);
 
       setFullIns(buildFullInstr(c.nameNom, c.surNom, c.gender));
     })();
@@ -185,33 +171,31 @@ const Questionnaire: React.FC = () => {
 
   if (submitted) return <Thanks />;
 
-  // —— Teksty nagłówkowe
   const title = fullGen ? `Badanie wizerunku i postrzegania ${fullGen}` : "Badanie wizerunku i postrzegania";
 
-const leadBlock = (
-  <>
-    <div
-      style={{
-        fontWeight: 600,
-        fontSize: "1.30rem",
-        color: "#253347",
-        lineHeight: 1.24,
-        marginTop: "40px" // 🔹 dodatkowy odstęp nad tekstem
-      }}
-    >
-      Postaraj się wcielić w <b>{fullAcc ?? "…"}</b> i odpowiedz na następujące pytania:
-    </div>
+  const leadBlock = (
+    <>
+      <div
+        style={{
+          fontWeight: 600,
+          fontSize: "1.30rem",
+          color: "#253347",
+          lineHeight: 1.24,
+          marginTop: "40px",
+        }}
+      >
+        Postaraj się wcielić w <b>{fullAcc ?? "…"}</b> i odpowiedz na następujące pytania:
+      </div>
 
-    <div style={{ margin: "20px 0 15px 0", fontSize: "1.20rem" }}>
-      <span style={{ color: "#c62828", fontWeight: 700 }}>Pamiętaj! </span>
-      <span style={{ color: "#253347", fontWeight: 400 }}>
-        Odpowiadasz jakbyś był(a) <u>{fullIns ?? "…"} politykiem (osobą publiczną)</u>{" "}
-        <span role="img" aria-label="smile">😊</span>
-      </span>
-    </div>
-  </>
-);
-
+      <div style={{ margin: "20px 0 15px 0", fontSize: "1.20rem" }}>
+        <span style={{ color: "#c62828", fontWeight: 700 }}>Pamiętaj! </span>
+        <span style={{ color: "#253347", fontWeight: 400 }}>
+          Odpowiadasz jakbyś był(a) <u>{fullIns ?? "…"} politykiem (osobą publiczną)</u>{" "}
+          <span role="img" aria-label="smile">😊</span>
+        </span>
+      </div>
+    </>
+  );
 
   return (
     <div style={{
@@ -227,45 +211,42 @@ const leadBlock = (
         </div>
       )}
 
-{/* Nagłówek i logo – układ i style zachowane */}
-<div style={{
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  marginBottom: 28
-}}>
-  <div>
-    <div style={{
-      fontWeight: 700,
-      fontSize: "2.1rem",
-      color: "#2c3e50",
-      textAlign: "left",
-      margin: "0 0 18px 0",
-      letterSpacing: 1,
-      lineHeight: 1.13,
-    }}>
-      {title}
-    </div>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 28
+      }}>
+        <div>
+          <div style={{
+            fontWeight: 700,
+            fontSize: "2.1rem",
+            color: "#2c3e50",
+            textAlign: "left",
+            margin: "0 0 18px 0",
+            letterSpacing: 1,
+            lineHeight: 1.13,
+          }}>
+            {title}
+          </div>
 
-    {/* NOWE: linia pod tytułem – jak na ekranie startowym */}
-    <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: "0 0 18px 0" }} />
+          <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: "0 0 18px 0" }} />
 
-    {leadBlock}
-  </div>
+          {leadBlock}
+        </div>
 
-  <img
-    src="/BadaniaPRO(r).png"
-    alt="Badania.pro logo"
-    style={{
-      height: 45,
-      width: "auto",
-      marginLeft: 24,
-      borderRadius: 7,
-      background: "#fff"
-    }}
-  />
-</div>
-
+        <img
+          src="/BadaniaPRO(r).png"
+          alt="Badania.pro logo"
+          style={{
+            height: 45,
+            width: "auto",
+            marginLeft: 24,
+            borderRadius: 7,
+            background: "#fff"
+          }}
+        />
+      </div>
 
       <form onSubmit={handleSubmit}>
         <table className="likert-table">
@@ -286,7 +267,6 @@ const leadBlock = (
           </thead>
           <tbody>
             {questions.map((item, rowIdx) => {
-              // >>> JEDYNA ZMIANA W RENDEROWANIU PYTANIA <<<
               const questionText = gender === "F" ? item.textF : item.textM;
 
               const missing = missingRows.includes(rowIdx);
@@ -324,7 +304,11 @@ const leadBlock = (
                           name={`row-${rowIdx}`}
                           value={colIdx + 1}
                           checked={responses[rowIdx] === colIdx + 1}
-                          onChange={() => handleResponse(rowIdx, colIdx + 1)}
+                          onChange={() => setResponses(prev => {
+                            const next = [...prev];
+                            next[rowIdx] = colIdx + 1;
+                            return next;
+                          })}
                         />
                       </label>
                     </td>
