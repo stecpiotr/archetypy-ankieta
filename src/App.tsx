@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useState, useEffect } from "react";
 import Questionnaire from "./Questionnaire";
 import "./index.css";
@@ -34,12 +33,12 @@ const App: React.FC = () => {
 
   const [hasStudy, setHasStudy] = useState<boolean | null>(null);
   const [gender, setGender] = useState<"M" | "F">("M");
-  const [personNom, setPersonNom] = useState<string>("");
-  const [personGen, setPersonGen] = useState<string>("");
-  const [personAcc, setPersonAcc] = useState<string>("");
-  const [personInstr, setPersonInstr] = useState<string>("");
-  const [personLoc, setPersonLoc] = useState<string>("");
-  const [surnameNom, setSurnameNom] = useState<string>("");
+  const [personNom, setPersonNom] = useState<string>("");   // Marcin Gołek
+  const [personGen, setPersonGen] = useState<string>("");   // Marcina Gołka
+  const [personAcc, setPersonAcc] = useState<string>("");   // Marcina Gołka / Annę Kowalską / Pawła Batyrę
+  const [personInstr, setPersonInstr] = useState<string>(""); // Marcinem Gołkiem / Anną Kowalską
+  const [personLoc, setPersonLoc] = useState<string>("");   // Marcinie Gołku / Annie Kowalskiej
+  const [surnameNom, setSurnameNom] = useState<string>(""); // Gołek / Kowalska
 
   useEffect(() => {
     (async () => {
@@ -48,7 +47,6 @@ const App: React.FC = () => {
         setHasStudy(false);
         return;
       }
-
       const study = await loadStudyBySlug(s);
       if (!study) {
         setHasStudy(false);
@@ -97,6 +95,7 @@ const App: React.FC = () => {
                 lineHeight: 1.13,
               }}
             >
+              {/* tytuł – dopełniacz */}
               Badanie wizerunku i postrzegania {personGen || "…"}
             </h1>
             <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
@@ -120,7 +119,7 @@ const App: React.FC = () => {
               To badanie jest realizowane na prośbę {personGen || "…"}.
               <br />
               <br />
-              {/* wcielić się w … → BIERNIK */}
+              {/* wcielić się w … → biernik */}
               Chcielibyśmy, abyś spróbował(a) wcielić się w {personAcc || "…"} i
               odpowiedział(a) z {gender === "F" ? "jej" : "jego"} perspektywy na kilka
               pytań dotyczących postrzegania, przekonań i stylu działania.
@@ -128,6 +127,7 @@ const App: React.FC = () => {
               <br />
               Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej
               doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak{" "}
+              {/* Mianownik */}
               {personNom || "…"} może być {perceivedWord} przez innych. Dla nas i dla {himHer} to strategicznie ważne –
               dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.
               <br />

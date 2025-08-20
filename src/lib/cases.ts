@@ -1,63 +1,66 @@
-import { supabase } from "../supabaseClient";
+// Proste fallbacki na wypadek braków w bazie – bez JSX.
 
 export type Gender = "M" | "F";
 
-export interface StudyRow {
-  slug: string;
-  is_active: boolean;
-  gender: Gender;
-
-  first_name_nom: string;
-  first_name_gen: string;
-  first_name_dat: string | null;
-  first_name_acc: string | null;
-  first_name_ins: string | null;
-  first_name_loc: string | null;
-  first_name_voc: string | null;
-
-  last_name_nom: string;
-  last_name_gen: string;
-  last_name_dat: string | null;
-  last_name_acc: string | null;
-  last_name_ins: string | null;
-  last_name_loc: string | null;
-  last_name_voc: string | null;
-
-  city_nom: string | null;
-  city_loc: string | null;
+/** Biernik imienia: gdy M → biernik=dopełniacz (jeśli brak GEN, zostawiamy NOM), gdy F: a→ę */
+export function toAccName(nameNom: string, gender: Gender, nameGen?: string | null): string {
+  if (!nameNom) return "";
+  if (gender === "M") {
+    if (nameGen && nameGen.trim()) return nameGen.trim(); // M: Acc = Gen
+    return nameNom; // fallback
+  }
+  // F
+  if (nameGen && nameGen.trim()) return nameGen.trim(); // u kobiet też często = Gen; jeśli brak, heurystyka:
+  if (nameNom.endsWith("a")) return nameNom.slice(0, -1) + "ę";
+  return nameNom;
 }
 
-export function getSlugFromUrl(): string | null {
-  try {
-    const url = new URL(window.location.href);
-    const seg = url.pathname.split("/").filter(Boolean)[0];
-    if (seg) return decodeURIComponent(seg);
-    const qs = url.searchParams.get("s");
-    return qs ? qs.trim() : null;
-  } catch {
-    return null;
+/** Biernik nazwiska */
+export function toAccSurname(surNom: string, gender: Gender, surGen?: string | null): string {
+  if (!surNom) return "";
+  if (gender === "M") {
+    if (surGen && surGen.trim()) return surGen.trim(); // M: Acc = Gen
+    if (surNom.endsWith("ek")) return surNom.slice(0, -2) + "ka"; // Gołek→Gołka
+    return surNom;
+  }
+  // F
+  if (surGen && surGen.trim()) return surGen.trim();
+  if (surNom.endsWith("ska")) return surNom.slice(0, -3) + "ską";
+  if (surNom.endsWith("cka")) return surNom.slice(0, -3) + "cką";
+  if (surNom.endsWith("dzka")) return surNom.slice(0, -4) + "dzką";
+  if (surNom.endsWith("zka"))  return surNom.slice(0, -3) + "zką";
+  if (surNom.endsWith("ka"))   return surNom.slice(0, -1) + "ą";
+  if (surNom.endsWith("a"))    return surNom.slice(0, -1) + "ą";
+  return surNom;
+}
+
+/** Narzędnik imienia */
+export function toInstrName(nameNom: string, gender: Gender): string {
+  if (!nameNom) return "";
+  if (gender === "M") {
+    if (nameNom.endsWith("ek")) return nameNom.slice(0, -2) + "kiem"; // Marek/Gołek→Markiem/Gołkiem
+    if (nameNom.endsWith("a"))  return nameNom.slice(0, -1) + "ą";
+    return nameNom + "em"; // Marcin→Marcinem
+  } else {
+    if (nameNom.endsWith("a")) return nameNom.slice(0, -1) + "ą";   // Anna→Anną
+    return nameNom;
   }
 }
 
-export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
-  const { data, error } = await supabase
-    .from("studies")
-    .select(
-      [
-        "slug","is_active","gender",
-        "first_name_nom","first_name_gen","first_name_dat","first_name_acc","first_name_ins","first_name_loc","first_name_voc",
-        "last_name_nom","last_name_gen","last_name_dat","last_name_acc","last_name_ins","last_name_loc","last_name_voc",
-        "city_nom","city_loc"
-      ].join(",")
-    )
-    .eq("slug", slug)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error("loadStudyBySlug error:", error);
-    return null;
+/** Narzędnik nazwiska */
+export function toInstrSurname(surNom: string, gender: Gender): string {
+  if (!surNom) return "";
+  if (gender === "M") {
+    if (surNom.endsWith("ek")) return surNom.slice(0, -2) + "kiem"; // Gołek→Gołkiem
+    if (surNom.endsWith("a"))  return surNom.slice(0, -1) + "ą";
+    return surNom + "em"; // Kowalski→Kowalskim
+  } else {
+    if (surNom.endsWith("ska")) return surNom.slice(0, -3) + "ską";
+    if (surNom.endsWith("cka")) return surNom.slice(0, -3) + "cką";
+    if (surNom.endsWith("dzka")) return surNom.slice(0, -4) + "dzką";
+    if (surNom.endsWith("zka"))  return surNom.slice(0, -3) + "zką";
+    if (surNom.endsWith("ka"))   return surNom.slice(0, -1) + "ą";
+    if (surNom.endsWith("a"))    return surNom.slice(0, -1) + "ą";
+    return surNom;
   }
-  return (data as unknown as StudyRow) || null;
 }

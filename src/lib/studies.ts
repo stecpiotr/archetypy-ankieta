@@ -90,23 +90,15 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
   return (data as StudyRow) || null;
 }
 
-/* ───────────────────────── Heurystyki awaryjne (tylko gdy w DB brak) ───────────────────────── */
+/* ───────────── Heurystyki awaryjne (używane TYLKO gdy w DB brakuje) ───────────── */
 
-function trimOrEmpty(v?: string | null): string {
-  return (v ?? "").trim();
-}
+function t(v?: string | null): string { return (v ?? "").trim(); }
+function nomFirst(s: StudyRow): string { return t(s.first_name_nom) || t(s.first_name); }
+function nomLast(s: StudyRow): string { return t(s.last_name_nom)  || t(s.last_name); }
 
-function nomFirst(study: StudyRow): string {
-  return trimOrEmpty(study.first_name_nom) || trimOrEmpty(study.first_name);
-}
-
-function nomLast(study: StudyRow): string {
-  return trimOrEmpty(study.last_name_nom) || trimOrEmpty(study.last_name);
-}
-
-/** Biernik imienia – fallback gdy w DB brak */
+/** Biernik imienia – fallback */
 function guessAccFirst(nom: string, gender: Gender, genFromDb?: string | null): string {
-  const gen = trimOrEmpty(genFromDb);
+  const gen = t(genFromDb);
   // U mężczyzn biernik = dopełniacz (osoba żywotna): Marcin→Marcina, Piotr→Piotra, Paweł→Pawła
   if (gender === "M") return gen || nom;
   // Kobiety: zwykle -a → -ę (Anna→Annę), inaczej bez zmiany
@@ -114,27 +106,22 @@ function guessAccFirst(nom: string, gender: Gender, genFromDb?: string | null): 
   return nom;
 }
 
-/** Biernik nazwiska – fallback gdy w DB brak */
+/** Biernik nazwiska – fallback */
 function guessAccLast(nom: string, gender: Gender, genFromDb?: string | null): string {
-  const gen = trimOrEmpty(genFromDb);
-
+  const gen = t(genFromDb);
   if (gender === "M") {
-    // typowe wzorce męskie:
-    if (nom.endsWith("ek")) return nom.slice(0, -2) + "ka";   // Gołek→Gołka
-    if (nom.endsWith("eł")) return nom.slice(0, -1) + "ła";   // (rzadziej spotykane)
-    if (nom.endsWith("a"))  return nom.slice(0, -1) + "ę";    // Batyra→Batyrę (kluczowa poprawka)
-    // wiele nazwisk męskich ma biernik = dopełniacz (Kowalski→Kowalskiego, Nowak→Nowaka, itd.)
-    return gen || nom;
-  } else {
-    // wzorce żeńskie: -ska/-cka/-dzka/-zka/-ka/-a → końcówka z „ą”
-    if (nom.endsWith("ska")) return nom.slice(0, -3) + "ską";
-    if (nom.endsWith("cka")) return nom.slice(0, -3) + "cką";
-    if (nom.endsWith("dzka")) return nom.slice(0, -4) + "dzką";
-    if (nom.endsWith("zka")) return nom.slice(0, -3) + "zką";
-    if (nom.endsWith("ka"))  return nom.slice(0, -1) + "ą";
-    if (nom.endsWith("a"))   return nom.slice(0, -1) + "ą";
-    return nom;
+    if (nom.endsWith("ek")) return nom.slice(0, -2) + "ka"; // Gołek→Gołka
+    if (nom.endsWith("a"))  return nom.slice(0, -1) + "ę";  // Batyra→Batyrę
+    return gen || nom;                                     // Nowak→Nowaka itd.
   }
+  // żeńskie
+  if (nom.endsWith("ska")) return nom.slice(0, -3) + "ską";
+  if (nom.endsWith("cka")) return nom.slice(0, -3) + "cką";
+  if (nom.endsWith("dzka")) return nom.slice(0, -4) + "dzką";
+  if (nom.endsWith("zka")) return nom.slice(0, -3) + "zką";
+  if (nom.endsWith("ka"))  return nom.slice(0, -1) + "ą";
+  if (nom.endsWith("a"))   return nom.slice(0, -1) + "ą";
+  return nom;
 }
 
 /** Narzędnik imienia – fallback */
@@ -142,7 +129,7 @@ function guessInsFirst(nom: string, gender: Gender): string {
   if (gender === "M") {
     if (nom.endsWith("ek")) return nom.slice(0, -2) + "kiem";
     if (nom.endsWith("a"))  return nom.slice(0, -1) + "ą";
-    return nom + "em"; // Marcinem, Piotrem (tu idea fix – Piotr→Piotrem zrobi baza; heurystyka zostaje neutralna)
+    return nom + "em"; // Marcinem; Piotr→Piotrem zrobi DB, to tylko awaryjne
   } else {
     if (nom.endsWith("a")) return nom.slice(0, -1) + "ą";
     return nom;
@@ -152,9 +139,9 @@ function guessInsFirst(nom: string, gender: Gender): string {
 /** Narzędnik nazwiska – fallback */
 function guessInsLast(nom: string, gender: Gender): string {
   if (gender === "M") {
-    if (nom.endsWith("ek")) return nom.slice(0, -2) + "kiem"; // Gołkiem
-    if (nom.endsWith("a"))  return nom.slice(0, -1) + "ą";    // Batyrą
-    return nom + "em";                                        // Kowalskim
+    if (nom.endsWith("ek")) return nom.slice(0, -2) + "kiem";
+    if (nom.endsWith("a"))  return nom.slice(0, -1) + "ą";  // Batyrą
+    return nom + "em";                                      // Kowalskim
   } else {
     if (nom.endsWith("ska")) return nom.slice(0, -3) + "ską";
     if (nom.endsWith("cka")) return nom.slice(0, -3) + "cką";
@@ -167,16 +154,15 @@ function guessInsLast(nom: string, gender: Gender): string {
 }
 
 /** Miejscownik pełny – fallback */
-function guessLocFull(firstNom: string, lastNom: string): string {
-  // Bez zabawy – jeśli nie mamy z DB, wpisujemy „o {Nom} {Nom}”
-  return `o ${firstNom} ${lastNom}`.trim();
+function guessLocFull(fnNom: string, lnNom: string): string {
+  return `o ${fnNom} ${lnNom}`.trim();
 }
 
-/* ───────────────────────── Builder używany przez App/Questionnaire/Thanks ───────────────────────── */
+/* ───────────── Builder używany przez App/Questionnaire/Thanks ───────────── */
 
 export interface BuiltDisplay {
   gender: Gender;
-  surNom: string;      // nazwisko w mianowniku (do „Kowalska Team”)
+  surNom: string;      // nazwisko w mianowniku (np. do „Kowalska Team”)
   fullNom: string;     // Marcin Gołek
   fullGen: string;     // Marcina Gołka
   fullAcc: string;     // Marcina Gołka / Annę Kowalską / Pawła Batyrę
@@ -184,7 +170,6 @@ export interface BuiltDisplay {
   fullLoc: string;     // Marcinie Gołku / Annie Kowalskiej / Emilu Stecu...
 }
 
-/** Składanie fraz z przewagą danych z bazy. Heurystyki tylko gdy w DB brak. */
 export function buildDisplayFromStudy(study: StudyRow): BuiltDisplay {
   const gender = study.gender;
 
@@ -193,21 +178,21 @@ export function buildDisplayFromStudy(study: StudyRow): BuiltDisplay {
   const lnNom = nomLast(study);
 
   // dopełniacz
-  const fnGen = trimOrEmpty(study.first_name_gen) || fnNom;
-  const lnGen = trimOrEmpty(study.last_name_gen) || lnNom;
+  const fnGen = t(study.first_name_gen) || fnNom;
+  const lnGen = t(study.last_name_gen) || lnNom;
 
-  // biernik (KLUCZOWE)
-  const fnAcc = trimOrEmpty(study.first_name_acc) || guessAccFirst(fnNom, gender, study.first_name_gen);
-  const lnAcc = trimOrEmpty(study.last_name_acc) || guessAccLast(lnNom, gender, study.last_name_gen);
+  // biernik
+  const fnAcc = t(study.first_name_acc) || guessAccFirst(fnNom, gender, study.first_name_gen);
+  const lnAcc = t(study.last_name_acc)  || guessAccLast(lnNom, gender, study.last_name_gen);
 
   // narzędnik
-  const fnIns = trimOrEmpty(study.first_name_ins) || guessInsFirst(fnNom, gender);
-  const lnIns = trimOrEmpty(study.last_name_ins) || guessInsLast(lnNom, gender);
+  const fnIns = t(study.first_name_ins) || guessInsFirst(fnNom, gender);
+  const lnIns = t(study.last_name_ins)  || guessInsLast(lnNom, gender);
 
-  // miejscownik
+  // miejscownik (pełna fraza)
   let fullLoc = "";
-  const fnLoc = trimOrEmpty(study.first_name_loc);
-  const lnLoc = trimOrEmpty(study.last_name_loc);
+  const fnLoc = t(study.first_name_loc);
+  const lnLoc = t(study.last_name_loc);
   if (fnLoc && lnLoc) fullLoc = `${fnLoc} ${lnLoc}`;
   else fullLoc = guessLocFull(fnNom, lnNom);
 

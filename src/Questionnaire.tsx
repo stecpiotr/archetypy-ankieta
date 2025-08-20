@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import "./LikertTable.css";
 import Thanks from "./Thanks";
 import { questions } from "./questions";
+
 import { supabase } from "./supabaseClient";
 import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
 
@@ -25,12 +26,12 @@ const Questionnaire: React.FC = () => {
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
 
+  // Z bazy
   const [slug, setSlug] = useState<string | null>(null);
-  const [fullNom, setFullNom] = useState<string | null>(null);
   const [fullGen, setFullGen] = useState<string | null>(null);
   const [fullAcc, setFullAcc] = useState<string | null>(null);
   const [fullIns, setFullIns] = useState<string | null>(null);
-  const [surNomOnly, setSurNomOnly] = useState<string | null>(null);
+  const [fullLoc, setFullLoc] = useState<string | null>(null);
   const [gender, setGender] = useState<"M" | "F">("M");
 
   useEffect(() => {
@@ -50,13 +51,13 @@ const Questionnaire: React.FC = () => {
         setApiError("Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem.");
         return;
       }
+
       const c = buildDisplayFromStudy(study);
       setGender(c.gender);
-      setFullNom(c.fullNom);
       setFullGen(c.fullGen);
       setFullAcc(c.fullAcc);
-      setSurNomOnly(c.surNom);
       setFullIns(c.fullIns);
+      setFullLoc(c.fullLoc);
     })();
   }, []);
 
@@ -157,6 +158,7 @@ const Questionnaire: React.FC = () => {
           marginTop: "40px"
         }}
       >
+        {/* biernik */}
         Postaraj się wcielić w <b>{fullAcc ?? "…"}</b> i odpowiedz na następujące pytania:
       </div>
 
