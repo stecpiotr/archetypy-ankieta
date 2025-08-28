@@ -23,7 +23,7 @@ export const questions: Ap48Item[] = [
   { id: 13, textM: "Czuję moralny obowiązek opiekowania się słabszymi.", textF: "Czuję moralny obowiązek opiekowania się słabszymi." },
   { id: 14, textM: "Pomaganie innym daje mi satysfakcję.", textF: "Pomaganie innym daje mi satysfakcję." },
   { id: 15, textM: "Czuję się odpowiedzialny za dobro tych, których reprezentuję.", textF: "Czuję się odpowiedzialna za dobro tych, których reprezentuję." },
-  { id: 16, textM: "Czuję potrzebę chronienia grup społecznych, które mają mniejszy głos.", textF: "Czuję potrzebę chronienia grup społecznych, które mają mniejszy głos." },
+  { id: 16, textM: "Czuję potrzebę chronienia grup społecznych, których głos jest mniej słyszany.", textF: "Czuję potrzebę chronienia grup społecznych, których głos jest mniej słyszany." },
 
   // KOCHANEK (17–20)
   { id: 17, textM: "Buduję z ludźmi relacje oparte na autentycznych emocjach.", textF: "Buduję z ludźmi relacje oparte na autentycznych emocjach." },
@@ -34,7 +34,7 @@ export const questions: Ap48Item[] = [
   // BŁAZEN (21–24)
   { id: 21, textM: "Często używam humoru, by rozluźnić sytuację.", textF: "Często używam humoru, by rozluźnić sytuację." },
   { id: 22, textM: "Łatwo łapię dystans do problemów.", textF: "Łatwo łapię dystans do problemów." },
-  { id: 23, textM: "Przez humor i lekkość łatwiej przekonuję ludzi do swoich racji.", textF: "Przez humor i lekkość łatwiej przekonuję ludzi do swoich racji." },
+  { id: 23, textM: "Przez humor i swobodę łatwiej przekonuję ludzi do swoich racji.", textF: "Przez humor i swobodę łatwiej przekonuję ludzi do swoich racji." },
   { id: 24, textM: "Nawet złożone kwestie potrafię przedstawić w przystępny sposób.", textF: "Nawet złożone kwestie potrafię przedstawić w przystępny sposób." },
 
   // TWÓRCA (25–28)
