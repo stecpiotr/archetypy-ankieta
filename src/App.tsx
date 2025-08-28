@@ -116,11 +116,11 @@ const App: React.FC = () => {
               Witaj!
               <br />
               <br />
-              To badanie jest realizowane na prośbę {personGen || "…"}.
+              To badanie jest realizowane na prośbę {personGen || ""}.
               <br />
               <br />
               {/* wcielić się w … → biernik */}
-              Chcielibyśmy, abyś spróbował(a) wcielić się w {personAcc || "…"} i
+              Chcielibyśmy, abyś spróbował(a) wcielić się w {personAcc || ""} i
               odpowiedział(a) z {gender === "F" ? "jej" : "jego"} perspektywy na kilka
               pytań dotyczących postrzegania, przekonań i stylu działania.
               <br />
@@ -128,12 +128,12 @@ const App: React.FC = () => {
               Zdajemy sobie sprawę, że takie zadanie może być wyzwaniem, dlatego tym bardziej
               doceniamy Twoje zaangażowanie. Twoje odpowiedzi pomogą nam lepiej zrozumieć, jak{" "}
               {/* Mianownik */}
-              {personNom || "…"} może być {perceivedWord} przez innych. Dla nas i dla {himHer} to strategicznie ważne –
+              {personNom || ""} może być {perceivedWord} przez innych. Dla nas i dla {himHer} to strategicznie ważne –
               dlatego jesteśmy bardzo wdzięczni za Twój czas i szczerość.
               <br />
               <br />
               Prosimy, postaraj się udzielać odpowiedzi jak najbardziej szczerze, na podstawie
-              swoich obserwacji i wyobrażeń o {personLoc || "…"}.
+              swoich obserwacji i wyobrażeń o {personLoc || ""}.
               <br />
               <br />
               <span style={{ display: "block", textAlign: "right", fontStyle: "normal", marginTop: 30 }}>
