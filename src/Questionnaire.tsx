@@ -62,7 +62,7 @@ const Questionnaire: React.FC = () => {
   }, []);
 
   const isMobile = window.innerWidth < 800;
-  if (isMobile && orientation === "portrait") {
+if (!submitted && isMobile && orientation === "portrait") {
     return (
       <div className="orientation-warning">
         <p>
