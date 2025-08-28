@@ -96,7 +96,7 @@ const App: React.FC = () => {
               }}
             >
               {/* tytuł – dopełniacz */}
-              Badanie wizerunku i postrzegania {personGen || "…"}
+              Badanie wizerunku i postrzegania {personGen || ""}
             </h1>
             <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: 0 }} />
           </header>
