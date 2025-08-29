@@ -52,17 +52,16 @@ const Questionnaire: React.FC = () => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Wczytaj slug + study + odnotuj kliknięcie (i start) jeśli jest ?t=...
+  // Wczytaj slug + study + odnotuj kliknięcie jeśli jest ?t=...
   useEffect(() => {
     (async () => {
       // token z URL (jeśli link z SMS)
       const t = getTokenFromUrl();
       tokenRef.current = t || null;
 
-      // kliknięcie i rozpoczęcie (nie blokują UI)
+      // kliknięcie (nie blokuje UI)
       if (t) {
         supabase.rpc("mark_sms_clicked",  { p_token: t }).catch(() => void 0);
-        supabase.rpc("mark_sms_started",  { p_token: t }).catch(() => void 0);
       }
 
       // dotychczasowa logika ładowania badania
