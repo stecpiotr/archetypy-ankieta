@@ -206,3 +206,15 @@ export function buildDisplayFromStudy(study: StudyRow): BuiltDisplay {
     fullLoc,
   };
 }
+// ───────────────────────────────────────────────
+// Pobieranie tokenu ?t=... z adresu URL (dla SMS)
+// ───────────────────────────────────────────────
+export function getTokenFromUrl(): string | null {
+  try {
+    const url = new URL(window.location.href);
+    const t = url.searchParams.get("t");
+    return t && t.trim() ? t.trim() : null;
+  } catch {
+    return null;
+  }
+}

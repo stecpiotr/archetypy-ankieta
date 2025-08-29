@@ -4,7 +4,13 @@ import Thanks from "./Thanks";
 import { questions } from "./questions";
 
 import { supabase } from "./supabaseClient";
-import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
+import {
+  getSlugFromUrl,
+  loadStudyBySlug,
+  buildDisplayFromStudy,
+  // ↓↓↓ NOWE
+  getTokenFromUrl,
+} from "./lib/studies";
 
 const scaleLabels = [
   { label: "zdecydowanie nie", color: "#d32f2f" },
@@ -26,6 +32,10 @@ const Questionnaire: React.FC = () => {
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
 
+  // ↓↓↓ NOWE: token z URL i flaga "rozpoczęto" żeby nie pingować wiele razy
+  const tokenRef = useRef<string | null>(null);
+  const startedMarkedRef = useRef<boolean>(false);
+
   // Z bazy
   const [slug, setSlug] = useState<string | null>(null);
   const [fullGen, setFullGen] = useState<string | null>(null);
@@ -40,8 +50,19 @@ const Questionnaire: React.FC = () => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // ↓↓↓ NOWE: wczytaj slug + study + ZAPISZ „kliknięto”, jeśli w URL jest ?t=...
   useEffect(() => {
     (async () => {
+      // token z URL (jeśli przyszedł z SMS)
+      const t = getTokenFromUrl();
+      tokenRef.current = t || null;
+
+      // „Kliknięto” – jednokrotnie, bez blokowania UI
+      if (t) {
+        supabase.rpc("mark_sms_clicked", { p_token: t }).catch(() => void 0);
+      }
+
+      // dotychczasowa logika ładowania badania
       const s = getSlugFromUrl();
       setSlug(s);
       if (!s) return;
@@ -62,7 +83,7 @@ const Questionnaire: React.FC = () => {
   }, []);
 
   const isMobile = window.innerWidth < 800;
-if (!submitted && isMobile && orientation === "portrait") {
+  if (!submitted && isMobile && orientation === "portrait") {
     return (
       <div className="orientation-warning">
         <p>
@@ -76,7 +97,19 @@ if (!submitted && isMobile && orientation === "portrait") {
     );
   }
 
+  const markStartedOnce = () => {
+    if (startedMarkedRef.current) return;
+    startedMarkedRef.current = true;
+    const t = tokenRef.current;
+    if (t) {
+      supabase.rpc("mark_sms_started", { p_token: t }).catch(() => void 0);
+    }
+  };
+
   const handleResponse = (row: number, value: number) => {
+    // ↓↓↓ NOWE: pierwsza odpowiedź = „rozpoczęto”
+    markStartedOnce();
+
     const next = [...responses];
     next[row] = value;
     setResponses(next);
@@ -135,6 +168,13 @@ if (!submitted && isMobile && orientation === "portrait") {
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
+
+      // ↓↓↓ NOWE: zakończono – po udanym zapisie
+      const t = tokenRef.current;
+      if (t) {
+        supabase.rpc("mark_sms_completed", { p_token: t }).catch(() => void 0);
+      }
+
       setSubmitted(true);
     } catch (err) {
       console.error(err);
