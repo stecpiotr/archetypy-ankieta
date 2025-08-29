@@ -153,31 +153,41 @@ const Questionnaire: React.FC = () => {
     setMissingRows([]);
     setApiError("");
 
-    try {
-      const scores = null;
-      const rawTotal = null;
-      const respondentCode = null;
+// ...
+try {
+const scores = null;        // jeśli kiedyś policzysz – też jako JSON.stringify(obj)
+const rawTotal = null;
+const respondentCode = null;
 
-      const { error } = await supabase.rpc("add_response_by_slug", {
-        p_slug: slug,
-        p_answers: responses,
-        p_scores: scores,
-        p_raw_total: rawTotal,
-        p_respondent_code: respondentCode,
-      });
+const { error } = await supabase.rpc("add_response_by_slug", {
+  p_slug: slug,
+  // ⬇⬇⬇ KLUCZOWA ZMIANA: JSONB oczekuje stringa z JSON-em
+  p_answers: JSON.stringify(responses),
+  p_scores: scores === null ? null : JSON.stringify(scores),
+  p_raw_total: rawTotal,          // numeric | null OK
+  p_respondent_code: respondentCode, // text | null OK
+});
 
-      if (error) {
-        console.error("RPC error:", error);
-        setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        return;
-      }
+  if (error) {
+    console.error("RPC error:", error);
+    setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
 
-      // zakończono – po udanym zapisie
-      const t = tokenRef.current;
-      if (t) {
-        supabase.rpc("mark_sms_completed", { p_token: t }).catch(() => void 0);
-      }
+  // zakończono – po udanym zapisie
+  const t = tokenRef.current;
+  if (t) {
+    supabase.rpc("mark_sms_completed", { p_token: t }).catch(() => void 0);
+  }
+
+  setSubmitted(true);
+} catch (err) {
+  console.error(err);
+  setApiError("Nieoczekiwany błąd sieci podczas zapisu.");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 
       setSubmitted(true);
     } catch (err) {
