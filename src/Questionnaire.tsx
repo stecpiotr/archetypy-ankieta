@@ -8,7 +8,6 @@ import {
   getSlugFromUrl,
   loadStudyBySlug,
   buildDisplayFromStudy,
-  // ↓↓↓ NOWE
   getTokenFromUrl,
 } from "./lib/studies";
 
@@ -21,7 +20,9 @@ const scaleLabels = [
 ];
 
 const Questionnaire: React.FC = () => {
-  const [responses, setResponses] = useState<number[]>(Array(questions.length).fill(0));
+  const [responses, setResponses] = useState<number[]>(
+    Array(questions.length).fill(0)
+  );
   const [hovered, setHovered] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
@@ -32,7 +33,7 @@ const Questionnaire: React.FC = () => {
     window.innerWidth > window.innerHeight ? "landscape" : "portrait"
   );
 
-  // ↓↓↓ NOWE: token z URL i flaga "rozpoczęto" żeby nie pingować wiele razy
+  // Token z URL + flaga żeby "started" wysłać tylko raz
   const tokenRef = useRef<string | null>(null);
   const startedMarkedRef = useRef<boolean>(false);
 
@@ -45,21 +46,23 @@ const Questionnaire: React.FC = () => {
   const [gender, setGender] = useState<"M" | "F">("M");
 
   useEffect(() => {
-    const onResize = () => setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
+    const onResize = () =>
+      setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // ↓↓↓ NOWE: wczytaj slug + study + ZAPISZ „kliknięto”, jeśli w URL jest ?t=...
+  // Wczytaj slug + study + odnotuj kliknięcie (i start) jeśli jest ?t=...
   useEffect(() => {
     (async () => {
-      // token z URL (jeśli przyszedł z SMS)
+      // token z URL (jeśli link z SMS)
       const t = getTokenFromUrl();
       tokenRef.current = t || null;
 
-      // „Kliknięto” – jednokrotnie, bez blokowania UI
+      // kliknięcie i rozpoczęcie (nie blokują UI)
       if (t) {
-        supabase.rpc("mark_sms_clicked", { p_token: t }).catch(() => void 0);
+        supabase.rpc("mark_sms_clicked",  { p_token: t }).catch(() => void 0);
+        supabase.rpc("mark_sms_started",  { p_token: t }).catch(() => void 0);
       }
 
       // dotychczasowa logika ładowania badania
@@ -69,7 +72,9 @@ const Questionnaire: React.FC = () => {
 
       const study = await loadStudyBySlug(s);
       if (!study) {
-        setApiError("Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem.");
+        setApiError(
+          "Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem."
+        );
         return;
       }
 
@@ -97,6 +102,7 @@ const Questionnaire: React.FC = () => {
     );
   }
 
+  // Pierwsza odpowiedź = „rozpoczęto” (wysyłamy tylko raz)
   const markStartedOnce = () => {
     if (startedMarkedRef.current) return;
     startedMarkedRef.current = true;
@@ -107,7 +113,6 @@ const Questionnaire: React.FC = () => {
   };
 
   const handleResponse = (row: number, value: number) => {
-    // ↓↓↓ NOWE: pierwsza odpowiedź = „rozpoczęto”
     markStartedOnce();
 
     const next = [...responses];
@@ -169,7 +174,7 @@ const Questionnaire: React.FC = () => {
         return;
       }
 
-      // ↓↓↓ NOWE: zakończono – po udanym zapisie
+      // zakończono – po udanym zapisie
       const t = tokenRef.current;
       if (t) {
         supabase.rpc("mark_sms_completed", { p_token: t }).catch(() => void 0);
@@ -185,7 +190,9 @@ const Questionnaire: React.FC = () => {
 
   if (submitted) return <Thanks />;
 
-  const title = fullGen ? `Badanie wizerunku i postrzegania ${fullGen}` : "Badanie wizerunku i postrzegania";
+  const title = fullGen
+    ? `Badanie wizerunku i postrzegania ${fullGen}`
+    : "Badanie wizerunku i postrzegania";
 
   const leadBlock = (
     <>
@@ -195,7 +202,7 @@ const Questionnaire: React.FC = () => {
           fontSize: "1.30rem",
           color: "#253347",
           lineHeight: 1.24,
-          marginTop: "40px"
+          marginTop: "40px",
         }}
       >
         {/* biernik */}
@@ -213,39 +220,51 @@ const Questionnaire: React.FC = () => {
   );
 
   return (
-    <div style={{
-      maxWidth: 1100,
-      margin: "0 auto",
-      padding: "28px 12px 0 12px",
-      fontFamily: "'Roboto', Arial, sans-serif"
-    }}>
+    <div
+      style={{
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: "28px 12px 0 12px",
+        fontFamily: "'Roboto', Arial, sans-serif",
+      }}
+    >
       {(error || apiError) && (
         <div className="sticky-error-msg">
-          {error && (<div>Proszę udzielić odpowiedzi w każdym wierszu.</div>)}
-          {apiError && (<div>{apiError}</div>)}
+          {error && <div>Proszę udzielić odpowiedzi w każdym wierszu.</div>}
+          {apiError && <div>{apiError}</div>}
         </div>
       )}
 
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 28
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 28,
+        }}
+      >
         <div>
-          <div style={{
-            fontWeight: 700,
-            fontSize: "2.1rem",
-            color: "#2c3e50",
-            textAlign: "left",
-            margin: "0 0 18px 0",
-            letterSpacing: 1,
-            lineHeight: 1.13,
-          }}>
+          <div
+            style={{
+              fontWeight: 700,
+              fontSize: "2.1rem",
+              color: "#2c3e50",
+              textAlign: "left",
+              margin: "0 0 18px 0",
+              letterSpacing: 1,
+              lineHeight: 1.13,
+            }}
+          >
             {title}
           </div>
 
-          <hr style={{ border: 0, borderTop: "1.5px solid #ececec", margin: "0 0 18px 0" }} />
+          <hr
+            style={{
+              border: 0,
+              borderTop: "1.5px solid #ececec",
+              margin: "0 0 18px 0",
+            }}
+          />
 
           {leadBlock}
         </div>
@@ -258,7 +277,7 @@ const Questionnaire: React.FC = () => {
             width: "auto",
             marginLeft: 24,
             borderRadius: 7,
-            background: "#fff"
+            background: "#fff",
           }}
         />
       </div>
@@ -287,8 +306,14 @@ const Questionnaire: React.FC = () => {
               return (
                 <tr
                   key={item.id}
-                  ref={el => rowRefs.current[rowIdx] = el}
-                  className={missing ? "missing-row" : hovered.row === rowIdx ? "hovered-row" : ""}
+                  ref={(el) => (rowRefs.current[rowIdx] = el)}
+                  className={
+                    missing
+                      ? "missing-row"
+                      : hovered.row === rowIdx
+                      ? "hovered-row"
+                      : ""
+                  }
                 >
                   <td
                     className={
@@ -346,7 +371,7 @@ const Questionnaire: React.FC = () => {
                 boxShadow: "0 2px 8px #ececec",
                 cursor: "pointer",
                 letterSpacing: "0.5px",
-                transition: "background 0.2s"
+                transition: "background 0.2s",
               }}
             >
               Wyślij
