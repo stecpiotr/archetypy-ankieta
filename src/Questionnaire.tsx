@@ -3,6 +3,7 @@ import "./LikertTable.css";
 import Thanks from "./Thanks";
 import { questions } from "./questions";
 
+// ⬇ zachowujemy import (nie przeszkadza), ale RPC robimy przez fetch
 import { supabase } from "./supabaseClient";
 import {
   getSlugFromUrl,
@@ -10,6 +11,34 @@ import {
   buildDisplayFromStudy,
   getTokenFromUrl,
 } from "./lib/studies";
+
+// ──────────────────────────────────────────────
+// Pomocnicze: wywołanie RPC przez REST (pewniak)
+// ──────────────────────────────────────────────
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+async function callRpc<T = any>(fn: string, body: Record<string, any>): Promise<{ data: T | null; error: any }> {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
+      method: "POST",
+      headers: {
+        "apikey": supabaseAnonKey,
+        "Authorization": `Bearer ${supabaseAnonKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      return { data: null, error: { status: res.status, message: txt || res.statusText } };
+    }
+    const data = await res.json().catch(() => null);
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: e };
+  }
+}
 
 const scaleLabels = [
   { label: "zdecydowanie nie", color: "#d32f2f" },
@@ -55,16 +84,14 @@ const Questionnaire: React.FC = () => {
   // Wczytaj slug + study + odnotuj kliknięcie jeśli jest ?t=...
   useEffect(() => {
     (async () => {
-      // token z URL (jeśli link z SMS)
       const t = getTokenFromUrl();
       tokenRef.current = t || null;
 
-      // kliknięcie (nie blokuje UI)
       if (t) {
-        supabase.rpc("mark_sms_clicked",  { p_token: t }).catch(() => void 0);
+        // było: supabase.rpc(...).catch(...)
+        callRpc("mark_sms_clicked", { p_token: t });
       }
 
-      // dotychczasowa logika ładowania badania
       const s = getSlugFromUrl();
       setSlug(s);
       if (!s) return;
@@ -107,7 +134,7 @@ const Questionnaire: React.FC = () => {
     startedMarkedRef.current = true;
     const t = tokenRef.current;
     if (t) {
-      supabase.rpc("mark_sms_started", { p_token: t }).catch(() => void 0);
+      callRpc("mark_sms_started", { p_token: t });
     }
   };
 
@@ -153,41 +180,27 @@ const Questionnaire: React.FC = () => {
     setMissingRows([]);
     setApiError("");
 
-// ...
-try {
-const scores = null;        // jeśli kiedyś policzysz – też jako JSON.stringify(obj)
-const rawTotal = null;
-const respondentCode = null;
+    try {
+      // jsonb w SQL → wysyłamy string z JSON-em
+      const { error } = await callRpc("add_response_by_slug", {
+        p_slug: slug,
+        p_answers: JSON.stringify(responses),   // ⬅ KLUCZOWE
+        p_scores: null,                         // jeśli kiedyś będzie obiekt -> JSON.stringify(obj)
+        p_raw_total: null,                      // numeric | null
+        p_respondent_code: null,                // text | null
+      });
 
-const { error } = await supabase.rpc("add_response_by_slug", {
-  p_slug: slug,
-  // ⬇⬇⬇ KLUCZOWA ZMIANA: JSONB oczekuje stringa z JSON-em
-  p_answers: JSON.stringify(responses),
-  p_scores: scores === null ? null : JSON.stringify(scores),
-  p_raw_total: rawTotal,          // numeric | null OK
-  p_respondent_code: respondentCode, // text | null OK
-});
+      if (error) {
+        console.error("RPC error:", error);
+        setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
 
-  if (error) {
-    console.error("RPC error:", error);
-    setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
-
-  // zakończono – po udanym zapisie
-  const t = tokenRef.current;
-  if (t) {
-    supabase.rpc("mark_sms_completed", { p_token: t }).catch(() => void 0);
-  }
-
-  setSubmitted(true);
-} catch (err) {
-  console.error(err);
-  setApiError("Nieoczekiwany błąd sieci podczas zapisu.");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
+      const t = tokenRef.current;
+      if (t) {
+        callRpc("mark_sms_completed", { p_token: t });
+      }
 
       setSubmitted(true);
     } catch (err) {
