@@ -4,7 +4,7 @@ import Thanks from "./Thanks";
 import { questions } from "./questions";
 
 // ⬇ zachowujemy import (nie przeszkadza), ale RPC robimy przez fetch
-import { supabase } from "./supabaseClient";
+// import { supabase } from "./supabaseClient";
 import {
   getSlugFromUrl,
   loadStudyBySlug,
@@ -153,67 +153,69 @@ const Questionnaire: React.FC = () => {
      setApiError("");
    };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const missing = responses.map((v, i) => (v === null ? i : -1)).filter(i => i !== -1);
-    if (missing.length) {
-      setError(true);
-      setMissingRows(missing);
-      setApiError("");
-      setTimeout(() => {
-        const firstIdx = missing[0];
-        const stickyMsg = document.querySelector(".sticky-error-msg") as HTMLElement | null;
-        const offset = stickyMsg ? stickyMsg.offsetHeight + 10 : 80;
-        const el = rowRefs.current[firstIdx];
-        if (el) {
-          const top = el.getBoundingClientRect().top + window.scrollY;
-          window.scrollTo({ top: top - offset, behavior: "smooth" });
-        }
-      }, 60);
-      return;
-    }
-
-    if (!slug) {
-      setApiError("Brak identyfikatora badania w linku (użyj adresu /slug, np. /lublin).");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    setError(false);
-    setMissingRows([]);
+  const missing = responses.map((v, i) => (v === null ? i : -1)).filter(i => i !== -1);
+  if (missing.length) {
+    setError(true);
+    setMissingRows(missing);
     setApiError("");
-
-    try {
-      // jsonb w SQL → wysyłamy string z JSON-em
-      const { error } = await callRpc("add_response_by_slug", {
-        p_slug: slug,
-        const payloadAnswers = responses.map(v => v as number);  // ⬅ KLUCZOWE
-        p_answers = JSON.stringify(payloadAnswers),
-        p_scores: null,                         // jeśli kiedyś będzie obiekt -> JSON.stringify(obj)
-        p_raw_total: null,                      // numeric | null
-        p_respondent_code: null,                // text | null
-      });
-
-      if (error) {
-        console.error("RPC error:", error);
-        setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        return;
+    setTimeout(() => {
+      const firstIdx = missing[0];
+      const stickyMsg = document.querySelector(".sticky-error-msg") as HTMLElement | null;
+      const offset = stickyMsg ? stickyMsg.offsetHeight + 10 : 80;
+      const el = rowRefs.current[firstIdx];
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: top - offset, behavior: "smooth" });
       }
+    }, 60);
+    return;
+  }
 
-      const t = tokenRef.current;
-      if (t) {
-        callRpc("mark_sms_completed", { p_token: t });
-      }
+  if (!slug) {
+    setApiError("Brak identyfikatora badania w linku (użyj adresu /slug, np. /lublin).");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
 
-      setSubmitted(true);
-    } catch (err) {
-      console.error(err);
-      setApiError("Nieoczekiwany błąd sieci podczas zapisu.");
+  setError(false);
+  setMissingRows([]);
+  setApiError("");
+
+  try {
+    // 0/1/2/3/5 – żadnych nulli
+    const payloadAnswers = responses.map(v => v as number);
+    console.log("OUT answers:", payloadAnswers); // podgląd w konsoli
+
+    const { error } = await callRpc("add_response_by_slug", {
+      p_slug: slug,
+      p_answers: payloadAnswers,            // ⬅⬅⬅ TU JEST ZMIANA
+      p_scores: null,
+      p_raw_total: null,
+      p_respondent_code: null,
+    });
+
+    if (error) {
+      console.error("RPC error:", error);
+      setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
-  };
+
+    const t = tokenRef.current;
+    if (t) {
+      callRpc("mark_sms_completed", { p_token: t });
+    }
+
+    setSubmitted(true);
+  } catch (err) {
+    console.error(err);
+    setApiError("Nieoczekiwany błąd sieci podczas zapisu.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
 
   if (submitted) return <Thanks />;
 
