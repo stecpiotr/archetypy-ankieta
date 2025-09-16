@@ -12,7 +12,7 @@ type LikertRowProps = {
   hoveredCol?: number;
 };
 
-const OPTIONS = [1, 2, 3, 4, 5];
+const OPTIONS = [0, 1, 2, 3, 5];
 
 const LikertRow: React.FC<LikertRowProps> = ({
   item,
