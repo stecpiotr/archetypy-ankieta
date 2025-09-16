@@ -12,6 +12,10 @@ import {
   getTokenFromUrl,
 } from "./lib/studies";
 
+// pod importami
+const SCALE_VALUES = [0, 1, 2, 3, 5] as const;
+type Answer = (typeof SCALE_VALUES)[number]; // 0 | 1 | 2 | 3 | 5
+
 // ──────────────────────────────────────────────
 // Pomocnicze: wywołanie RPC przez REST (pewniak)
 // ──────────────────────────────────────────────
@@ -49,9 +53,10 @@ const scaleLabels = [
 ];
 
 const Questionnaire: React.FC = () => {
-  const [responses, setResponses] = useState<number[]>(
-    Array(questions.length).fill(0)
+  const [responses, setResponses] = React.useState<(Answer | null)[]>(
+    () => Array(questions.length).fill(null)
   );
+
   const [hovered, setHovered] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
@@ -138,21 +143,20 @@ const Questionnaire: React.FC = () => {
     }
   };
 
-  const handleResponse = (row: number, value: number) => {
-    markStartedOnce();
-
-    const next = [...responses];
-    next[row] = value;
-    setResponses(next);
-    setError(false);
-    setMissingRows([]);
-    setApiError("");
-  };
+   const handleResponse = (row: number, value: Answer) => {
+     markStartedOnce();
+     const next = [...responses];
+     next[row] = value;
+     setResponses(next);
+     setError(false);
+     setMissingRows([]);
+     setApiError("");
+   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const missing = responses.map((v, i) => (v === 0 ? i : -1)).filter(i => i !== -1);
+    const missing = responses.map((v, i) => (v === null ? i : -1)).filter(i => i !== -1);
     if (missing.length) {
       setError(true);
       setMissingRows(missing);
@@ -184,7 +188,8 @@ const Questionnaire: React.FC = () => {
       // jsonb w SQL → wysyłamy string z JSON-em
       const { error } = await callRpc("add_response_by_slug", {
         p_slug: slug,
-        p_answers: JSON.stringify(responses),   // ⬅ KLUCZOWE
+        const payloadAnswers = responses.map(v => v as number);  // ⬅ KLUCZOWE
+        p_answers = JSON.stringify(payloadAnswers),
         p_scores: null,                         // jeśli kiedyś będzie obiekt -> JSON.stringify(obj)
         p_raw_total: null,                      // numeric | null
         p_respondent_code: null,                // text | null
@@ -363,9 +368,9 @@ const Questionnaire: React.FC = () => {
                         <input
                           type="radio"
                           name={`row-${rowIdx}`}
-                          value={colIdx + 1}
-                          checked={responses[rowIdx] === colIdx + 1}
-                          onChange={() => handleResponse(rowIdx, colIdx + 1)}
+                          value={SCALE_VALUES[colIdx]}
+                          checked={responses[rowIdx] === SCALE_VALUES[colIdx]}
+                          onChange={() => handleResponse(rowIdx, SCALE_VALUES[colIdx])}
                         />
                       </label>
                     </td>
