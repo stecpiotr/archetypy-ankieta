@@ -93,8 +93,9 @@ const Questionnaire: React.FC = () => {
       tokenRef.current = t || null;
 
       if (t) {
-        // było: supabase.rpc(...).catch(...)
-        callRpc("mark_sms_clicked", { p_token: t });
+        // SMS (jak było) + e-mail (nowe)
+        callRpc("mark_sms_clicked",   { p_token: t });
+        callRpc("mark_email_clicked", { p_token: t });
       }
 
       const s = getSlugFromUrl();
@@ -139,7 +140,8 @@ const Questionnaire: React.FC = () => {
     startedMarkedRef.current = true;
     const t = tokenRef.current;
     if (t) {
-      callRpc("mark_sms_started", { p_token: t });
+      callRpc("mark_sms_started",   { p_token: t });
+      callRpc("mark_email_started", { p_token: t });
     }
   };
 
@@ -206,7 +208,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     const t = tokenRef.current;
     if (t) {
-      callRpc("mark_sms_completed", { p_token: t });
+      callRpc("mark_sms_completed",   { p_token: t });
+      callRpc("mark_email_completed", { p_token: t });
     }
 
     setSubmitted(true);
