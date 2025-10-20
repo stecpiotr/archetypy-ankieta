@@ -92,10 +92,11 @@ const App: React.FC = () => {
 
   return (
     <div style={wrapperStyle}>
-      {alreadyDone ? (
-        <AlreadyCompleted />
-      ) : (
-      {!started ? (
+        {alreadyDone ? (
+          <AlreadyCompleted />
+        ) : (
+          <>
+            {!started ? (
         <>
           <header
             style={{
@@ -253,6 +254,8 @@ const App: React.FC = () => {
       ) : (
         <Questionnaire />
       )}
+  </>
+)}
     </div>
   );
 };
