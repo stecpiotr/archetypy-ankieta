@@ -1,6 +1,5 @@
 // src/Thanks.tsx
 import React, { useEffect, useState } from "react";
-import { useEffect } from "react";
 import { markTokenCompleted } from "./lib/tokens";
 import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
 
