@@ -91,10 +91,10 @@ const App: React.FC = () => {
   const showBlocker = hasStudy === false;
 
   return (
-        {alreadyDone ? (
-            <AlreadyCompleted />
-        ) : (
     <div style={wrapperStyle}>
+      {alreadyDone ? (
+        <AlreadyCompleted />
+      ) : (
       {!started ? (
         <>
           <header
