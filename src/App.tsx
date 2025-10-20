@@ -253,7 +253,6 @@ const App: React.FC = () => {
       ) : (
         <Questionnaire />
       )}
-    )}
     </div>
   );
 };
