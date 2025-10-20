@@ -5,6 +5,8 @@ import "./App.css";
 import "./LikertTable.css";
 
 import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
+import AlreadyCompleted from "./AlreadyCompleted";
+import { isTokenCompleted, markTokenStarted } from "./lib/tokens";
 
 const isMobile = window.innerWidth <= 600;
 
@@ -40,6 +42,9 @@ const App: React.FC = () => {
   const [personLoc, setPersonLoc] = useState<string>("");   // Marcinie Gołku / Annie Kowalskiej
   const [surnameNom, setSurnameNom] = useState<string>(""); // Gołek / Kowalska
 
+  const [token, setToken] = useState<string | null>(null);
+  const [alreadyDone, setAlreadyDone] = useState(false);
+
   useEffect(() => {
     (async () => {
       const s = getSlugFromUrl();
@@ -62,6 +67,21 @@ const App: React.FC = () => {
       setPersonLoc(c.fullLoc);
       setSurnameNom(c.surNom);
 
+      // ⬇⬇ NOWE: token z URL i sprawdzenie czy już zakończony
+      const urlToken = new URLSearchParams(window.location.search).get("t")?.trim() || null;
+      setToken(urlToken);
+      if (urlToken) {
+        try {
+          const done = await isTokenCompleted(urlToken);
+          if (done) {
+            setAlreadyDone(true);    // pokaż stronę „już wypełniono”
+          }
+        } catch (e) {
+          console.warn("isTokenCompleted error:", e);
+        }
+      }
+      // ⬆⬆ KONIEC NOWEGO
+
       setHasStudy(true);
     })();
   }, []);
@@ -71,6 +91,9 @@ const App: React.FC = () => {
   const showBlocker = hasStudy === false;
 
   return (
+        {alreadyDone ? (
+            <AlreadyCompleted />
+        ) : (
     <div style={wrapperStyle}>
       {!started ? (
         <>
@@ -161,7 +184,13 @@ const App: React.FC = () => {
                   transition: "background 0.2s",
                   opacity: showBlocker ? 0.65 : 1,
                 }}
-                onClick={() => !showBlocker && setStarted(true)}
+                onClick={async () => {
+                  if (showBlocker) return;
+                  setStarted(true);
+                  if (token) {
+                    try { await markTokenStarted(token); } catch (e) { console.warn("markTokenStarted:", e); }
+                  }
+                }}
                 disabled={showBlocker}
                 title={
                   showBlocker
@@ -224,6 +253,7 @@ const App: React.FC = () => {
       ) : (
         <Questionnaire />
       )}
+    )}
     </div>
   );
 };

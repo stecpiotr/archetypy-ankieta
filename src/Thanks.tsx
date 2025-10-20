@@ -1,9 +1,18 @@
 // src/Thanks.tsx
 import React, { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { markTokenCompleted } from "./lib/tokens";
 import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
 
 const Thanks: React.FC = () => {
   const [personGen, setPersonGen] = useState<string>("");
+
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("t")?.trim() || "";
+    if (t) {
+      markTokenCompleted(t).catch(e => console.warn("markTokenCompleted:", e));
+    }
+  }, []);
 
   useEffect(() => {
     // Spróbuj zdjąć ewentualną blokadę orientacji (jeśli wcześniej została ustawiona)
