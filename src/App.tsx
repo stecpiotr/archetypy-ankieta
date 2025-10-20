@@ -44,17 +44,20 @@ const App: React.FC = () => {
 
   const [token, setToken] = useState<string | null>(null);
   const [alreadyDone, setAlreadyDone] = useState(false);
+  const [checking, setChecking] = useState(true); // ⬅️ czekamy aż sprawdzimy token
 
   useEffect(() => {
     (async () => {
       const s = getSlugFromUrl();
       if (!s) {
         setHasStudy(false);
+        setChecking(false);
         return;
       }
       const study = await loadStudyBySlug(s);
       if (!study) {
         setHasStudy(false);
+        setChecking(false);
         return;
       }
 
@@ -67,24 +70,22 @@ const App: React.FC = () => {
       setPersonLoc(c.fullLoc);
       setSurnameNom(c.surNom);
 
-      // ⬇⬇ NOWE: token z URL i sprawdzenie czy już zakończony
       const urlToken = new URLSearchParams(window.location.search).get("t")?.trim() || null;
       setToken(urlToken);
       if (urlToken) {
         try {
           const done = await isTokenCompleted(urlToken);
-          if (done) {
-            setAlreadyDone(true);    // pokaż stronę „już wypełniono”
-          }
+          if (done) setAlreadyDone(true);
         } catch (e) {
           console.warn("isTokenCompleted error:", e);
         }
       }
-      // ⬆⬆ KONIEC NOWEGO
 
       setHasStudy(true);
+      setChecking(false); // ⬅️ koniec sprawdzania
     })();
   }, []);
+
 
   const perceivedWord = gender === "F" ? "postrzegana" : "postrzegany";
   const himHer = gender === "F" ? "niej" : "niego";
@@ -92,11 +93,11 @@ const App: React.FC = () => {
 
   return (
     <div style={wrapperStyle}>
-        {alreadyDone ? (
-          <AlreadyCompleted />
-        ) : (
-          <>
-            {!started ? (
+      {checking ? null : alreadyDone ? (
+        <AlreadyCompleted />
+      ) : (
+        !started ? (
+
         <>
           <header
             style={{
@@ -180,7 +181,7 @@ const App: React.FC = () => {
                   borderRadius: 8,
                   padding: "0.75em 0",
                   boxShadow: "0 2px 8px #ececec",
-                  cursor: showBlocker ? "not-allowed" : "pointer",
+                  cursor: (showBlocker || checking) ? "not-allowed" : "pointer",
                   letterSpacing: "0.5px",
                   transition: "background 0.2s",
                   opacity: showBlocker ? 0.65 : 1,
@@ -192,7 +193,7 @@ const App: React.FC = () => {
                     try { await markTokenStarted(token); } catch (e) { console.warn("markTokenStarted:", e); }
                   }
                 }}
-                disabled={showBlocker}
+                disabled={showBlocker || checking}
                 title={
                   showBlocker
                     ? "Brak identyfikatora badania lub badanie nie istnieje."
