@@ -191,6 +191,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const [isResident, setIsResident] = useState<boolean | null>(null);
+  const [missingAIds, setMissingAIds] = useState<string[]>([]);
 
   const [metry, setMetry] = useState<Record<keyof typeof METRY, string>>({
     M_PLEC: "",
@@ -221,11 +222,47 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     step !== "thanks" &&
     step !== "rejected";
 
+  const panDat = metry.M_PLEC === "kobieta" ? "Pani" : metry.M_PLEC === "mężczyzna" ? "Panu" : "Panu/Pani";
+
+  const scrollToTopAll = () => {
+    const targets: (Window | HTMLElement)[] = [window];
+    const de = document.documentElement;
+    const db = document.body;
+    const ds = document.scrollingElement as HTMLElement | null;
+    if (de) targets.push(de);
+    if (db) targets.push(db);
+    if (ds) targets.push(ds);
+    document.querySelectorAll<HTMLElement>(".jst-root, .jst-wrap, main, section").forEach((el) => {
+      if (el.scrollHeight > el.clientHeight + 1) targets.push(el);
+    });
+    targets.forEach((t) => {
+      try {
+        if (t === window) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        else t.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      } catch {
+        // ignore
+      }
+      try {
+        if (t !== window) (t as HTMLElement).scrollTop = 0;
+      } catch {
+        // ignore
+      }
+    });
+  };
+
   useEffect(() => {
     const onResize = () => setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    const run = () => {
+      scrollToTopAll();
+      requestAnimationFrame(() => scrollToTopAll());
+    };
+    run();
+  }, [step, dIndex]);
 
   useEffect(() => {
     if (!token) return;
@@ -241,8 +278,13 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       await supabase.rpc("mark_sms_started", { p_token: token });
       await supabase.rpc("mark_email_started", { p_token: token });
     } catch {
-      // bez blokowania badania
+      // brak blokady badania
     }
+  };
+
+  const clearErrors = () => {
+    setErrorMsg("");
+    setMissingAIds([]);
   };
 
   const goNextFromScreening = () => {
@@ -250,7 +292,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       setErrorMsg("Proszę zaznaczyć odpowiedź.");
       return;
     }
-    setErrorMsg("");
+    clearErrors();
     if (!isResident) {
       setStep("rejected");
       return;
@@ -265,7 +307,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       setShowOnlyMissingMetry(true);
       return false;
     }
-    setErrorMsg("");
+    clearErrors();
     setShowOnlyMissingMetry(false);
     return true;
   };
@@ -274,9 +316,14 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     const missing = A_ITEMS.map((x) => x.id).filter((id) => !aAnswers[id]);
     if (missing.length) {
       setErrorMsg("Proszę udzielić odpowiedzi na wszystkie pytania");
+      setMissingAIds(missing);
+      const firstId = missing[0];
+      setTimeout(() => {
+        document.querySelector(`[data-a-id="${firstId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 20);
       return false;
     }
-    setErrorMsg("");
+    clearErrors();
     return true;
   };
 
@@ -285,12 +332,11 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       setErrorMsg("Proszę zaznaczyć 3 odpowiedzi");
       return false;
     }
-    setErrorMsg("");
+    clearErrors();
     return true;
   };
 
   const currentD = D_ITEMS.find((x) => x.id === dOrder[dIndex])!;
-
   const dChosenRows = dOrder
     .map((id) => {
       const item = D_ITEMS.find((x) => x.id === id)!;
@@ -306,7 +352,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       setErrorMsg("Proszę wskazać jedną odpowiedź.");
       return;
     }
-    setErrorMsg("");
+    clearErrors();
     setSubmitting(true);
 
     try {
@@ -323,17 +369,13 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       A_ITEMS.forEach((item) => {
         payload[item.id] = Number(aAnswers[item.id] || 0);
       });
-
       ARCHETYPES.forEach((a) => {
         payload[`B1_${a}`] = selectedB1.includes(a) ? 1 : 0;
       });
-
       payload.B2 = selectedB2;
-
       D_ITEMS.forEach((item) => {
         payload[item.id] = dAnswers[item.id] || "";
       });
-
       const selectedD13 = D_ITEMS.find((x) => x.id === selectedD13Id);
       payload.D13 = selectedD13?.archetype || "";
 
@@ -344,7 +386,6 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       });
 
       if (error || !data || (typeof data === "object" && (data as any).ok === false)) {
-        console.error("add_jst_response_by_slug error:", error, data);
         setErrorMsg("Nie udało się zapisać odpowiedzi. Spróbuj ponownie.");
         setSubmitting(false);
         return;
@@ -356,13 +397,11 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
           await supabase.rpc("mark_sms_completed", { p_token: token });
           await supabase.rpc("mark_email_completed", { p_token: token });
         } catch {
-          // bez blokowania przejścia do podziękowania
+          // bez blokady
         }
       }
-
       setStep("thanks");
-    } catch (e) {
-      console.error(e);
+    } catch {
       setErrorMsg("Nie udało się zapisać odpowiedzi. Spróbuj ponownie.");
     } finally {
       setSubmitting(false);
@@ -372,9 +411,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
   if (shouldRotate) {
     return (
       <div className="jst-root">
-        <div className="jst-rotate">
-          Proszę obrócić telefon poziomo, aby wygodnie wypełnić ankietę.
-        </div>
+        <div className="jst-rotate">Proszę obrócić telefon poziomo, aby wygodnie wypełnić ankietę.</div>
       </div>
     );
   }
@@ -383,27 +420,25 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     return (
       <main className="jst-root">
         <div className="jst-wrap">
-          <div className="jst-card" style={{ textAlign: "center", padding: "64px 20px" }}>
-            <h2 className="jst-title" style={{ color: "#0ca495" }}>
-              Dziękujemy za udział w badaniu!
-            </h2>
-            <p style={{ fontSize: "1.2rem", marginTop: 10 }}>Twoje odpowiedzi zostały zapisane.</p>
-            <p className="jst-muted" style={{ marginTop: 16, lineHeight: 1.6 }}>
+          <section className="jst-card jst-center-card">
+            <h2 className="jst-title jst-thanks-title">Dziękujemy za udział w badaniu!</h2>
+            <p className="jst-thanks-sub">Twoje odpowiedzi zostały zapisane.</p>
+            <p className="jst-muted jst-thanks-contact">
               Jeśli pojawiły się jakiekolwiek wątpliwości lub masz pytania, proszę o kontakt:
               <br />
               Piotr Stec, Badania.pro
               <br />
-              e-mail:{" "}
-              <a href="mailto:piotr.stec@badania.pro" style={{ color: "inherit" }}>
-                piotr.stec@badania.pro
-              </a>
+              e-mail: <a href="mailto:piotr.stec@badania.pro">piotr.stec@badania.pro</a>
               <br />
-              tel.:{" "}
-              <a href="tel:500121141" style={{ color: "inherit" }}>
-                500-121-141
-              </a>
+              tel.: <a href="tel:500121141">500-121-141</a>
             </p>
-          </div>
+          </section>
+          <footer className="jst-footer">
+            opracowanie: Piotr Stec, Badania.pro® | © 2026
+            <div className="jst-footer-sub">
+              Jeśli pojawiły się jakieś wątpliwości lub masz pytania proszę o kontakt: Piotr Stec, Badania.pro, piotr.stec@badania.pro, tel.: 500-121-141
+            </div>
+          </footer>
         </div>
       </main>
     );
@@ -413,12 +448,16 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     return (
       <main className="jst-root">
         <div className="jst-wrap">
-          <div className="jst-card" style={{ textAlign: "center", padding: "64px 20px" }}>
+          <section className="jst-card jst-center-card">
             <h2 className="jst-title">Niestety, nie spełnia Pan/Pani warunków udziału w badaniu.</h2>
-            <p className="jst-muted" style={{ fontSize: "1.1rem" }}>
-              Dziękujemy za zainteresowanie.
-            </p>
-          </div>
+            <p className="jst-muted">Dziękujemy za zainteresowanie.</p>
+          </section>
+          <footer className="jst-footer">
+            opracowanie: Piotr Stec, Badania.pro® | © 2026
+            <div className="jst-footer-sub">
+              Jeśli pojawiły się jakieś wątpliwości lub masz pytania proszę o kontakt: Piotr Stec, Badania.pro, piotr.stec@badania.pro, tel.: 500-121-141
+            </div>
+          </footer>
         </div>
       </main>
     );
@@ -427,25 +466,28 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
   return (
     <main className="jst-root">
       <div className="jst-wrap">
-        {errorMsg && <div className="jst-alert">{errorMsg}</div>}
+        {errorMsg && <div className="jst-alert jst-alert-sticky">{errorMsg}</div>}
 
         {step === "intro" && (
-          <section className="jst-card">
-            <h1 className="jst-title">Badanie mieszkańców {ctx.fullGen}</h1>
-            <p style={{ lineHeight: 1.65, whiteSpace: "pre-line", fontSize: "1.08rem" }}>
+          <section className="jst-card jst-intro-card">
+            <h1 className="jst-title jst-intro-title">Badanie mieszkańców {ctx.fullGen}</h1>
+            <hr className="jst-intro-sep" />
+            <p className="jst-intro-text">
               {renderJstTemplate(
                 `Dzień dobry!
 
-Przeprowadzamy badanie wśród mieszkańców {nazwa JST w dopełniaczu}, którzy ukończyli co najmniej 15 lat. Badanie dotyczy jakości życia, spraw społecznych i gospodarczych związanych z {narzędnik JST}. W tym badaniu chcemy przekonać się jakie jest Pana/Pani podejście do spraw {miasto/gmina} i oczekiwania dotyczące tego, jak ${ctx.verbShould} {nazwa JST w mianowniku}.
+Przeprowadzamy badanie wśród mieszkańców {nazwa JST w dopełniaczu}, którzy ukończyli co najmniej 15 lat. Badanie dotyczy jakości życia, spraw społecznych i gospodarczych związanych z {narzędnik JST}. W tym badaniu chcemy przekonać się, jakie jest Pana/Pani podejście do spraw {miasta/gminy} i oczekiwania dotyczące tego, jak ${ctx.verbShould} {nazwa JST w mianowniku}.
 
-Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok. 5-7 minut.
-
-Dziękujemy,
-Zespół badawczy Badania.pro®`,
+Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok. 5-7 minut.`,
                 ctx
               )}
             </p>
-            <div style={{ marginTop: 24 }}>
+            <p className="jst-intro-sign">
+              Dziękujemy,
+              <br />
+              Zespół badawczy Badania.pro®
+            </p>
+            <div className="jst-intro-action">
               <button className="jst-btn" onClick={() => setStep("screening")}>
                 Zaczynamy
               </button>
@@ -455,18 +497,16 @@ Zespół badawczy Badania.pro®`,
 
         {step === "screening" && (
           <section className="jst-card">
-            <h2 className="jst-title" style={{ fontSize: "1.5rem" }}>
-              Czy jest Pan/Pani mieszkańcem/mieszkanką {ctx.fullGen}?
-            </h2>
-            <div className="jst-opt-list" style={{ maxWidth: 400 }}>
-              <button className={`jst-opt ${isResident === true ? "selected" : ""}`} onClick={() => setIsResident(true)}>
+            <h2 className="jst-title jst-step-title">Czy jest Pan/Pani mieszkańcem/mieszkanką {ctx.fullGen}?</h2>
+            <div className="jst-opt-list jst-screening-options">
+              <button className={`jst-opt ${isResident === true ? "selected" : ""}`} onClick={() => { setIsResident(true); clearErrors(); }}>
                 Tak
               </button>
-              <button className={`jst-opt ${isResident === false ? "selected" : ""}`} onClick={() => setIsResident(false)}>
+              <button className={`jst-opt ${isResident === false ? "selected" : ""}`} onClick={() => { setIsResident(false); clearErrors(); }}>
                 Nie
               </button>
             </div>
-            <div style={{ marginTop: 18 }}>
+            <div className="jst-action-row">
               <button className="jst-btn" onClick={goNextFromScreening}>
                 Przejdź dalej
               </button>
@@ -476,10 +516,7 @@ Zespół badawczy Badania.pro®`,
 
         {step === "metryka" && (
           <section className="jst-card">
-            <h2 className="jst-title" style={{ fontSize: "1.5rem" }}>
-              Metryczka
-            </h2>
-
+            <h2 className="jst-title jst-step-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
             {(Object.keys(METRY) as (keyof typeof METRY)[]).map((field) => {
               const missing = !metry[field];
               if (showOnlyMissingMetry && !missing) return null;
@@ -492,91 +529,109 @@ Zespół badawczy Badania.pro®`,
                     {field === "M_ZAWOD" && "Jaka jest Pana/Pani sytuacja zawodowa?"}
                     {field === "M_MATERIAL" && "Jak ocenia Pan/Pani własną sytuację materialną?"}
                   </p>
-                  <div className="jst-radio-list">
+                  <div className="jst-radio-grid">
                     {METRY[field].map((opt) => (
-                      <label key={opt}>
-                        <input
-                          type="radio"
-                          name={field}
-                          checked={metry[field] === opt}
-                          onChange={() => {
-                            setMetry((prev) => ({ ...prev, [field]: opt }));
-                            setErrorMsg("");
-                          }}
-                        />{" "}
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            <button
-              className="jst-btn"
-              onClick={async () => {
-                const ok = validateMetry();
-                if (!ok) return;
-                await ensureStarted();
-                setStep("A");
-              }}
-            >
-              Przejdź dalej
-            </button>
-          </section>
-        )}
-
-        {step === "A" && (
-          <section className="jst-card">
-            <h2 className="jst-title" style={{ fontSize: "1.45rem" }}>
-              Poniżej znajdują się pary sformułowań opisujące dwa różne podejścia do spraw {ctx.fullGen}. Proszę wskazać, które podejście jest Panu/Pani bliższe.
-            </h2>
-            <p className="jst-muted" style={{ marginTop: -4 }}>
-              Ustawienie na środku oznacza: „A i B tak samo ważne”.
-            </p>
-            {aOrder.map((id) => {
-              const item = A_ITEMS.find((x) => x.id === id)!;
-              const selected = aAnswers[id];
-              return (
-                <div className={`jst-slider-row ${!selected && errorMsg ? "missing" : ""}`} key={id}>
-                  <div className="jst-slider-head">
-                    <span>{renderJstTemplate(item.left, ctx)}</span>
-                    <span>{renderJstTemplate(item.right, ctx)}</span>
-                  </div>
-                  {selected ? <span className="jst-slider-bubble">{SLIDER_LABELS[selected]}</span> : <span className="jst-muted">Wybierz ocenę 1-7</span>}
-                  <div className="jst-scale">
-                    {[1, 2, 3, 4, 5, 6, 7].map((v) => (
                       <button
-                        key={`${id}-${v}`}
-                        className={`jst-dot ${selected === v ? "active" : ""}`}
-                        onClick={() => {
-                          setAAnswers((prev) => ({ ...prev, [id]: v }));
-                          setErrorMsg("");
-                        }}
+                        key={opt}
                         type="button"
+                        className={`jst-radio-opt ${metry[field] === opt ? "selected" : ""}`}
+                        onClick={() => {
+                          setMetry((prev) => ({ ...prev, [field]: opt }));
+                          clearErrors();
+                        }}
                       >
-                        {v === 1 ? "A" : v === 7 ? "B" : "•"}
+                        <span className="jst-radio-mark" aria-hidden>
+                          {metry[field] === opt ? "✓" : ""}
+                        </span>
+                        <span>{opt}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               );
             })}
-            <button
-              className="jst-btn"
-              onClick={() => {
-                if (!validateA()) return;
-                setStep("B1");
-              }}
-            >
-              Przejdź dalej
-            </button>
+            <div className="jst-action-row">
+              <button
+                className="jst-btn"
+                onClick={async () => {
+                  const ok = validateMetry();
+                  if (!ok) return;
+                  await ensureStarted();
+                  setStep("A");
+                }}
+              >
+                Przejdź dalej
+              </button>
+            </div>
+          </section>
+        )}
+
+        {step === "A" && (
+          <section className="jst-card">
+            <h2 className="jst-title jst-step-title">
+              Poniżej znajdują się pary sformułowań opisujące dwa różne podejścia do spraw {ctx.fullGen}. Proszę przesunąć suwak bliżej tego podejścia, które jest {panDat} bliższe.
+            </h2>
+            <p className="jst-muted">Ustawienie suwaka na środku oznacza, że oba podejścia są tak samo ważne.</p>
+
+            {aOrder.map((id) => {
+              const item = A_ITEMS.find((x) => x.id === id)!;
+              const selected = aAnswers[id];
+              const pct = (((selected ?? 4) - 1) / 6) * 100;
+              return (
+                <div className={`jst-slider-row ${missingAIds.includes(id) ? "missing" : ""}`} data-a-id={id} key={id}>
+                  <div className="jst-slider-top">
+                    <span className="jst-end-chip">A</span>
+                    <input
+                      className={`jst-range ${selected ? "active" : ""}`}
+                      type="range"
+                      min={1}
+                      max={7}
+                      step={1}
+                      value={selected ?? 4}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setAAnswers((prev) => ({ ...prev, [id]: val }));
+                        setMissingAIds((prev) => prev.filter((x) => x !== id));
+                        setErrorMsg("");
+                      }}
+                      style={
+                        selected
+                          ? { background: `linear-gradient(to right, #22c1a8 0%, #22c1a8 ${pct}%, #d9ece9 ${pct}%, #d9ece9 100%)` }
+                          : undefined
+                      }
+                    />
+                    <span className="jst-end-chip">B</span>
+                  </div>
+                  <div className="jst-slider-ticks">
+                    {[1, 2, 3, 4, 5, 6, 7].map((v) => (
+                      <span key={`${id}-tick-${v}`} className="jst-tick" />
+                    ))}
+                  </div>
+                  <div className="jst-slider-head">
+                    <span>{renderJstTemplate(item.left, ctx)}</span>
+                    <span>{renderJstTemplate(item.right, ctx)}</span>
+                  </div>
+                  {selected && <div className="jst-slider-bubble">{SLIDER_LABELS[selected]}</div>}
+                </div>
+              );
+            })}
+            <div className="jst-action-row">
+              <button
+                className="jst-btn"
+                onClick={() => {
+                  if (!validateA()) return;
+                  setStep("B1");
+                }}
+              >
+                Przejdź dalej
+              </button>
+            </div>
           </section>
         )}
 
         {step === "B1" && (
           <section className="jst-card">
-            <h2 className="jst-title" style={{ fontSize: "1.45rem" }}>
+            <h2 className="jst-title jst-step-title">
               Poniżej znajduje się 12 opisów. Proszę wybrać maksymalnie 3, które najlepiej pasują do tego, jak powinno działać {ctx.fullNom} w najbliższych latach.
             </h2>
             <p className="jst-muted">Zaznaczone: {selectedB1.length} / 3</p>
@@ -603,7 +658,7 @@ Zespół badawczy Badania.pro®`,
                 );
               })}
             </div>
-            <div style={{ marginTop: 16 }}>
+            <div className="jst-action-row">
               <button
                 className="jst-btn"
                 onClick={() => {
@@ -619,9 +674,7 @@ Zespół badawczy Badania.pro®`,
 
         {step === "B2" && (
           <section className="jst-card">
-            <h2 className="jst-title" style={{ fontSize: "1.45rem" }}>
-              Spośród wybranych przed chwilą opisów proszę wskazać jeden najważniejszy.
-            </h2>
+            <h2 className="jst-title jst-step-title">Spośród wybranych przed chwilą opisów proszę wskazać jeden najważniejszy.</h2>
             <div className="jst-opt-list">
               {selectedB1.map((archetype) => {
                 const item = B_ITEMS.find((x) => x.archetype === archetype)!;
@@ -640,7 +693,7 @@ Zespół badawczy Badania.pro®`,
                 );
               })}
             </div>
-            <div style={{ marginTop: 16 }}>
+            <div className="jst-action-row">
               <button
                 className="jst-btn"
                 onClick={() => {
@@ -648,7 +701,7 @@ Zespół badawczy Badania.pro®`,
                     setErrorMsg("Proszę wskazać jedną odpowiedź.");
                     return;
                   }
-                  setErrorMsg("");
+                  clearErrors();
                   setStep("D");
                 }}
               >
@@ -660,8 +713,8 @@ Zespół badawczy Badania.pro®`,
 
         {step === "D" && (
           <section className="jst-card">
-            <h2 className="jst-title" style={{ fontSize: "1.45rem" }}>
-              Poniżej znajdują się pary stwierdzeń o różnych sferach funkcjonowania {ctx.fullGen}. W każdej parze wybierz wariant (A lub B), który lepiej odpowiada doświadczeniom i obserwacjom.
+            <h2 className="jst-title jst-step-title">
+              Poniżej znajdują się pary stwierdzeń o różnych sferach funkcjonowania {ctx.fullGen}. W każdej parze wybierz wariant, który lepiej odpowiada doświadczeniom i obserwacjom.
             </h2>
             <p className="jst-muted">
               Para {dIndex + 1} z {D_ITEMS.length}
@@ -686,7 +739,7 @@ Zespół badawczy Badania.pro®`,
                 {renderJstTemplate(currentD.b, ctx)}
               </button>
             </div>
-            <div style={{ marginTop: 16 }}>
+            <div className="jst-action-row">
               <button
                 className="jst-btn"
                 onClick={() => {
@@ -694,7 +747,7 @@ Zespół badawczy Badania.pro®`,
                     setErrorMsg("Proszę wskazać jedną odpowiedź.");
                     return;
                   }
-                  setErrorMsg("");
+                  clearErrors();
                   if (dIndex < dOrder.length - 1) setDIndex((x) => x + 1);
                   else setStep("D13");
                 }}
@@ -707,9 +760,7 @@ Zespół badawczy Badania.pro®`,
 
         {step === "D13" && (
           <section className="jst-card">
-            <h2 className="jst-title" style={{ fontSize: "1.45rem" }}>
-              Spośród wskazanych przed chwilą doświadczeń proszę wybrać jedną najważniejszą odpowiedź.
-            </h2>
+            <h2 className="jst-title jst-step-title">Spośród wskazanych przed chwilą doświadczeń proszę wybrać jedną najważniejszą odpowiedź.</h2>
             <div className="jst-opt-list">
               {dChosenRows.map((row) => (
                 <button
@@ -724,7 +775,7 @@ Zespół badawczy Badania.pro®`,
                 </button>
               ))}
             </div>
-            <div style={{ marginTop: 16 }}>
+            <div className="jst-action-row">
               <button className="jst-btn" onClick={submitAll} disabled={submitting}>
                 {submitting ? "Wysyłanie..." : "Wyślij"}
               </button>
@@ -734,7 +785,7 @@ Zespół badawczy Badania.pro®`,
 
         <footer className="jst-footer">
           opracowanie: Piotr Stec, Badania.pro® | © 2026
-          <div style={{ marginTop: 8 }}>
+          <div className="jst-footer-sub">
             Jeśli pojawiły się jakieś wątpliwości lub masz pytania proszę o kontakt: Piotr Stec, Badania.pro, piotr.stec@badania.pro, tel.: 500-121-141
           </div>
         </footer>

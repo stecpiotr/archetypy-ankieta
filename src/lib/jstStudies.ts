@@ -26,7 +26,10 @@ export interface JstTextCtx {
   type: "miasto" | "gmina";
   typeCap: "Miasto" | "Gmina";
   typeGen: "miasta" | "gminy";
+  typeLoc2: "mieście" | "gminie";
   typeLoc: "mieście" | "gminie";
+  typeDat: "miastu" | "gminie";
+  typeGenCap: "Miasta" | "Gminy";
   verbShould: "powinno działać" | "powinna działać";
   fullNom: string;
   fullGen: string;
@@ -60,7 +63,10 @@ export function buildJstTextContext(study: JstStudyRow): JstTextCtx {
   const type = (study.jst_type === "gmina" ? "gmina" : "miasto") as "miasto" | "gmina";
   const typeCap = (type === "miasto" ? "Miasto" : "Gmina") as "Miasto" | "Gmina";
   const typeGen = (type === "miasto" ? "miasta" : "gminy") as "miasta" | "gminy";
+  const typeGenCap = (type === "miasto" ? "Miasta" : "Gminy") as "Miasta" | "Gminy";
   const typeLoc = (type === "miasto" ? "mieście" : "gminie") as "mieście" | "gminie";
+  const typeLoc2 = typeLoc;
+  const typeDat = (type === "miasto" ? "miastu" : "gminie") as "miastu" | "gminie";
   const verbShould = (type === "miasto" ? "powinno działać" : "powinna działać") as
     | "powinno działać"
     | "powinna działać";
@@ -80,7 +86,10 @@ export function buildJstTextContext(study: JstStudyRow): JstTextCtx {
     type,
     typeCap,
     typeGen,
+    typeLoc2,
     typeLoc,
+    typeDat,
+    typeGenCap,
     verbShould,
     fullNom,
     fullGen,
@@ -103,11 +112,15 @@ export function renderJstTemplate(text: string, ctx: JstTextCtx): string {
     .replaceAll("{narzędnik JST}", ctx.nameIns)
     .replaceAll("{miasto/gmina}", ctx.type)
     .replaceAll("{Miasto/Gmina}", ctx.typeCap)
+    .replaceAll("{miasta/gminy}", ctx.typeGen)
+    .replaceAll("{Miasta/Gminy}", ctx.typeGenCap)
     .replaceAll("{miasta}/{gminy}", ctx.typeGen)
     .replaceAll("{mieście/gminie}", ctx.typeLoc)
-    .replaceAll("{miastu/gminie}", ctx.type === "miasto" ? "miastu" : "gminie")
+    .replaceAll("{miastu/gminie}", ctx.typeDat)
+    .replaceAll("{miastu/gminie}", ctx.typeDat)
+    .replaceAll("{mieście/gminie}", ctx.typeLoc2)
     .replaceAll("{naszym mieście}/{naszej gminie}", ctx.type === "miasto" ? "naszym mieście" : "naszej gminie")
-    .replaceAll("{mieście/gminie}", ctx.typeLoc)
+    .replaceAll("{mieście}/{gminie}", ctx.typeLoc)
     .replaceAll("{miasto}", "miasto")
     .replaceAll("{gmina}", "gmina");
   return out;
