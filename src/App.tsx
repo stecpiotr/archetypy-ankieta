@@ -8,7 +8,7 @@ import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/st
 import { loadJstStudyBySlug } from "./lib/jstStudies";
 import type { JstStudyRow } from "./lib/jstStudies";
 import AlreadyCompleted from "./AlreadyCompleted";
-import { isTokenCompleted, markTokenStarted } from "./lib/tokens";
+import { isJstTokenCompleted, isTokenCompleted, markTokenStarted } from "./lib/tokens";
 import JstSurvey from "./JstSurvey";
 
 const isMobile = window.innerWidth <= 600;
@@ -33,6 +33,20 @@ const contentStyle: React.CSSProperties = {
   flex: 1,
 };
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race<T>([
+      promise,
+      new Promise<T>((resolve) => {
+        timeoutId = setTimeout(() => resolve(fallbackValue), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 const App: React.FC = () => {
   const [started, setStarted] = useState(false);
 
@@ -52,71 +66,88 @@ const App: React.FC = () => {
   const [checking, setChecking] = useState(true); // ⬅️ czekamy aż sprawdzimy token
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const s = getSlugFromUrl();
-      if (!s) {
-        setHasStudy(false);
-        setSurveyKind(null);
-        setChecking(false);
-        return;
-      }
-
-      const host = window.location.hostname.toLowerCase();
-      const preferJst = host.startsWith("jst.");
-
-      let personalStudy = null;
-      let jstCandidate: JstStudyRow | null = null;
-
-      if (preferJst) {
-        jstCandidate = await loadJstStudyBySlug(s);
-        if (!jstCandidate) {
-          personalStudy = await loadStudyBySlug(s);
+      try {
+        const s = getSlugFromUrl();
+        if (!s) {
+          if (!cancelled) {
+            setHasStudy(false);
+            setSurveyKind(null);
+          }
+          return;
         }
-      } else {
-        personalStudy = await loadStudyBySlug(s);
-        if (!personalStudy) {
-          jstCandidate = await loadJstStudyBySlug(s);
+
+        const host = window.location.hostname.toLowerCase();
+        const preferJst = host.startsWith("jst.");
+
+        let personalStudy = null;
+        let jstCandidate: JstStudyRow | null = null;
+
+        if (preferJst) {
+          jstCandidate = await withTimeout(loadJstStudyBySlug(s), 6000, null);
+          if (!jstCandidate) {
+            personalStudy = await withTimeout(loadStudyBySlug(s), 6000, null);
+          }
+        } else {
+          personalStudy = await withTimeout(loadStudyBySlug(s), 6000, null);
+          if (!personalStudy) {
+            jstCandidate = await withTimeout(loadJstStudyBySlug(s), 6000, null);
+          }
         }
-      }
 
-      if (!personalStudy && !jstCandidate) {
-        setHasStudy(false);
-        setSurveyKind(null);
-        setChecking(false);
-        return;
-      }
-
-      if (personalStudy) {
-        const c = buildDisplayFromStudy(personalStudy);
-        setSurveyKind("personal");
-        setGender(c.gender);
-        setPersonNom(c.fullNom);
-        setPersonGen(c.fullGen);
-        setPersonAcc(c.fullAcc);
-        setPersonInstr(c.fullIns);
-        setPersonLoc(c.fullLoc);
-        setSurnameNom(c.surNom);
-      } else if (jstCandidate) {
-        setSurveyKind("jst");
-        setJstStudy(jstCandidate);
-      }
-
-      const urlToken = new URLSearchParams(window.location.search).get("t")?.trim() || null;
-      setToken(urlToken);
-      if (urlToken) {
-        try {
-          const done = await isTokenCompleted(urlToken);
-          if (done) setAlreadyDone(true);
-        } catch (e) {
-          console.warn("isTokenCompleted error:", e);
+        if (!personalStudy && !jstCandidate) {
+          if (!cancelled) {
+            setHasStudy(false);
+            setSurveyKind(null);
+          }
+          return;
         }
-      }
 
-      setHasStudy(true);
-      setChecking(false); // ⬅️ koniec sprawdzania
+        let resolvedKind: "personal" | "jst" | null = null;
+        if (personalStudy) {
+          const c = buildDisplayFromStudy(personalStudy);
+          resolvedKind = "personal";
+          if (!cancelled) {
+            setSurveyKind("personal");
+            setGender(c.gender);
+            setPersonNom(c.fullNom);
+            setPersonGen(c.fullGen);
+            setPersonAcc(c.fullAcc);
+            setPersonInstr(c.fullIns);
+            setPersonLoc(c.fullLoc);
+            setSurnameNom(c.surNom);
+          }
+        } else if (jstCandidate) {
+          resolvedKind = "jst";
+          if (!cancelled) {
+            setSurveyKind("jst");
+            setJstStudy(jstCandidate);
+          }
+        }
+
+        const urlToken = new URLSearchParams(window.location.search).get("t")?.trim() || null;
+        if (!cancelled) setToken(urlToken);
+        if (urlToken) {
+          try {
+            const done = resolvedKind === "jst"
+              ? await withTimeout(isJstTokenCompleted(urlToken), 2500, false)
+              : await withTimeout(isTokenCompleted(urlToken), 2500, false);
+            if (!cancelled && done) setAlreadyDone(true);
+          } catch (e) {
+            console.warn("isTokenCompleted error:", e);
+          }
+        }
+
+        if (!cancelled) setHasStudy(true);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
 
   const perceivedWord = gender === "F" ? "postrzegana" : "postrzegany";
   const himHer = gender === "F" ? "niej" : "niego";
@@ -128,7 +159,11 @@ const App: React.FC = () => {
 
 return (
   <div style={wrapperStyle}>
-    {checking ? null : alreadyDone ? (
+    {checking ? (
+      <div style={{ maxWidth: 900, margin: "80px auto 0 auto", padding: "0 24px", color: "#334155" }}>
+        Ładowanie ankiety...
+      </div>
+    ) : alreadyDone ? (
       <AlreadyCompleted />
     ) : !started ? (
       <>

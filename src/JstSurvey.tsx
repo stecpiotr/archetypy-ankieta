@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabaseClient";
-import { markTokenCompleted, markTokenStarted } from "./lib/tokens";
+import { markJstTokenCompleted, markJstTokenStarted } from "./lib/tokens";
 import { buildJstTextContext, renderJstTemplate } from "./lib/jstStudies";
 import type { JstStudyRow } from "./lib/jstStudies";
 import "./JstSurvey.css";
@@ -250,33 +250,54 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     });
   };
 
+  const forceScrollTop = () => {
+    scrollToTopAll();
+    requestAnimationFrame(() => scrollToTopAll());
+    setTimeout(() => scrollToTopAll(), 40);
+    setTimeout(() => scrollToTopAll(), 140);
+  };
+
+  const goToStep = (next: Step) => {
+    const active = document.activeElement as HTMLElement | null;
+    try {
+      active?.blur();
+    } catch {
+      // ignore
+    }
+    setStep(next);
+    setTimeout(() => forceScrollTop(), 0);
+  };
+
   useEffect(() => {
     const onResize = () => setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
     window.addEventListener("resize", onResize);
+    try {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+    } catch {
+      // ignore
+    }
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
   useEffect(() => {
-    const run = () => {
-      scrollToTopAll();
-      requestAnimationFrame(() => scrollToTopAll());
-    };
-    run();
+    forceScrollTop();
   }, [step, dIndex]);
 
   useEffect(() => {
     if (!token) return;
-    supabase.rpc("mark_sms_clicked", { p_token: token }).catch(() => undefined);
-    supabase.rpc("mark_email_clicked", { p_token: token }).catch(() => undefined);
+    supabase.rpc("mark_jst_sms_clicked", { p_token: token }).catch(() => undefined);
+    supabase.rpc("mark_jst_email_clicked", { p_token: token }).catch(() => undefined);
   }, [token]);
 
   const ensureStarted = async () => {
     if (!token || startedMarked) return;
     setStartedMarked(true);
     try {
-      await markTokenStarted(token);
-      await supabase.rpc("mark_sms_started", { p_token: token });
-      await supabase.rpc("mark_email_started", { p_token: token });
+      await markJstTokenStarted(token);
+      await supabase.rpc("mark_jst_sms_started", { p_token: token });
+      await supabase.rpc("mark_jst_email_started", { p_token: token });
     } catch {
       // brak blokady badania
     }
@@ -294,10 +315,10 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     }
     clearErrors();
     if (!isResident) {
-      setStep("rejected");
+      goToStep("rejected");
       return;
     }
-    setStep("metryka");
+    goToStep("metryka");
   };
 
   const validateMetry = () => {
@@ -393,14 +414,14 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
 
       if (token) {
         try {
-          await markTokenCompleted(token);
-          await supabase.rpc("mark_sms_completed", { p_token: token });
-          await supabase.rpc("mark_email_completed", { p_token: token });
+          await markJstTokenCompleted(token);
+          await supabase.rpc("mark_jst_sms_completed", { p_token: token });
+          await supabase.rpc("mark_jst_email_completed", { p_token: token });
         } catch {
           // bez blokady
         }
       }
-      setStep("thanks");
+      goToStep("thanks");
     } catch {
       setErrorMsg("Nie udało się zapisać odpowiedzi. Spróbuj ponownie.");
     } finally {
@@ -488,7 +509,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
               Zespół badawczy Badania.pro®
             </p>
             <div className="jst-intro-action">
-              <button className="jst-btn" onClick={() => setStep("screening")}>
+              <button className="jst-btn" onClick={() => goToStep("screening")}>
                 Zaczynamy
               </button>
             </div>
@@ -540,8 +561,8 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                           clearErrors();
                         }}
                       >
-                        <span className="jst-radio-mark" aria-hidden>
-                          {metry[field] === opt ? "✓" : ""}
+                        <span className={`jst-radio-mark ${metry[field] === opt ? "selected" : ""}`} aria-hidden>
+                          <span className="jst-radio-dot" />
                         </span>
                         <span>{opt}</span>
                       </button>
@@ -557,7 +578,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                   const ok = validateMetry();
                   if (!ok) return;
                   await ensureStarted();
-                  setStep("A");
+                  goToStep("A");
                 }}
               >
                 Przejdź dalej
@@ -576,9 +597,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
             {aOrder.map((id) => {
               const item = A_ITEMS.find((x) => x.id === id)!;
               const selected = aAnswers[id];
-              const pct = (((selected ?? 4) - 1) / 6) * 100;
               return (
                 <div className={`jst-slider-row ${missingAIds.includes(id) ? "missing" : ""}`} data-a-id={id} key={id}>
+                  <div className="jst-slider-choice">{SLIDER_LABELS[selected ?? 4]}</div>
                   <div className="jst-slider-top">
                     <span className="jst-end-chip">A</span>
                     <input
@@ -594,18 +615,17 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                         setMissingAIds((prev) => prev.filter((x) => x !== id));
                         setErrorMsg("");
                       }}
-                      style={
-                        selected
-                          ? { background: `linear-gradient(to right, #22c1a8 0%, #22c1a8 ${pct}%, #d9ece9 ${pct}%, #d9ece9 100%)` }
-                          : undefined
-                      }
                     />
                     <span className="jst-end-chip">B</span>
                   </div>
-                  <div className="jst-slider-ticks">
-                    {[1, 2, 3, 4, 5, 6, 7].map((v) => (
-                      <span key={`${id}-tick-${v}`} className="jst-tick" />
-                    ))}
+                  <div className="jst-slider-ticks-wrap">
+                    <span />
+                    <div className="jst-slider-ticks">
+                      {[1, 2, 3, 4, 5, 6, 7].map((v) => (
+                        <span key={`${id}-tick-${v}`} className="jst-tick" />
+                      ))}
+                    </div>
+                    <span />
                   </div>
                   <div className="jst-slider-head">
                     <span>{renderJstTemplate(item.left, ctx)}</span>
@@ -620,7 +640,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                 className="jst-btn"
                 onClick={() => {
                   if (!validateA()) return;
-                  setStep("B1");
+                  goToStep("B1");
                 }}
               >
                 Przejdź dalej
@@ -663,7 +683,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                 className="jst-btn"
                 onClick={() => {
                   if (!validateB1()) return;
-                  setStep("B2");
+                  goToStep("B2");
                 }}
               >
                 Przejdź dalej
@@ -702,7 +722,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                     return;
                   }
                   clearErrors();
-                  setStep("D");
+                  goToStep("D");
                 }}
               >
                 Przejdź dalej
@@ -748,8 +768,17 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                     return;
                   }
                   clearErrors();
-                  if (dIndex < dOrder.length - 1) setDIndex((x) => x + 1);
-                  else setStep("D13");
+                  try {
+                    (document.activeElement as HTMLElement | null)?.blur();
+                  } catch {
+                    // ignore
+                  }
+                  if (dIndex < dOrder.length - 1) {
+                    setDIndex((x) => x + 1);
+                    setTimeout(() => forceScrollTop(), 0);
+                  } else {
+                    goToStep("D13");
+                  }
                 }}
               >
                 Przejdź dalej

@@ -1,21 +1,40 @@
 import { supabase } from "../supabaseClient";
 
-/** true → token już zakończony (nie wpuszczamy do ankiety) */
-export async function isTokenCompleted(token: string): Promise<boolean> {
+async function rpcBool(fn: string, token: string): Promise<boolean> {
   if (!token) return false;
-  const { data, error } = await supabase.rpc("is_token_completed", { p_token: token });
+  const { data, error } = await supabase.rpc(fn, { p_token: token });
   if (error) throw error;
   return Boolean(data);
 }
 
-/** idempotentnie oznacz start (nic się nie stanie, jeśli już było) */
-export async function markTokenStarted(token: string): Promise<void> {
+async function rpcVoid(fn: string, token: string): Promise<void> {
   if (!token) return;
-  await supabase.rpc("mark_token_started", { p_token: token });
+  const { error } = await supabase.rpc(fn, { p_token: token });
+  if (error) throw error;
 }
 
-/** idempotentnie oznacz koniec (blokada ponownych wejść) */
+/** Personal */
+export async function isTokenCompleted(token: string): Promise<boolean> {
+  return rpcBool("is_token_completed", token);
+}
+
+export async function markTokenStarted(token: string): Promise<void> {
+  await rpcVoid("mark_token_started", token);
+}
+
 export async function markTokenCompleted(token: string): Promise<void> {
-  if (!token) return;
-  await supabase.rpc("mark_token_completed", { p_token: token });
+  await rpcVoid("mark_token_completed", token);
+}
+
+/** JST */
+export async function isJstTokenCompleted(token: string): Promise<boolean> {
+  return rpcBool("is_jst_token_completed", token);
+}
+
+export async function markJstTokenStarted(token: string): Promise<void> {
+  await rpcVoid("mark_jst_token_started", token);
+}
+
+export async function markJstTokenCompleted(token: string): Promise<void> {
+  await rpcVoid("mark_jst_token_completed", token);
 }
