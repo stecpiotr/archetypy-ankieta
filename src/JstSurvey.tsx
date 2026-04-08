@@ -204,6 +204,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
 
   const [aOrder] = useState(() => shuffle(A_ITEMS.map((x) => x.id)));
   const [aAnswers, setAAnswers] = useState<Record<string, number | undefined>>({});
+  const [activeASliderId, setActiveASliderId] = useState<string | null>(null);
 
   const [bOrder] = useState(() => shuffle(B_ITEMS.map((x) => x.archetype)));
   const [selectedB1, setSelectedB1] = useState<string[]>([]);
@@ -287,8 +288,19 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
 
   useEffect(() => {
     if (!token) return;
-    supabase.rpc("mark_jst_sms_clicked", { p_token: token }).catch(() => undefined);
-    supabase.rpc("mark_jst_email_clicked", { p_token: token }).catch(() => undefined);
+    const markClicked = async () => {
+      try {
+        await supabase.rpc("mark_jst_sms_clicked", { p_token: token });
+      } catch {
+        // brak blokady ankiety
+      }
+      try {
+        await supabase.rpc("mark_jst_email_clicked", { p_token: token });
+      } catch {
+        // brak blokady ankiety
+      }
+    };
+    void markClicked();
   }, [token]);
 
   const ensureStarted = async () => {
@@ -597,15 +609,24 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
             {aOrder.map((id) => {
               const item = A_ITEMS.find((x) => x.id === id)!;
               const selected = aAnswers[id];
+              const isActive = activeASliderId === id;
               const sliderValue = selected ?? 4;
               const sliderPos = ((sliderValue - 1) / 6) * 100;
               const sliderStyle = { "--jst-pos": `${sliderPos}%` } as React.CSSProperties;
+              const activateSlider = () => {
+                setActiveASliderId(id);
+                if (!selected) {
+                  setAAnswers((prev) => ({ ...prev, [id]: 4 }));
+                  setMissingAIds((prev) => prev.filter((x) => x !== id));
+                  setErrorMsg("");
+                }
+              };
               return (
                 <div className={`jst-slider-row ${missingAIds.includes(id) ? "missing" : ""}`} data-a-id={id} key={id}>
                   <div className="jst-slider-top">
                     <span className="jst-end-chip">A</span>
                     <div className="jst-range-wrap" style={sliderStyle}>
-                      {selected && <div className="jst-slider-choice-bubble">{SLIDER_LABELS[selected]}</div>}
+                      {selected && isActive && <div className="jst-slider-choice-bubble">{SLIDER_LABELS[selected]}</div>}
                       <input
                         className={`jst-range ${selected ? "active" : ""}`}
                         type="range"
@@ -613,8 +634,12 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                         max={7}
                         step={1}
                         value={sliderValue}
+                        onPointerDown={activateSlider}
+                        onFocus={activateSlider}
+                        onClick={activateSlider}
                         onChange={(e) => {
                           const val = Number(e.target.value);
+                          setActiveASliderId(id);
                           setAAnswers((prev) => ({ ...prev, [id]: val }));
                           setMissingAIds((prev) => prev.filter((x) => x !== id));
                           setErrorMsg("");
