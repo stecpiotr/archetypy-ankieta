@@ -1,7 +1,3 @@
-body {
-  background: #f3f6fa; /* bardzo jasne, niebiesko-szare tło strony */
-}
-
 /* Powitalna sekcja – centralna rama */
 .welcome-layout {
   min-height: 100vh;
@@ -98,13 +94,23 @@ body {
   margin-top: 11px;
   line-height: 1.35;
 }
-@media (prefers-color-scheme: light) {
-  body, html, .welcome-layout, .welcome-title, .welcome-text, .welcome-thanks, .footer, .footer-sub {
-    color: #213547 !important;
-    background: #fff !important;
+@media (prefers-color-scheme: dark) {
+  .welcome-layout {
+    background: #172433;
+    box-shadow: none;
   }
-}
-body, html {
-  color: #213547 !important;
-  background: #f3f6fa !important;
+  .welcome-title,
+  .welcome-text,
+  .welcome-thanks {
+    color: #e6eef8;
+  }
+  .welcome-line {
+    border-top-color: #31475c;
+  }
+  .footer {
+    color: #afc3d8;
+  }
+  .footer-sub {
+    color: #97adc3;
+  }
 }

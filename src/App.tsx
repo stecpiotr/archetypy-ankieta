@@ -5,8 +5,11 @@ import "./App.css";
 import "./LikertTable.css";
 
 import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/studies";
+import { loadJstStudyBySlug } from "./lib/jstStudies";
+import type { JstStudyRow } from "./lib/jstStudies";
 import AlreadyCompleted from "./AlreadyCompleted";
 import { isTokenCompleted, markTokenStarted } from "./lib/tokens";
+import JstSurvey from "./JstSurvey";
 
 const isMobile = window.innerWidth <= 600;
 
@@ -34,6 +37,8 @@ const App: React.FC = () => {
   const [started, setStarted] = useState(false);
 
   const [hasStudy, setHasStudy] = useState<boolean | null>(null);
+  const [surveyKind, setSurveyKind] = useState<"personal" | "jst" | null>(null);
+  const [jstStudy, setJstStudy] = useState<JstStudyRow | null>(null);
   const [gender, setGender] = useState<"M" | "F">("M");
   const [personNom, setPersonNom] = useState<string>("");   // Marcin Gołek
   const [personGen, setPersonGen] = useState<string>("");   // Marcina Gołka
@@ -51,24 +56,50 @@ const App: React.FC = () => {
       const s = getSlugFromUrl();
       if (!s) {
         setHasStudy(false);
-        setChecking(false);
-        return;
-      }
-      const study = await loadStudyBySlug(s);
-      if (!study) {
-        setHasStudy(false);
+        setSurveyKind(null);
         setChecking(false);
         return;
       }
 
-      const c = buildDisplayFromStudy(study);
-      setGender(c.gender);
-      setPersonNom(c.fullNom);
-      setPersonGen(c.fullGen);
-      setPersonAcc(c.fullAcc);
-      setPersonInstr(c.fullIns);
-      setPersonLoc(c.fullLoc);
-      setSurnameNom(c.surNom);
+      const host = window.location.hostname.toLowerCase();
+      const preferJst = host.startsWith("jst.");
+
+      let personalStudy = null;
+      let jstCandidate: JstStudyRow | null = null;
+
+      if (preferJst) {
+        jstCandidate = await loadJstStudyBySlug(s);
+        if (!jstCandidate) {
+          personalStudy = await loadStudyBySlug(s);
+        }
+      } else {
+        personalStudy = await loadStudyBySlug(s);
+        if (!personalStudy) {
+          jstCandidate = await loadJstStudyBySlug(s);
+        }
+      }
+
+      if (!personalStudy && !jstCandidate) {
+        setHasStudy(false);
+        setSurveyKind(null);
+        setChecking(false);
+        return;
+      }
+
+      if (personalStudy) {
+        const c = buildDisplayFromStudy(personalStudy);
+        setSurveyKind("personal");
+        setGender(c.gender);
+        setPersonNom(c.fullNom);
+        setPersonGen(c.fullGen);
+        setPersonAcc(c.fullAcc);
+        setPersonInstr(c.fullIns);
+        setPersonLoc(c.fullLoc);
+        setSurnameNom(c.surNom);
+      } else if (jstCandidate) {
+        setSurveyKind("jst");
+        setJstStudy(jstCandidate);
+      }
 
       const urlToken = new URLSearchParams(window.location.search).get("t")?.trim() || null;
       setToken(urlToken);
@@ -90,6 +121,10 @@ const App: React.FC = () => {
   const perceivedWord = gender === "F" ? "postrzegana" : "postrzegany";
   const himHer = gender === "F" ? "niej" : "niego";
   const showBlocker = hasStudy === false;
+
+  if (!checking && !alreadyDone && surveyKind === "jst" && jstStudy) {
+    return <JstSurvey study={jstStudy} token={token} />;
+  }
 
 return (
   <div style={wrapperStyle}>

@@ -243,3 +243,37 @@
   background: #fae8e6 !important;
   color: #b00020 !important;
 }
+
+@media (prefers-color-scheme: dark) {
+  .likert-table {
+    background: #172433;
+    color: #e4edf6;
+  }
+  .likert-table th,
+  .likert-table td {
+    border-bottom-color: #31465a !important;
+    border-right-color: #31465a !important;
+  }
+  .likert-table th.th-blank,
+  .likert-table td.question-cell,
+  .likert-table td.sticky-col {
+    background: #1a2b3d !important;
+    color: #e4edf6 !important;
+  }
+  .likert-table th.th-scale {
+    background: #22384f !important;
+    border-bottom-color: #3b556d;
+  }
+  .likert-table tbody tr:nth-child(even) td,
+  .likert-table tbody tr:nth-child(even) .question-cell,
+  .likert-table tbody tr:nth-child(even) .sticky-col {
+    background: #1e3145 !important;
+  }
+  .option-label input[type="radio"] {
+    background: #24394d;
+    border-color: #4ab08d;
+  }
+  .option-label input[type="radio"]:checked:after {
+    background: #5fd7ac;
+  }
+}
