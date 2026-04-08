@@ -518,7 +518,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
 
         {step === "screening" && (
           <section className="jst-card">
-            <h2 className="jst-title jst-step-title">Czy jest Pan/Pani mieszkańcem/mieszkanką {ctx.fullGen}?</h2>
+            <h2 className="jst-title jst-step-title jst-screening-title">Czy jest Pan/Pani mieszkańcem/mieszkanką {ctx.fullGen}?</h2>
             <div className="jst-opt-list jst-screening-options">
               <button className={`jst-opt ${isResident === true ? "selected" : ""}`} onClick={() => { setIsResident(true); clearErrors(); }}>
                 Tak
@@ -537,7 +537,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
 
         {step === "metryka" && (
           <section className="jst-card">
-            <h2 className="jst-title jst-step-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
+            <h2 className="jst-title jst-step-title jst-metry-step-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
             {(Object.keys(METRY) as (keyof typeof METRY)[]).map((field) => {
               const missing = !metry[field];
               if (showOnlyMissingMetry && !missing) return null;
@@ -597,25 +597,30 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
             {aOrder.map((id) => {
               const item = A_ITEMS.find((x) => x.id === id)!;
               const selected = aAnswers[id];
+              const sliderValue = selected ?? 4;
+              const sliderPos = ((sliderValue - 1) / 6) * 100;
+              const sliderStyle = { "--jst-pos": `${sliderPos}%` } as React.CSSProperties;
               return (
                 <div className={`jst-slider-row ${missingAIds.includes(id) ? "missing" : ""}`} data-a-id={id} key={id}>
-                  <div className="jst-slider-choice">{SLIDER_LABELS[selected ?? 4]}</div>
                   <div className="jst-slider-top">
                     <span className="jst-end-chip">A</span>
-                    <input
-                      className={`jst-range ${selected ? "active" : ""}`}
-                      type="range"
-                      min={1}
-                      max={7}
-                      step={1}
-                      value={selected ?? 4}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setAAnswers((prev) => ({ ...prev, [id]: val }));
-                        setMissingAIds((prev) => prev.filter((x) => x !== id));
-                        setErrorMsg("");
-                      }}
-                    />
+                    <div className="jst-range-wrap" style={sliderStyle}>
+                      {selected && <div className="jst-slider-choice-bubble">{SLIDER_LABELS[selected]}</div>}
+                      <input
+                        className={`jst-range ${selected ? "active" : ""}`}
+                        type="range"
+                        min={1}
+                        max={7}
+                        step={1}
+                        value={sliderValue}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setAAnswers((prev) => ({ ...prev, [id]: val }));
+                          setMissingAIds((prev) => prev.filter((x) => x !== id));
+                          setErrorMsg("");
+                        }}
+                      />
+                    </div>
                     <span className="jst-end-chip">B</span>
                   </div>
                   <div className="jst-slider-ticks-wrap">

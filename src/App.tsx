@@ -33,6 +33,17 @@ const contentStyle: React.CSSProperties = {
   flex: 1,
 };
 
+function getTokenFromUrl(): string | null {
+  const qs = window.location.search || "";
+  const m = qs.match(/[?&]t=([^&]+)/i);
+  if (!m || !m[1]) return null;
+  try {
+    return decodeURIComponent(m[1]).trim() || null;
+  } catch {
+    return m[1].trim() || null;
+  }
+}
+
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   try {
@@ -44,6 +55,59 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallbackVa
     ]);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+type AppErrorBoundaryState = {
+  hasError: boolean;
+  message: string;
+};
+
+class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, AppErrorBoundaryState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: "" };
+  }
+
+  static getDerivedStateFromError(error: unknown): AppErrorBoundaryState {
+    return { hasError: true, message: String(error ?? "Nieznany błąd") };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error("JST render error:", error);
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          width: "100vw",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+          boxSizing: "border-box",
+          background: "#ffffff",
+          color: "#1f2937",
+          fontFamily: "'Roboto', Arial, sans-serif",
+        }}
+      >
+        <div style={{ maxWidth: 780, width: "100%", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 22px" }}>
+          <h2 style={{ margin: "0 0 10px 0", color: "#0f172a" }}>Nie udało się wyświetlić ankiety</h2>
+          <p style={{ margin: 0, lineHeight: 1.55 }}>
+            Wystąpił błąd renderowania strony. Odśwież stronę, a jeśli problem się powtórzy, otwórz ankietę bez parametru tokena:
+            {" "}
+            <a href={cleanUrl}>{cleanUrl}</a>
+          </p>
+          <p style={{ margin: "12px 0 0 0", fontSize: "0.9rem", color: "#64748b" }}>
+            Szczegóły techniczne: {this.state.message}
+          </p>
+        </div>
+      </main>
+    );
   }
 }
 
@@ -126,7 +190,7 @@ const App: React.FC = () => {
           }
         }
 
-        const urlToken = new URLSearchParams(window.location.search).get("t")?.trim() || null;
+        const urlToken = getTokenFromUrl();
         if (!cancelled) setToken(urlToken);
         if (urlToken) {
           try {
@@ -154,7 +218,11 @@ const App: React.FC = () => {
   const showBlocker = hasStudy === false;
 
   if (!checking && !alreadyDone && surveyKind === "jst" && jstStudy) {
-    return <JstSurvey study={jstStudy} token={token} />;
+    return (
+      <AppErrorBoundary>
+        <JstSurvey study={jstStudy} token={token} />
+      </AppErrorBoundary>
+    );
   }
 
 return (
