@@ -1,5 +1,17 @@
 import { supabase } from "../supabaseClient";
 
+export type JstTokenMeta = {
+  found: boolean;
+  channel: "sms" | "email" | null;
+  contact: string;
+  study_id: string;
+  study_slug: string;
+  completed: boolean;
+  rejected: boolean;
+  completed_at?: string | null;
+  rejected_at?: string | null;
+};
+
 async function rpcBool(fn: string, token: string): Promise<boolean> {
   if (!token) return false;
   const { data, error } = await supabase.rpc(fn, { p_token: token });
@@ -41,4 +53,27 @@ export async function markJstTokenCompleted(token: string): Promise<void> {
 
 export async function markJstTokenRejected(token: string): Promise<void> {
   await rpcVoid("mark_jst_token_rejected", token);
+}
+
+export async function getJstTokenMeta(token: string): Promise<JstTokenMeta | null> {
+  if (!token) return null;
+  const { data, error } = await supabase.rpc("get_jst_token_meta", { p_token: token });
+  if (error) throw error;
+  if (!data || typeof data !== "object") return null;
+
+  const d = data as Record<string, unknown>;
+  const channelRaw = String(d.channel || "").toLowerCase();
+  const channel = channelRaw === "sms" || channelRaw === "email" ? channelRaw : null;
+
+  return {
+    found: Boolean(d.found),
+    channel,
+    contact: String(d.contact || ""),
+    study_id: String(d.study_id || ""),
+    study_slug: String(d.study_slug || ""),
+    completed: Boolean(d.completed),
+    rejected: Boolean(d.rejected),
+    completed_at: d.completed_at ? String(d.completed_at) : null,
+    rejected_at: d.rejected_at ? String(d.rejected_at) : null,
+  };
 }

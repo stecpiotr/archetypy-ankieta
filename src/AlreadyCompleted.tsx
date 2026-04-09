@@ -1,6 +1,19 @@
 import React from "react";
 
-const AlreadyCompleted: React.FC = () => {
+type Props = {
+  channel?: "sms" | "email" | null;
+  contact?: string | null;
+};
+
+const AlreadyCompleted: React.FC<Props> = ({ channel = null, contact = "" }) => {
+  const trimmed = String(contact || "").trim();
+  const channelLabel =
+    channel === "sms" ? "numeru telefonu" : channel === "email" ? "adresu e-mail" : "";
+  const title =
+    trimmed && channelLabel
+      ? `Ankieta dla tego ${channelLabel} ${trimmed} została już wypełniona.`
+      : "Ta ankieta została już wypełniona.";
+
   return (
     <main
       style={{
@@ -28,7 +41,7 @@ const AlreadyCompleted: React.FC = () => {
           lineHeight: 1.15,
         }}
       >
-        Ta ankieta została już wypełniona.
+        {title}
       </h2>
 
       <p

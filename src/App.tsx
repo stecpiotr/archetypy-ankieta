@@ -8,7 +8,7 @@ import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/st
 import { loadJstStudyBySlug } from "./lib/jstStudies";
 import type { JstStudyRow } from "./lib/jstStudies";
 import AlreadyCompleted from "./AlreadyCompleted";
-import { isJstTokenCompleted, isTokenCompleted, markTokenStarted } from "./lib/tokens";
+import { getJstTokenMeta, isJstTokenCompleted, isTokenCompleted, markTokenStarted } from "./lib/tokens";
 import JstSurvey from "./JstSurvey";
 
 const isMobile = window.innerWidth <= 600;
@@ -127,6 +127,8 @@ const App: React.FC = () => {
 
   const [token, setToken] = useState<string | null>(null);
   const [alreadyDone, setAlreadyDone] = useState(false);
+  const [alreadyDoneChannel, setAlreadyDoneChannel] = useState<"sms" | "email" | null>(null);
+  const [alreadyDoneContact, setAlreadyDoneContact] = useState<string>("");
   const [checking, setChecking] = useState(true); // ⬅️ czekamy aż sprawdzimy token
 
   useEffect(() => {
@@ -194,12 +196,39 @@ const App: React.FC = () => {
         if (!cancelled) setToken(urlToken);
         if (urlToken) {
           try {
-            const done = resolvedKind === "jst"
-              ? await withTimeout(isJstTokenCompleted(urlToken), 2500, false)
-              : await withTimeout(isTokenCompleted(urlToken), 2500, false);
-            if (!cancelled && done) setAlreadyDone(true);
+            if (resolvedKind === "jst") {
+              const tokenMeta = await withTimeout(getJstTokenMeta(urlToken), 3500, null);
+              if (tokenMeta?.found) {
+                const currentSlug = (s || "").trim().toLowerCase();
+                const tokenSlug = (tokenMeta.study_slug || "").trim().toLowerCase();
+                if (!cancelled && currentSlug && tokenSlug && currentSlug !== tokenSlug) {
+                  const next = `${window.location.origin}/${tokenSlug}?t=${encodeURIComponent(urlToken)}`;
+                  window.location.replace(next);
+                  return;
+                }
+                if (!cancelled && tokenMeta.completed) {
+                  setAlreadyDone(true);
+                  setAlreadyDoneChannel(tokenMeta.channel);
+                  setAlreadyDoneContact(tokenMeta.contact || "");
+                }
+              } else {
+                const done = await withTimeout(isJstTokenCompleted(urlToken), 2500, false);
+                if (!cancelled && done) setAlreadyDone(true);
+              }
+            } else {
+              const done = await withTimeout(isTokenCompleted(urlToken), 2500, false);
+              if (!cancelled && done) setAlreadyDone(true);
+            }
           } catch (e) {
             console.warn("isTokenCompleted error:", e);
+            try {
+              const doneFallback = resolvedKind === "jst"
+                ? await withTimeout(isJstTokenCompleted(urlToken), 4000, false)
+                : await withTimeout(isTokenCompleted(urlToken), 4000, false);
+              if (!cancelled && doneFallback) setAlreadyDone(true);
+            } catch (fallbackErr) {
+              console.warn("isTokenCompleted fallback error:", fallbackErr);
+            }
           }
         }
 
@@ -232,7 +261,7 @@ return (
         Ładowanie ankiety...
       </div>
     ) : alreadyDone ? (
-      <AlreadyCompleted />
+      <AlreadyCompleted channel={alreadyDoneChannel} contact={alreadyDoneContact} />
     ) : !started ? (
       <>
         <header
