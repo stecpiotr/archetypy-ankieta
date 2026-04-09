@@ -47,6 +47,7 @@ const METRY = {
 } as const;
 
 const M_ZAWOD_OTHER_OPTION = "inna (jaka?)";
+const M_ZAWOD_OTHER_MIN_CHARS = 3;
 
 const A_ITEMS = [
   { id: "A1", left: "stabilność i przewidywalność", right: "otwartość na zmiany i nowości" },
@@ -321,6 +322,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
   const clearErrors = () => {
     setErrorMsg("");
     setMissingAIds([]);
+    setShowOnlyMissingMetry(false);
   };
 
   const goNextFromScreening = async () => {
@@ -348,14 +350,17 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
   const validateMetry = () => {
     const missing = (Object.keys(METRY) as (keyof typeof METRY)[]).filter((k) => !metry[k]);
     const needsOther = metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION;
-    const missingOther = needsOther && !metryZawodOther.trim();
+    const missingOther = needsOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
     if (missing.length || missingOther) {
-      setErrorMsg("Proszę udzielić odpowiedzi na wszystkie pytania");
+      if (!missing.length && missingOther) {
+        setErrorMsg(`Proszę doprecyzować odpowiedź "inna (jaka?)" (min. ${M_ZAWOD_OTHER_MIN_CHARS} znaki).`);
+      } else {
+        setErrorMsg("Proszę udzielić odpowiedzi na wszystkie pytania");
+      }
       setShowOnlyMissingMetry(true);
       return false;
     }
     clearErrors();
-    setShowOnlyMissingMetry(false);
     return true;
   };
 
@@ -572,9 +577,8 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
             <h2 className="jst-title jst-step-title jst-metry-step-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
             {(Object.keys(METRY) as (keyof typeof METRY)[]).map((field) => {
               const missingBase = !metry[field];
-              const missingOther = field === "M_ZAWOD" && metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION && !metryZawodOther.trim();
+              const missingOther = field === "M_ZAWOD" && metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
               const missing = missingBase || missingOther;
-              if (showOnlyMissingMetry && !missing) return null;
               return (
                 <div key={field} className={`jst-metry ${missing && showOnlyMissingMetry ? "missing" : ""}`}>
                   <p className="jst-metry-title">
@@ -606,9 +610,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                     ))}
                   </div>
                   {field === "M_ZAWOD" && metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION && (
-                    <div className={`jst-other-wrap ${showOnlyMissingMetry && !metryZawodOther.trim() ? "missing" : ""}`}>
+                    <div className={`jst-other-wrap ${showOnlyMissingMetry && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS ? "missing" : ""}`}>
                       <label className="jst-other-label" htmlFor="jst-zawod-other">
-                        Proszę doprecyzować odpowiedź:
+                        Proszę doprecyzować odpowiedź (min. {M_ZAWOD_OTHER_MIN_CHARS} znaki):
                       </label>
                       <input
                         id="jst-zawod-other"
