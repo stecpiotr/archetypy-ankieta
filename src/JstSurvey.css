@@ -175,7 +175,7 @@
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
-  background: #f7f9fb;
+  background: #fbfcfd;
 }
 
 .jst-metry.missing {
@@ -262,21 +262,21 @@
 
 .jst-slider-top {
   display: grid;
-  grid-template-columns: 32px 1fr 32px;
-  gap: 8px;
-  align-items: center;
+  grid-template-columns: 22px 1fr 22px;
+  gap: 6px;
+  align-items: end;
 }
 
 .jst-range-wrap {
   position: relative;
-  padding-top: 44px;
+  padding-top: 34px;
 }
 
 .jst-slider-choice-bubble {
   position: absolute;
-  left: var(--jst-pos, 50%);
-  top: 4px;
-  transform: translate(-50%, -100%);
+  left: var(--jst-bubble-pos, var(--jst-pos, 50%));
+  top: 2px;
+  transform: translateX(-50%);
   background: #edf7f5;
   color: #0d5a51;
   border: 1px solid #d2ece7;
@@ -286,13 +286,19 @@
   font-weight: 700;
   white-space: nowrap;
   pointer-events: none;
+  z-index: 2;
 }
 
 .jst-end-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  font-size: 0.88rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #4b667f;
+  line-height: 1;
+  padding-bottom: 3px;
 }
 
 .jst-range {
@@ -363,8 +369,8 @@
 
 .jst-slider-ticks-wrap {
   display: grid;
-  grid-template-columns: 32px 1fr 32px;
-  gap: 8px;
+  grid-template-columns: 22px 1fr 22px;
+  gap: 6px;
   margin: 8px 0 10px;
 }
 

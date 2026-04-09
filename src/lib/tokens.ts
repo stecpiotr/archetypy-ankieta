@@ -38,3 +38,7 @@ export async function markJstTokenStarted(token: string): Promise<void> {
 export async function markJstTokenCompleted(token: string): Promise<void> {
   await rpcVoid("mark_jst_token_completed", token);
 }
+
+export async function markJstTokenRejected(token: string): Promise<void> {
+  await rpcVoid("mark_jst_token_rejected", token);
+}

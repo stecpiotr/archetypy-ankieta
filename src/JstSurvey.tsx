@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabaseClient";
-import { markJstTokenCompleted, markJstTokenStarted } from "./lib/tokens";
+import { markJstTokenCompleted, markJstTokenRejected, markJstTokenStarted } from "./lib/tokens";
 import { buildJstTextContext, renderJstTemplate } from "./lib/jstStudies";
 import type { JstStudyRow } from "./lib/jstStudies";
 import "./JstSurvey.css";
@@ -320,13 +320,22 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     setMissingAIds([]);
   };
 
-  const goNextFromScreening = () => {
+  const goNextFromScreening = async () => {
     if (isResident === null) {
       setErrorMsg("Proszę zaznaczyć odpowiedź.");
       return;
     }
     clearErrors();
     if (!isResident) {
+      if (token) {
+        try {
+          await markJstTokenRejected(token);
+          await supabase.rpc("mark_jst_sms_rejected", { p_token: token });
+          await supabase.rpc("mark_jst_email_rejected", { p_token: token });
+        } catch {
+          // brak blokady ankiety
+        }
+      }
       goToStep("rejected");
       return;
     }
@@ -540,7 +549,12 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
               </button>
             </div>
             <div className="jst-action-row">
-              <button className="jst-btn" onClick={goNextFromScreening}>
+              <button
+                className="jst-btn"
+                onClick={() => {
+                  void goNextFromScreening();
+                }}
+              >
                 Przejdź dalej
               </button>
             </div>
@@ -612,7 +626,11 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
               const isActive = activeASliderId === id;
               const sliderValue = selected ?? 4;
               const sliderPos = ((sliderValue - 1) / 6) * 100;
-              const sliderStyle = { "--jst-pos": `${sliderPos}%` } as React.CSSProperties;
+              const bubblePos = Math.max(8, Math.min(92, sliderPos));
+              const sliderStyle = {
+                "--jst-pos": `${sliderPos}%`,
+                "--jst-bubble-pos": `${bubblePos}%`,
+              } as React.CSSProperties;
               const activateSlider = () => {
                 setActiveASliderId(id);
                 if (!selected) {
