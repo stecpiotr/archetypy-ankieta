@@ -269,13 +269,13 @@
 
 .jst-range-wrap {
   position: relative;
-  padding-top: 34px;
+  padding-top: 44px;
 }
 
 .jst-slider-choice-bubble {
   position: absolute;
   left: var(--jst-bubble-pos, var(--jst-pos, 50%));
-  top: 2px;
+  top: -8px;
   transform: translateX(-50%);
   background: #edf7f5;
   color: #0d5a51;
@@ -295,7 +295,7 @@
   justify-content: center;
   text-align: center;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #4b667f;
   line-height: 1;
   padding-bottom: 3px;
