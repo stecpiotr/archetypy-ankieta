@@ -46,6 +46,8 @@ const METRY = {
   ],
 } as const;
 
+const M_ZAWOD_OTHER_OPTION = "inna (jaka?)";
+
 const A_ITEMS = [
   { id: "A1", left: "stabilność i przewidywalność", right: "otwartość na zmiany i nowości" },
   { id: "A2", left: "bliskość mieszkańcom", right: "silny autorytet" },
@@ -201,6 +203,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     M_MATERIAL: "",
   });
   const [showOnlyMissingMetry, setShowOnlyMissingMetry] = useState(false);
+  const [metryZawodOther, setMetryZawodOther] = useState("");
 
   const [aOrder] = useState(() => shuffle(A_ITEMS.map((x) => x.id)));
   const [aAnswers, setAAnswers] = useState<Record<string, number | undefined>>({});
@@ -344,7 +347,9 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
 
   const validateMetry = () => {
     const missing = (Object.keys(METRY) as (keyof typeof METRY)[]).filter((k) => !metry[k]);
-    if (missing.length) {
+    const needsOther = metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION;
+    const missingOther = needsOther && !metryZawodOther.trim();
+    if (missing.length || missingOther) {
       setErrorMsg("Proszę udzielić odpowiedzi na wszystkie pytania");
       setShowOnlyMissingMetry(true);
       return false;
@@ -405,6 +410,7 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
         M_WIEK: metry.M_WIEK,
         M_WYKSZT: metry.M_WYKSZT,
         M_ZAWOD: metry.M_ZAWOD,
+        M_ZAWOD_OTHER: metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION ? metryZawodOther.trim() : "",
         M_MATERIAL: metry.M_MATERIAL,
       };
 
@@ -565,7 +571,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
           <section className="jst-card">
             <h2 className="jst-title jst-step-title jst-metry-step-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
             {(Object.keys(METRY) as (keyof typeof METRY)[]).map((field) => {
-              const missing = !metry[field];
+              const missingBase = !metry[field];
+              const missingOther = field === "M_ZAWOD" && metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION && !metryZawodOther.trim();
+              const missing = missingBase || missingOther;
               if (showOnlyMissingMetry && !missing) return null;
               return (
                 <div key={field} className={`jst-metry ${missing && showOnlyMissingMetry ? "missing" : ""}`}>
@@ -583,6 +591,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                         type="button"
                         className={`jst-radio-opt ${metry[field] === opt ? "selected" : ""}`}
                         onClick={() => {
+                          if (field === "M_ZAWOD" && opt !== M_ZAWOD_OTHER_OPTION) {
+                            setMetryZawodOther("");
+                          }
                           setMetry((prev) => ({ ...prev, [field]: opt }));
                           clearErrors();
                         }}
@@ -594,6 +605,26 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                       </button>
                     ))}
                   </div>
+                  {field === "M_ZAWOD" && metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION && (
+                    <div className={`jst-other-wrap ${showOnlyMissingMetry && !metryZawodOther.trim() ? "missing" : ""}`}>
+                      <label className="jst-other-label" htmlFor="jst-zawod-other">
+                        Proszę doprecyzować odpowiedź:
+                      </label>
+                      <input
+                        id="jst-zawod-other"
+                        type="text"
+                        className="jst-other-input"
+                        value={metryZawodOther}
+                        onChange={(e) => {
+                          setMetryZawodOther(e.target.value);
+                          clearErrors();
+                        }}
+                        placeholder="Wpisz jaki zawód/sytuacja"
+                        maxLength={120}
+                        autoComplete="off"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

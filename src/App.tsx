@@ -206,7 +206,8 @@ const App: React.FC = () => {
                   window.location.replace(next);
                   return;
                 }
-                if (!cancelled && tokenMeta.completed) {
+                const blockedByToken = tokenMeta.completed || tokenMeta.rejected;
+                if (!cancelled && blockedByToken) {
                   setAlreadyDone(true);
                   setAlreadyDoneChannel(tokenMeta.channel);
                   setAlreadyDoneContact(tokenMeta.contact || "");
