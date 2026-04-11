@@ -66,7 +66,7 @@ const A_ITEMS = [
   { id: "A14", left: "koncentracja na codziennych sprawach", right: "wizja przyszłości" },
   { id: "A15", left: "otwartość i swoboda", right: "reguły i porządek" },
   { id: "A16", left: "eksperymentowanie i poszukiwanie nowych rozwiązań", right: "praktyczne rozwiązywanie problemów" },
-  { id: "A17", left: "troska o potrzeby ludzi", right: "wyrazistość i brak kompromisów" },
+  { id: "A17", left: "troska o potrzeby ludzi", right: "wyrazistość i bezkompromisowość" },
   { id: "A18", left: "zacieśnianie więzi między ludźmi poprzez integrację i wspólnotę", right: "napędzanie rozwoju {miasta/gminy} odważnymi inwestycjami" },
 ] as const;
 
