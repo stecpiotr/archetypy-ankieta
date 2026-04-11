@@ -244,7 +244,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       <div style={{ margin: "20px 0 15px 0", fontSize: "1.20rem" }}>
         <span style={{ color: "#c62828", fontWeight: 700 }}>Pamiętaj! </span>
         <span style={{ color: "#253347", fontWeight: 400 }}>
-          Twoje odpowiedzi dotyczą  <u>{fullGen ?? ""} polityka (osoby publicznej)</u>{" "}
+          Twoje odpowiedzi dotyczą  <u>{fullGen ?? ""} jako osoby publicznej (polityka)</u>{" "}
         </span>
       </div>
     </>
