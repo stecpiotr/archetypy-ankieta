@@ -111,6 +111,39 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, Ap
   }
 }
 
+type StudyLifecycleStatus = "active" | "suspended" | "closed" | "deleted";
+
+function normalizeStudyLifecycleStatus(raw: unknown, isActive: unknown): StudyLifecycleStatus {
+  const txt = String(raw ?? "").trim().toLowerCase();
+  if (txt === "suspended" || txt === "closed" || txt === "deleted" || txt === "active") {
+    return txt;
+  }
+  if (isActive === false) return "deleted";
+  return "active";
+}
+
+function statusBlockMessage(status: StudyLifecycleStatus): { title: string; text: string } | null {
+  if (status === "suspended") {
+    return {
+      title: "Badanie jest nieaktywne",
+      text: "To badanie zostało zawieszone. Wypełnianie ankiety jest tymczasowo wyłączone.",
+    };
+  }
+  if (status === "closed") {
+    return {
+      title: "Badanie zakończone",
+      text: "To badanie zostało zamknięte. Nie można już oddawać głosów.",
+    };
+  }
+  if (status === "deleted") {
+    return {
+      title: "Badanie zakończone",
+      text: "To badanie nie jest już dostępne.",
+    };
+  }
+  return null;
+}
+
 const App: React.FC = () => {
   const [started, setStarted] = useState(false);
 
@@ -129,6 +162,8 @@ const App: React.FC = () => {
   const [alreadyDone, setAlreadyDone] = useState(false);
   const [alreadyDoneChannel, setAlreadyDoneChannel] = useState<"sms" | "email" | null>(null);
   const [alreadyDoneContact, setAlreadyDoneContact] = useState<string>("");
+  const [studyStatus, setStudyStatus] = useState<StudyLifecycleStatus>("active");
+  const [statusBlock, setStatusBlock] = useState<{ title: string; text: string } | null>(null);
   const [checking, setChecking] = useState(true); // ⬅️ czekamy aż sprawdzimy token
 
   useEffect(() => {
@@ -173,6 +208,10 @@ const App: React.FC = () => {
         let resolvedKind: "personal" | "jst" | null = null;
         if (personalStudy) {
           const c = buildDisplayFromStudy(personalStudy);
+          const resolvedStatus = normalizeStudyLifecycleStatus(
+            (personalStudy as any).study_status,
+            (personalStudy as any).is_active,
+          );
           resolvedKind = "personal";
           if (!cancelled) {
             setSurveyKind("personal");
@@ -183,12 +222,20 @@ const App: React.FC = () => {
             setPersonInstr(c.fullIns);
             setPersonLoc(c.fullLoc);
             setSurnameNom(c.surNom);
+            setStudyStatus(resolvedStatus);
+            setStatusBlock(statusBlockMessage(resolvedStatus));
           }
         } else if (jstCandidate) {
+          const resolvedStatus = normalizeStudyLifecycleStatus(
+            (jstCandidate as any).study_status,
+            (jstCandidate as any).is_active,
+          );
           resolvedKind = "jst";
           if (!cancelled) {
             setSurveyKind("jst");
             setJstStudy(jstCandidate);
+            setStudyStatus(resolvedStatus);
+            setStatusBlock(statusBlockMessage(resolvedStatus));
           }
         }
 
@@ -247,11 +294,38 @@ const App: React.FC = () => {
   const himHer = gender === "F" ? "niej" : "niego";
   const showBlocker = hasStudy === false;
 
-  if (!checking && !alreadyDone && surveyKind === "jst" && jstStudy) {
+  if (!checking && !alreadyDone && surveyKind === "jst" && jstStudy && studyStatus === "active" && !statusBlock) {
     return (
       <AppErrorBoundary>
         <JstSurvey study={jstStudy} token={token} />
       </AppErrorBoundary>
+    );
+  }
+
+  if (!checking && statusBlock) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          width: "100vw",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+          boxSizing: "border-box",
+          background: "#ffffff",
+          color: "#1f2937",
+          fontFamily: "'Roboto', Arial, sans-serif",
+        }}
+      >
+        <div style={{ maxWidth: 780, width: "100%", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 22px" }}>
+          <h2 style={{ margin: "0 0 10px 0", color: "#0f172a" }}>{statusBlock.title}</h2>
+          <p style={{ margin: 0, lineHeight: 1.55 }}>{statusBlock.text}</p>
+          <p style={{ margin: "12px 0 0 0", fontSize: "0.9rem", color: "#64748b" }}>
+            W razie pytań skontaktuj się z administratorem badania.
+          </p>
+        </div>
+      </main>
     );
   }
 

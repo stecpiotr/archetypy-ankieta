@@ -8,6 +8,9 @@ export type Gender = "M" | "F";
 export interface StudyRow {
   slug: string;
   is_active: boolean;
+  study_status?: "active" | "suspended" | "closed" | "deleted" | string | null;
+  status_changed_at?: string | null;
+  started_at?: string | null;
 
   first_name: string;   // historyczne
   last_name: string;    // historyczne
@@ -58,30 +61,49 @@ export function getSlugFromUrl(): string | null {
 
 /** Ładowanie rekordu badania po slugu */
 export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
-  const { data, error } = await supabase
-    .from("studies")
-    .select(
-      [
-        "slug",
-        "is_active",
-        "first_name",
-        "last_name",
-        "city",
-        "gender",
+  const baseFields = [
+    "slug",
+    "is_active",
+    "first_name",
+    "last_name",
+    "city",
+    "gender",
+    "first_name_nom", "last_name_nom",
+    "first_name_gen", "last_name_gen",
+    "first_name_dat", "last_name_dat",
+    "first_name_acc", "last_name_acc",
+    "first_name_ins", "last_name_ins",
+    "first_name_loc", "last_name_loc",
+    "first_name_voc", "last_name_voc",
+  ];
+  const extendedFields = ["study_status", "status_changed_at", "started_at", ...baseFields];
 
-        "first_name_nom", "last_name_nom",
-        "first_name_gen", "last_name_gen",
-        "first_name_dat", "last_name_dat",
-        "first_name_acc", "last_name_acc",
-        "first_name_ins", "last_name_ins",
-        "first_name_loc", "last_name_loc",
-        "first_name_voc", "last_name_voc",
-      ].join(",")
-    )
+  let data: unknown = null;
+  let error: any = null;
+  ({ data, error } = await supabase
+    .from("studies")
+    .select(extendedFields.join(","))
     .eq("slug", slug)
     .eq("is_active", true)
     .limit(1)
-    .maybeSingle();
+    .maybeSingle());
+
+  if (error) {
+    const msg = String((error as any)?.message || error || "").toLowerCase();
+    const missingStatusCols =
+      msg.includes("study_status")
+      || msg.includes("status_changed_at")
+      || msg.includes("started_at");
+    if (missingStatusCols) {
+      ({ data, error } = await supabase
+        .from("studies")
+        .select(baseFields.join(","))
+        .eq("slug", slug)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle());
+    }
+  }
 
   if (error) {
     console.error("loadStudyBySlug error:", error);

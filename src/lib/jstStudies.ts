@@ -20,6 +20,9 @@ export interface JstStudyRow {
   jst_full_loc?: string | null;
   jst_full_voc?: string | null;
   is_active?: boolean;
+  study_status?: "active" | "suspended" | "closed" | "deleted" | string | null;
+  status_changed_at?: string | null;
+  started_at?: string | null;
 }
 
 export interface JstTextCtx {

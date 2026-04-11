@@ -439,7 +439,17 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
       });
 
       if (error || !data || (typeof data === "object" && (data as any).ok === false)) {
-        setErrorMsg("Nie udało się zapisać odpowiedzi. Spróbuj ponownie.");
+        const dataErr = typeof data === "object" ? String((data as any)?.error || "") : "";
+        const dataStatus = typeof data === "object" ? String((data as any)?.study_status || "").toLowerCase() : "";
+        if (dataErr === "study_inactive") {
+          if (dataStatus === "closed") {
+            setErrorMsg("Badanie zakończone. Nie można już oddawać głosów.");
+          } else {
+            setErrorMsg("Badanie jest nieaktywne. Wypełnianie ankiety jest tymczasowo wyłączone.");
+          }
+        } else {
+          setErrorMsg("Nie udało się zapisać odpowiedzi. Spróbuj ponownie.");
+        }
         setSubmitting(false);
         return;
       }
