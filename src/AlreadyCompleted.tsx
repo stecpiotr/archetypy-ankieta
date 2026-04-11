@@ -59,7 +59,7 @@ const AlreadyCompleted: React.FC<Props> = ({ channel = null, contact = "" }) => 
         <br />
         e-mail: <a href="mailto:piotr.stec@badania.pro">piotr.stec@badania.pro</a>
         <br />
-        tel.: <a href="tel:500121141">500-121-141</a>
+        tel.: <a href="tel: 500121141">500-121-141</a>
       </p>
     </main>
   );

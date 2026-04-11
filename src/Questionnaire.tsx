@@ -238,14 +238,13 @@ const handleSubmit = async (e: React.FormEvent) => {
         }}
       >
         {/* biernik */}
-        Postaraj się wcielić w <b>{fullAcc ?? ""}</b> i odpowiedz na następujące pytania:
+        Czy zgadzasz się z poniższymi stwierdzeniami na temat <b>{fullGen ?? ""}</b>?
       </div>
 
       <div style={{ margin: "20px 0 15px 0", fontSize: "1.20rem" }}>
         <span style={{ color: "#c62828", fontWeight: 700 }}>Pamiętaj! </span>
         <span style={{ color: "#253347", fontWeight: 400 }}>
-          Odpowiadasz jakbyś był(a) <u>{fullIns ?? ""} politykiem (osobą publiczną)</u>{" "}
-          <span role="img" aria-label="smile">😊</span>
+          Twoje odpowiedzi dotyczą  <u>{fullGen ?? ""} polityka (osoby publicznej)</u>{" "}
         </span>
       </div>
     </>
