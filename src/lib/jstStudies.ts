@@ -107,24 +107,26 @@ export function buildJstTextContext(study: JstStudyRow): JstTextCtx {
 }
 
 export function renderJstTemplate(text: string, ctx: JstTextCtx): string {
-  const out = (text || "")
-    .replaceAll("{nazwa JST w dopełniaczu}", ctx.fullGen)
-    .replaceAll("{nazwa JST w mianowniku}", ctx.fullNom)
-    .replaceAll("{nazwa miasta w mianowniku}", ctx.fullNom)
-    .replaceAll("{nazwa gminy w mianowniku}", ctx.fullNom)
-    .replaceAll("{narzędnik JST}", ctx.nameIns)
-    .replaceAll("{miasto/gmina}", ctx.type)
-    .replaceAll("{Miasto/Gmina}", ctx.typeCap)
-    .replaceAll("{miasta/gminy}", ctx.typeGen)
-    .replaceAll("{Miasta/Gminy}", ctx.typeGenCap)
-    .replaceAll("{miasta}/{gminy}", ctx.typeGen)
-    .replaceAll("{mieście/gminie}", ctx.typeLoc)
-    .replaceAll("{miastu/gminie}", ctx.typeDat)
-    .replaceAll("{miastu/gminie}", ctx.typeDat)
-    .replaceAll("{mieście/gminie}", ctx.typeLoc2)
-    .replaceAll("{naszym mieście}/{naszej gminie}", ctx.type === "miasto" ? "naszym mieście" : "naszej gminie")
-    .replaceAll("{mieście}/{gminie}", ctx.typeLoc)
-    .replaceAll("{miasto}", "miasto")
-    .replaceAll("{gmina}", "gmina");
+  const rep = (src: string, from: string, to: string): string => src.split(from).join(to);
+  const out = [
+    ["{nazwa JST w dopełniaczu}", ctx.fullGen],
+    ["{nazwa JST w mianowniku}", ctx.fullNom],
+    ["{nazwa miasta w mianowniku}", ctx.fullNom],
+    ["{nazwa gminy w mianowniku}", ctx.fullNom],
+    ["{narzędnik JST}", ctx.nameIns],
+    ["{miasto/gmina}", ctx.type],
+    ["{Miasto/Gmina}", ctx.typeCap],
+    ["{miasta/gminy}", ctx.typeGen],
+    ["{Miasta/Gminy}", ctx.typeGenCap],
+    ["{miasta}/{gminy}", ctx.typeGen],
+    ["{mieście/gminie}", ctx.typeLoc],
+    ["{miastu/gminie}", ctx.typeDat],
+    ["{miastu/gminie}", ctx.typeDat],
+    ["{mieście/gminie}", ctx.typeLoc2],
+    ["{naszym mieście}/{naszej gminie}", ctx.type === "miasto" ? "naszym mieście" : "naszej gminie"],
+    ["{mieście}/{gminie}", ctx.typeLoc],
+    ["{miasto}", "miasto"],
+    ["{gmina}", "gmina"],
+  ].reduce((acc, [from, to]) => rep(acc, from, to), text || "");
   return out;
 }

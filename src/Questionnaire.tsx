@@ -74,9 +74,6 @@ const Questionnaire: React.FC = () => {
   // Z bazy
   const [slug, setSlug] = useState<string | null>(null);
   const [fullGen, setFullGen] = useState<string | null>(null);
-  const [fullAcc, setFullAcc] = useState<string | null>(null);
-  const [fullIns, setFullIns] = useState<string | null>(null);
-  const [fullLoc, setFullLoc] = useState<string | null>(null);
   const [gender, setGender] = useState<"M" | "F">("M");
 
   useEffect(() => {
@@ -113,9 +110,6 @@ const Questionnaire: React.FC = () => {
       const c = buildDisplayFromStudy(study);
       setGender(c.gender);
       setFullGen(c.fullGen);
-      setFullAcc(c.fullAcc);
-      setFullIns(c.fullIns);
-      setFullLoc(c.fullLoc);
     })();
   }, []);
 

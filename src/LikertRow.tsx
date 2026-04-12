@@ -9,7 +9,6 @@ type LikertRowProps = {
   hovered: { row: number; col: number } | null;
   setHovered: (val: { row: number; col: number } | null) => void;
   missing?: boolean;
-  hoveredCol?: number;
 };
 
 const OPTIONS = [0, 1, 2, 3, 5];
@@ -21,8 +20,7 @@ const LikertRow: React.FC<LikertRowProps> = ({
   rowIdx,
   hovered,
   setHovered,
-  missing,
-  hoveredCol
+  missing
 }) => (
   <tr
     className={
@@ -31,7 +29,7 @@ const LikertRow: React.FC<LikertRowProps> = ({
       (missing ? " missing-row" : "")
     }
   >
-    <td className="question-cell">{item.text}</td>
+    <td className="question-cell">{item.textM}</td>
     {OPTIONS.map((num, colIdx) => (
       <td
         key={num}

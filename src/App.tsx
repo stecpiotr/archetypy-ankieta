@@ -154,7 +154,6 @@ const App: React.FC = () => {
   const [personNom, setPersonNom] = useState<string>("");   // Marcin Gołek
   const [personGen, setPersonGen] = useState<string>("");   // Marcina Gołka
   const [personAcc, setPersonAcc] = useState<string>("");   // Marcina Gołka / Annę Kowalską / Pawła Batyrę
-  const [personInstr, setPersonInstr] = useState<string>(""); // Marcinem Gołkiem / Anną Kowalską
   const [personLoc, setPersonLoc] = useState<string>("");   // Marcinie Gołku / Annie Kowalskiej
   const [surnameNom, setSurnameNom] = useState<string>(""); // Gołek / Kowalska
 
@@ -219,7 +218,6 @@ const App: React.FC = () => {
             setPersonNom(c.fullNom);
             setPersonGen(c.fullGen);
             setPersonAcc(c.fullAcc);
-            setPersonInstr(c.fullIns);
             setPersonLoc(c.fullLoc);
             setSurnameNom(c.surNom);
             setStudyStatus(resolvedStatus);

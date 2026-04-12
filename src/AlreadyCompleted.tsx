@@ -55,11 +55,11 @@ const AlreadyCompleted: React.FC<Props> = ({ channel = null, contact = "" }) => 
       >
         Jeśli pojawiły się jakiekolwiek wątpliwości lub masz pytania, proszę o kontakt:
         <br />
-        <b>Piotr Stec, Badania.pro</b>
+        <b>Piotr Stec, Badania.pro®</b>
         <br />
         e-mail: <a href="mailto:piotr.stec@badania.pro">piotr.stec@badania.pro</a>
         <br />
-        tel.: <a href="tel: 500121141">500-121-141</a>
+        tel.: <a href="tel:500121141">500-121-141</a>
       </p>
     </main>
   );
