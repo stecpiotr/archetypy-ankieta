@@ -144,6 +144,109 @@ function statusBlockMessage(status: StudyLifecycleStatus): { title: string; text
   return null;
 }
 
+type PersonalSurveySettings = {
+  displayMode: "matrix" | "single";
+  showProgress: boolean;
+  allowBack: boolean;
+  randomizeQuestions: boolean;
+  autoStartEnabled: boolean;
+  autoStartAt: string | null;
+  autoEndEnabled: boolean;
+  autoEndAt: string | null;
+};
+
+type JstSurveySettings = {
+  showProgress: boolean;
+  allowBack: boolean;
+  autoStartEnabled: boolean;
+  autoStartAt: string | null;
+  autoEndEnabled: boolean;
+  autoEndAt: string | null;
+};
+
+const DEFAULT_PERSONAL_SETTINGS: PersonalSurveySettings = {
+  displayMode: "matrix",
+  showProgress: true,
+  allowBack: true,
+  randomizeQuestions: false,
+  autoStartEnabled: false,
+  autoStartAt: null,
+  autoEndEnabled: false,
+  autoEndAt: null,
+};
+
+const DEFAULT_JST_SETTINGS: JstSurveySettings = {
+  showProgress: true,
+  allowBack: true,
+  autoStartEnabled: false,
+  autoStartAt: null,
+  autoEndEnabled: false,
+  autoEndAt: null,
+};
+
+function asBool(raw: unknown, fallback: boolean): boolean {
+  if (typeof raw === "boolean") return raw;
+  if (typeof raw === "number") return raw !== 0;
+  const txt = String(raw ?? "").trim().toLowerCase();
+  if (["1", "true", "t", "yes", "y", "on"].includes(txt)) return true;
+  if (["0", "false", "f", "no", "n", "off", ""].includes(txt)) return false;
+  return fallback;
+}
+
+function asIsoOrNull(raw: unknown): string | null {
+  const txt = String(raw ?? "").trim();
+  return txt ? txt : null;
+}
+
+function asDate(raw: string | null): Date | null {
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+}
+
+function applyScheduleStatus(
+  baseStatus: StudyLifecycleStatus,
+  schedule: { autoStartEnabled: boolean; autoStartAt: string | null; autoEndEnabled: boolean; autoEndAt: string | null },
+): StudyLifecycleStatus {
+  if (baseStatus === "closed" || baseStatus === "deleted") return baseStatus;
+  const now = new Date();
+  const endAt = asDate(schedule.autoEndAt);
+  if (schedule.autoEndEnabled && endAt && now >= endAt) {
+    return "suspended";
+  }
+  const startAt = asDate(schedule.autoStartAt);
+  if (schedule.autoStartEnabled && startAt && now < startAt) {
+    return "suspended";
+  }
+  return baseStatus;
+}
+
+function buildPersonalSurveySettings(study: any): PersonalSurveySettings {
+  const modeRaw = String(study?.survey_display_mode ?? "").trim().toLowerCase();
+  return {
+    displayMode: modeRaw === "single" ? "single" : "matrix",
+    showProgress: asBool(study?.survey_show_progress, true),
+    allowBack: asBool(study?.survey_allow_back, true),
+    randomizeQuestions: asBool(study?.survey_randomize_questions, false),
+    autoStartEnabled: asBool(study?.survey_auto_start_enabled, false),
+    autoStartAt: asIsoOrNull(study?.survey_auto_start_at),
+    autoEndEnabled: asBool(study?.survey_auto_end_enabled, false),
+    autoEndAt: asIsoOrNull(study?.survey_auto_end_at),
+  };
+}
+
+function buildJstSurveySettings(study: any): JstSurveySettings {
+  return {
+    showProgress: asBool(study?.survey_show_progress, true),
+    allowBack: asBool(study?.survey_allow_back, true),
+    autoStartEnabled: asBool(study?.survey_auto_start_enabled, false),
+    autoStartAt: asIsoOrNull(study?.survey_auto_start_at),
+    autoEndEnabled: asBool(study?.survey_auto_end_enabled, false),
+    autoEndAt: asIsoOrNull(study?.survey_auto_end_at),
+  };
+}
+
 const App: React.FC = () => {
   const [started, setStarted] = useState(false);
 
@@ -163,6 +266,8 @@ const App: React.FC = () => {
   const [alreadyDoneContact, setAlreadyDoneContact] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState<StudyLifecycleStatus>("active");
   const [statusBlock, setStatusBlock] = useState<{ title: string; text: string } | null>(null);
+  const [personalSettings, setPersonalSettings] = useState<PersonalSurveySettings>(DEFAULT_PERSONAL_SETTINGS);
+  const [jstSettings, setJstSettings] = useState<JstSurveySettings>(DEFAULT_JST_SETTINGS);
   const [checking, setChecking] = useState(true); // ⬅️ czekamy aż sprawdzimy token
 
   useEffect(() => {
@@ -207,10 +312,12 @@ const App: React.FC = () => {
         let resolvedKind: "personal" | "jst" | null = null;
         if (personalStudy) {
           const c = buildDisplayFromStudy(personalStudy);
-          const resolvedStatus = normalizeStudyLifecycleStatus(
+          const personalCfg = buildPersonalSurveySettings(personalStudy as any);
+          const baseStatus = normalizeStudyLifecycleStatus(
             (personalStudy as any).study_status,
             (personalStudy as any).is_active,
           );
+          const resolvedStatus = applyScheduleStatus(baseStatus, personalCfg);
           resolvedKind = "personal";
           if (!cancelled) {
             setSurveyKind("personal");
@@ -220,18 +327,22 @@ const App: React.FC = () => {
             setPersonAcc(c.fullAcc);
             setPersonLoc(c.fullLoc);
             setSurnameNom(c.surNom);
+            setPersonalSettings(personalCfg);
             setStudyStatus(resolvedStatus);
             setStatusBlock(statusBlockMessage(resolvedStatus));
           }
         } else if (jstCandidate) {
-          const resolvedStatus = normalizeStudyLifecycleStatus(
+          const jstCfg = buildJstSurveySettings(jstCandidate as any);
+          const baseStatus = normalizeStudyLifecycleStatus(
             (jstCandidate as any).study_status,
             (jstCandidate as any).is_active,
           );
+          const resolvedStatus = applyScheduleStatus(baseStatus, jstCfg);
           resolvedKind = "jst";
           if (!cancelled) {
             setSurveyKind("jst");
             setJstStudy(jstCandidate);
+            setJstSettings(jstCfg);
             setStudyStatus(resolvedStatus);
             setStatusBlock(statusBlockMessage(resolvedStatus));
           }
@@ -295,7 +406,7 @@ const App: React.FC = () => {
   if (!checking && !alreadyDone && surveyKind === "jst" && jstStudy && studyStatus === "active" && !statusBlock) {
     return (
       <AppErrorBoundary>
-        <JstSurvey study={jstStudy} token={token} />
+        <JstSurvey study={jstStudy} token={token} navigation={jstSettings} />
       </AppErrorBoundary>
     );
   }
@@ -491,7 +602,11 @@ return (
         )}
       </>
     ) : (
-      <Questionnaire />
+      <Questionnaire
+        settings={personalSettings}
+        initialGender={gender}
+        initialFullGen={personGen}
+      />
     )}
   </div>
 );

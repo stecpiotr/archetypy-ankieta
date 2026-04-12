@@ -182,10 +182,16 @@ function shuffle<T>(arr: T[]): T[] {
 type Props = {
   study: JstStudyRow;
   token: string | null;
+  navigation?: {
+    showProgress?: boolean;
+    allowBack?: boolean;
+  };
 };
 
-const JstSurvey: React.FC<Props> = ({ study, token }) => {
+const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   const ctx = useMemo(() => buildJstTextContext(study), [study]);
+  const showProgress = navigation?.showProgress !== false;
+  const allowBack = navigation?.allowBack !== false;
 
   const [step, setStep] = useState<Step>("intro");
   const [orientation, setOrientation] = useState(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
@@ -399,6 +405,56 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     })
     .filter(Boolean) as { id: string; archetype: string; text: string }[];
 
+  const totalProgressSteps = 6 + D_ITEMS.length;
+  const currentProgressStep = (() => {
+    if (step === "screening") return 1;
+    if (step === "metryka") return 2;
+    if (step === "A") return 3;
+    if (step === "B1") return 4;
+    if (step === "B2") return 5;
+    if (step === "D") return 6 + dIndex;
+    if (step === "D13") return 6 + D_ITEMS.length;
+    return 0;
+  })();
+  const progressPct = Math.max(0, Math.min(100, (currentProgressStep / Math.max(1, totalProgressSteps)) * 100));
+
+  const goBack = () => {
+    clearErrors();
+    if (step === "screening") {
+      goToStep("intro");
+      return;
+    }
+    if (step === "metryka") {
+      goToStep("screening");
+      return;
+    }
+    if (step === "A") {
+      goToStep("metryka");
+      return;
+    }
+    if (step === "B1") {
+      goToStep("A");
+      return;
+    }
+    if (step === "B2") {
+      goToStep("B1");
+      return;
+    }
+    if (step === "D") {
+      if (dIndex > 0) {
+        setDIndex((x) => Math.max(0, x - 1));
+        setTimeout(() => forceScrollTop(), 0);
+      } else {
+        goToStep("B2");
+      }
+      return;
+    }
+    if (step === "D13") {
+      setDIndex(Math.max(0, dOrder.length - 1));
+      goToStep("D");
+    }
+  };
+
   const submitAll = async () => {
     if (!selectedD13Id) {
       setErrorMsg("Proszę wskazać jedną odpowiedź.");
@@ -530,6 +586,29 @@ const JstSurvey: React.FC<Props> = ({ study, token }) => {
     <main className="jst-root">
       <div className="jst-wrap">
         {errorMsg && <div className="jst-alert jst-alert-sticky">{errorMsg}</div>}
+        {step !== "intro" && (showProgress || allowBack) && (
+          <div className="jst-nav-top">
+            {showProgress && (
+              <div className="jst-nav-progress-track">
+                <div className="jst-nav-progress-fill" style={{ width: `${progressPct}%` }} />
+              </div>
+            )}
+            <div className="jst-nav-row">
+              {allowBack ? (
+                <button type="button" className="jst-nav-back" onClick={goBack}>
+                  ← Wstecz
+                </button>
+              ) : (
+                <span />
+              )}
+              {showProgress ? (
+                <span className="jst-nav-counter">{currentProgressStep}/{totalProgressSteps}</span>
+              ) : (
+                <span />
+              )}
+            </div>
+          </div>
+        )}
 
         {step === "intro" && (
           <section className="jst-card jst-intro-card">

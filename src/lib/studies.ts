@@ -11,6 +11,16 @@ export interface StudyRow {
   study_status?: "active" | "suspended" | "closed" | "deleted" | string | null;
   status_changed_at?: string | null;
   started_at?: string | null;
+  survey_display_mode?: "matrix" | "single" | string | null;
+  survey_show_progress?: boolean | null;
+  survey_allow_back?: boolean | null;
+  survey_randomize_questions?: boolean | null;
+  survey_auto_start_enabled?: boolean | null;
+  survey_auto_start_at?: string | null;
+  survey_auto_start_applied_at?: string | null;
+  survey_auto_end_enabled?: boolean | null;
+  survey_auto_end_at?: string | null;
+  survey_auto_end_applied_at?: string | null;
 
   first_name: string;   // historyczne
   last_name: string;    // historyczne
@@ -76,7 +86,22 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
     "first_name_loc", "last_name_loc",
     "first_name_voc", "last_name_voc",
   ];
-  const extendedFields = ["study_status", "status_changed_at", "started_at", ...baseFields];
+  const extendedFields = [
+    "study_status",
+    "status_changed_at",
+    "started_at",
+    "survey_display_mode",
+    "survey_show_progress",
+    "survey_allow_back",
+    "survey_randomize_questions",
+    "survey_auto_start_enabled",
+    "survey_auto_start_at",
+    "survey_auto_start_applied_at",
+    "survey_auto_end_enabled",
+    "survey_auto_end_at",
+    "survey_auto_end_applied_at",
+    ...baseFields,
+  ];
 
   let data: unknown = null;
   let error: any = null;
@@ -93,7 +118,13 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
     const missingStatusCols =
       msg.includes("study_status")
       || msg.includes("status_changed_at")
-      || msg.includes("started_at");
+      || msg.includes("started_at")
+      || msg.includes("survey_display_mode")
+      || msg.includes("survey_show_progress")
+      || msg.includes("survey_allow_back")
+      || msg.includes("survey_randomize_questions")
+      || msg.includes("survey_auto_start")
+      || msg.includes("survey_auto_end");
     if (missingStatusCols) {
       ({ data, error } = await supabase
         .from("studies")

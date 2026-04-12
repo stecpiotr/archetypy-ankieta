@@ -23,6 +23,16 @@ export interface JstStudyRow {
   study_status?: "active" | "suspended" | "closed" | "deleted" | string | null;
   status_changed_at?: string | null;
   started_at?: string | null;
+  survey_display_mode?: "matrix" | "single" | string | null;
+  survey_show_progress?: boolean | null;
+  survey_allow_back?: boolean | null;
+  survey_randomize_questions?: boolean | null;
+  survey_auto_start_enabled?: boolean | null;
+  survey_auto_start_at?: string | null;
+  survey_auto_start_applied_at?: string | null;
+  survey_auto_end_enabled?: boolean | null;
+  survey_auto_end_at?: string | null;
+  survey_auto_end_applied_at?: string | null;
 }
 
 export interface JstTextCtx {

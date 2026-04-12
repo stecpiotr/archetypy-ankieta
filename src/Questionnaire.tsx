@@ -1,10 +1,8 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./LikertTable.css";
+import "./SingleQuestionnaire.css";
 import Thanks from "./Thanks";
 import { questions } from "./questions";
-
-// ⬇ zachowujemy import (nie przeszkadza), ale RPC robimy przez fetch
-// import { supabase } from "./supabaseClient";
 import {
   getSlugFromUrl,
   loadStudyBySlug,
@@ -12,13 +10,22 @@ import {
   getTokenFromUrl,
 } from "./lib/studies";
 
-// pod importami
 const SCALE_VALUES = [0, 1, 2, 3, 5] as const;
-type Answer = (typeof SCALE_VALUES)[number]; // 0 | 1 | 2 | 3 | 5
+type Answer = (typeof SCALE_VALUES)[number];
 
-// ──────────────────────────────────────────────
-// Pomocnicze: wywołanie RPC przez REST (pewniak)
-// ──────────────────────────────────────────────
+type QuestionnaireSettings = {
+  displayMode?: "matrix" | "single";
+  showProgress?: boolean;
+  allowBack?: boolean;
+  randomizeQuestions?: boolean;
+};
+
+type QuestionnaireProps = {
+  settings?: QuestionnaireSettings;
+  initialGender?: "M" | "F";
+  initialFullGen?: string | null;
+};
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
@@ -27,8 +34,8 @@ async function callRpc<T = any>(fn: string, body: Record<string, any>): Promise<
     const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
       method: "POST",
       headers: {
-        "apikey": supabaseAnonKey,
-        "Authorization": `Bearer ${supabaseAnonKey}`,
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -45,36 +52,57 @@ async function callRpc<T = any>(fn: string, body: Record<string, any>): Promise<
 }
 
 const scaleLabels = [
-  { label: "zdecydowanie nie", color: "#d32f2f" },
-  { label: "raczej nie",        color: "#f9a825" },
-  { label: "ani tak, ani nie",  color: "#388e3c" },
-  { label: "raczej tak",        color: "#4fc3f7" },
-  { label: "zdecydowanie tak",  color: "#1976d2" },
+  { label: "zdecydowanie nie", color: "#b91c1c", bg: "#fde8e8", border: "#f2a1a1" },
+  { label: "raczej nie", color: "#a16207", bg: "#fff7e6", border: "#f6c77a" },
+  { label: "ani tak, ani nie", color: "#166534", bg: "#eefdf1", border: "#98ddb0" },
+  { label: "raczej tak", color: "#0369a1", bg: "#ecf8ff", border: "#8bd5fb" },
+  { label: "zdecydowanie tak", color: "#1d4ed8", bg: "#eaf0ff", border: "#8faef5" },
 ];
 
-const Questionnaire: React.FC = () => {
-  const [responses, setResponses] = React.useState<(Answer | null)[]>(
-    () => Array(questions.length).fill(null)
-  );
+function shuffleIndices(arr: number[]): number[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 
+const Questionnaire: React.FC<QuestionnaireProps> = ({
+  settings,
+  initialGender = "M",
+  initialFullGen = null,
+}) => {
+  const displayMode = settings?.displayMode === "single" ? "single" : "matrix";
+  const showProgress = settings?.showProgress !== false;
+  const allowBack = settings?.allowBack !== false;
+  const randomizeQuestions = settings?.randomizeQuestions === true;
+
+  const [responses, setResponses] = useState<(Answer | null)[]>(() => Array(questions.length).fill(null));
   const [hovered, setHovered] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
   const [apiError, setApiError] = useState("");
   const [missingRows, setMissingRows] = useState<number[]>([]);
+  const [singleIndex, setSingleIndex] = useState(0);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const [orientation, setOrientation] = useState(
-    window.innerWidth > window.innerHeight ? "landscape" : "portrait"
+    window.innerWidth > window.innerHeight ? "landscape" : "portrait",
   );
 
-  // Token z URL + flaga żeby "started" wysłać tylko raz
   const tokenRef = useRef<string | null>(null);
   const startedMarkedRef = useRef<boolean>(false);
 
-  // Z bazy
   const [slug, setSlug] = useState<string | null>(null);
-  const [fullGen, setFullGen] = useState<string | null>(null);
-  const [gender, setGender] = useState<"M" | "F">("M");
+  const [fullGen, setFullGen] = useState<string | null>(initialFullGen);
+  const [gender, setGender] = useState<"M" | "F">(initialGender);
+
+  const questionOrderRef = useRef<number[] | null>(null);
+  if (!questionOrderRef.current) {
+    const baseOrder = questions.map((_, idx) => idx);
+    questionOrderRef.current = randomizeQuestions ? shuffleIndices(baseOrder) : baseOrder;
+  }
+  const questionOrder = questionOrderRef.current;
 
   useEffect(() => {
     const onResize = () =>
@@ -83,15 +111,13 @@ const Questionnaire: React.FC = () => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Wczytaj slug + study + odnotuj kliknięcie jeśli jest ?t=...
   useEffect(() => {
     (async () => {
       const t = getTokenFromUrl();
       tokenRef.current = t || null;
 
       if (t) {
-        // SMS (jak było) + e-mail (nowe)
-        callRpc("mark_sms_clicked",   { p_token: t });
+        callRpc("mark_sms_clicked", { p_token: t });
         callRpc("mark_email_clicked", { p_token: t });
       }
 
@@ -102,7 +128,7 @@ const Questionnaire: React.FC = () => {
       const study = await loadStudyBySlug(s);
       if (!study) {
         setApiError(
-          "Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem."
+          "Brak identyfikatora badania w linku lub badanie nie istnieje. Skontaktuj się z administratorem.",
         );
         return;
       }
@@ -114,13 +140,14 @@ const Questionnaire: React.FC = () => {
   }, []);
 
   const isMobile = window.innerWidth < 800;
-  if (!submitted && isMobile && orientation === "portrait") {
+  if (!submitted && displayMode === "matrix" && isMobile && orientation === "portrait") {
     return (
       <div className="orientation-warning">
         <p>
           <b>Prosimy, obróć telefon poziomo</b> <br />
           <span style={{ fontSize: "1.08em" }}>
-            Ta tabela działa wygodnie tylko w układzie poziomym.<br />
+            Ta tabela działa wygodnie tylko w układzie poziomym.
+            <br />
             <span role="img" aria-label="rotate">🔄</span>
           </span>
         </p>
@@ -128,97 +155,228 @@ const Questionnaire: React.FC = () => {
     );
   }
 
-  // Pierwsza odpowiedź = „rozpoczęto” (wysyłamy tylko raz)
   const markStartedOnce = () => {
     if (startedMarkedRef.current) return;
     startedMarkedRef.current = true;
     const t = tokenRef.current;
     if (t) {
-      callRpc("mark_sms_started",   { p_token: t });
+      callRpc("mark_sms_started", { p_token: t });
       callRpc("mark_email_started", { p_token: t });
     }
   };
 
-   const handleResponse = (row: number, value: Answer) => {
-     markStartedOnce();
-     const next = [...responses];
-     next[row] = value;
-     setResponses(next);
-     setError(false);
-     setMissingRows([]);
-     setApiError("");
-   };
-
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  const missing = responses.map((v, i) => (v === null ? i : -1)).filter(i => i !== -1);
-  if (missing.length) {
-    setError(true);
-    setMissingRows(missing);
+  const handleResponse = (questionIdx: number, value: Answer) => {
+    markStartedOnce();
+    const next = [...responses];
+    next[questionIdx] = value;
+    setResponses(next);
+    setError(false);
+    setMissingRows([]);
     setApiError("");
-    setTimeout(() => {
-      const firstIdx = missing[0];
-      const stickyMsg = document.querySelector(".sticky-error-msg") as HTMLElement | null;
-      const offset = stickyMsg ? stickyMsg.offsetHeight + 10 : 80;
-      const el = rowRefs.current[firstIdx];
-      if (el) {
-        const top = el.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({ top: top - offset, behavior: "smooth" });
-      }
-    }, 60);
-    return;
-  }
+  };
 
-  if (!slug) {
-    setApiError("Brak identyfikatora badania w linku (użyj adresu /slug, np. /lublin).");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
+  const collectMissing = (): number[] =>
+    responses.map((v, i) => (v === null ? i : -1)).filter((idx) => idx !== -1);
 
-  setError(false);
-  setMissingRows([]);
-  setApiError("");
-
-  try {
-    // 0/1/2/3/5 – żadnych nulli
-    const payloadAnswers = responses.map(v => v as number);
-    console.log("OUT answers:", payloadAnswers); // podgląd w konsoli
-
-    const { error } = await callRpc("add_response_by_slug", {
-      p_slug: slug,
-      p_answers: payloadAnswers,            // ⬅⬅⬅ TU JEST ZMIANA
-      p_scores: null,
-      p_raw_total: null,
-      p_respondent_code: null,
-    });
-
-    if (error) {
-      console.error("RPC error:", error);
-      setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
+  const submitResponses = async () => {
+    if (!slug) {
+      setApiError("Brak identyfikatora badania w linku (użyj adresu /slug, np. /lublin).");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    const t = tokenRef.current;
-    if (t) {
-      callRpc("mark_sms_completed",   { p_token: t });
-      callRpc("mark_email_completed", { p_token: t });
-    }
+    setError(false);
+    setMissingRows([]);
+    setApiError("");
 
-    setSubmitted(true);
-  } catch (err) {
-    console.error(err);
-    setApiError("Nieoczekiwany błąd sieci podczas zapisu.");
+    try {
+      const payloadAnswers = responses.map((v) => v as number);
+      const { error: rpcError } = await callRpc("add_response_by_slug", {
+        p_slug: slug,
+        p_answers: payloadAnswers,
+        p_scores: null,
+        p_raw_total: null,
+        p_respondent_code: null,
+      });
+
+      if (rpcError) {
+        console.error("RPC error:", rpcError);
+        setApiError("Błąd zapisu do bazy ankiet (RPC). Spróbuj ponownie.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      const t = tokenRef.current;
+      if (t) {
+        callRpc("mark_sms_completed", { p_token: t });
+        callRpc("mark_email_completed", { p_token: t });
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      setApiError("Nieoczekiwany błąd sieci podczas zapisu.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleMatrixSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const missing = collectMissing();
+    if (missing.length) {
+      setError(true);
+      setMissingRows(missing);
+      setApiError("");
+      setTimeout(() => {
+        const firstIdx = missing[0];
+        const stickyMsg = document.querySelector(".sticky-error-msg") as HTMLElement | null;
+        const offset = stickyMsg ? stickyMsg.offsetHeight + 10 : 80;
+        const el = rowRefs.current[firstIdx];
+        if (el) {
+          const top = el.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({ top: top - offset, behavior: "smooth" });
+        }
+      }, 60);
+      return;
+    }
+    await submitResponses();
+  };
+
+  const totalQuestions = questions.length;
+  const currentOriginalIdx = questionOrder[Math.min(singleIndex, totalQuestions - 1)] ?? 0;
+  const currentItem = questions[currentOriginalIdx];
+  const currentQuestionText = gender === "F" ? currentItem.textF : currentItem.textM;
+  const selectedCurrent = responses[currentOriginalIdx];
+
+  const singleProgress = useMemo(
+    () => Math.max(0, Math.min(100, ((singleIndex + 1) / Math.max(1, totalQuestions)) * 100)),
+    [singleIndex, totalQuestions],
+  );
+
+  const handleSingleNext = async () => {
+    if (selectedCurrent === null) {
+      setError(true);
+      setMissingRows([currentOriginalIdx]);
+      setApiError("Aby przejść dalej, wybierz jedną odpowiedź.");
+      return;
+    }
+    setError(false);
+    setMissingRows([]);
+    setApiError("");
+    if (singleIndex < totalQuestions - 1) {
+      setSingleIndex((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    await submitResponses();
+  };
+
+  const handleSingleBack = () => {
+    if (singleIndex <= 0) return;
+    setError(false);
+    setMissingRows([]);
+    setApiError("");
+    setSingleIndex((prev) => Math.max(0, prev - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-};
+  };
 
   if (submitted) return <Thanks />;
 
   const title = fullGen
     ? `Badanie wizerunku i postrzegania ${fullGen}`
     : "Badanie wizerunku i postrzegania";
+  const politykWord = gender === "F" ? "polityczki" : "polityka";
+
+  if (displayMode === "single") {
+    return (
+      <div className="single-survey-root">
+        {(error || apiError) && (
+          <div className="single-error-banner">
+            {error && <div>Wybierz odpowiedź, aby przejść dalej.</div>}
+            {apiError && <div>{apiError}</div>}
+          </div>
+        )}
+
+        <div className="single-nav-wrap">
+          {showProgress && (
+            <div className="single-progress-track">
+              <div className="single-progress-fill" style={{ width: `${singleProgress}%` }} />
+            </div>
+          )}
+          <div className="single-nav-row">
+            {allowBack ? (
+              <button
+                type="button"
+                className="single-back-btn"
+                onClick={handleSingleBack}
+                disabled={singleIndex === 0}
+              >
+                ← Wstecz
+              </button>
+            ) : (
+              <span />
+            )}
+            {showProgress ? (
+              <span className="single-counter">{singleIndex + 1}/{totalQuestions}</span>
+            ) : (
+              <span />
+            )}
+          </div>
+        </div>
+
+        <main className="single-main">
+          <section className="single-question-zone">
+            <p className="single-lead">
+              Czy zgadzasz się z poniższymi stwierdzeniami na temat <b>{fullGen ?? ""}</b>?
+            </p>
+            <p className="single-sublead">
+              Pamiętaj: Twoje odpowiedzi dotyczą <u>{fullGen ?? ""} jako osoby publicznej ({politykWord})</u>.
+            </p>
+            <h2 className="single-question-text">{currentQuestionText}</h2>
+          </section>
+
+          <section className="single-scale-zone">
+            <div className="single-scale-labels">
+              <span>Zdecydowanie się nie zgadzam</span>
+              <span>Zdecydowanie się zgadzam</span>
+            </div>
+            <div className="single-scale-grid" role="radiogroup" aria-label="Skala odpowiedzi">
+              {scaleLabels.map((opt, idx) => {
+                const value = SCALE_VALUES[idx];
+                const selected = selectedCurrent === value;
+                return (
+                  <button
+                    key={`${currentItem.id}-${value}`}
+                    type="button"
+                    className={`single-scale-btn ${selected ? "selected" : ""}`}
+                    style={{
+                      color: opt.color,
+                      background: selected ? opt.bg : "#f8fafc",
+                      borderColor: selected ? opt.border : "#d7dee8",
+                    }}
+                    onClick={() => handleResponse(currentOriginalIdx, value)}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        </main>
+
+        <div className="single-footer-actions">
+          <button
+            type="button"
+            className="single-next-btn"
+            onClick={() => void handleSingleNext()}
+            disabled={selectedCurrent === null}
+          >
+            {singleIndex >= totalQuestions - 1 ? "Wyślij" : "Dalej"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const leadBlock = (
     <>
@@ -231,14 +389,13 @@ const handleSubmit = async (e: React.FormEvent) => {
           marginTop: "40px",
         }}
       >
-        {/* biernik */}
         Czy zgadzasz się z poniższymi stwierdzeniami na temat <b>{fullGen ?? ""}</b>?
       </div>
 
       <div style={{ margin: "20px 0 15px 0", fontSize: "1.20rem" }}>
         <span style={{ color: "#c62828", fontWeight: 700 }}>Pamiętaj! </span>
         <span style={{ color: "#253347", fontWeight: 400 }}>
-          Twoje odpowiedzi dotyczą  <u>{fullGen ?? ""} jako osoby publicznej (polityka)</u>{" "}
+          Twoje odpowiedzi dotyczą <u>{fullGen ?? ""} jako osoby publicznej ({politykWord})</u>{" "}
         </span>
       </div>
     </>
@@ -307,7 +464,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         />
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => void handleMatrixSubmit(e)}>
         <table className="likert-table">
           <thead>
             <tr>
@@ -315,7 +472,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               {scaleLabels.map((col, colIdx) => (
                 <th
                   key={colIdx}
-                  className={"th-scale" + (hovered.col === colIdx ? " hovered" : "")}
+                  className={`th-scale${hovered.col === colIdx ? " hovered" : ""}`}
                   style={{ color: col.color }}
                   scope="col"
                 >
@@ -325,19 +482,22 @@ const handleSubmit = async (e: React.FormEvent) => {
             </tr>
           </thead>
           <tbody>
-            {questions.map((item, rowIdx) => {
+            {questionOrder.map((questionIdx) => {
+              const item = questions[questionIdx];
               const questionText = gender === "F" ? item.textF : item.textM;
-              const missing = missingRows.includes(rowIdx);
+              const missing = missingRows.includes(questionIdx);
               return (
                 <tr
                   key={item.id}
-                  ref={(el) => (rowRefs.current[rowIdx] = el)}
+                  ref={(el) => {
+                    rowRefs.current[questionIdx] = el;
+                  }}
                   className={
                     missing
                       ? "missing-row"
-                      : hovered.row === rowIdx
-                      ? "hovered-row"
-                      : ""
+                      : hovered.row === questionIdx
+                        ? "hovered-row"
+                        : ""
                   }
                 >
                   <td
@@ -357,18 +517,18 @@ const handleSubmit = async (e: React.FormEvent) => {
                         "option-cell" +
                         (missing ? " missing-cell" : "") +
                         (hovered.col === colIdx ? " hovered-col" : "") +
-                        (hovered.row === rowIdx ? " hovered-row" : "")
+                        (hovered.row === questionIdx ? " hovered-row" : "")
                       }
-                      onMouseEnter={() => setHovered({ row: rowIdx, col: colIdx })}
+                      onMouseEnter={() => setHovered({ row: questionIdx, col: colIdx })}
                       onMouseLeave={() => setHovered({ row: null, col: null })}
                     >
                       <label className="option-label">
                         <input
                           type="radio"
-                          name={`row-${rowIdx}`}
+                          name={`row-${questionIdx}`}
                           value={SCALE_VALUES[colIdx]}
-                          checked={responses[rowIdx] === SCALE_VALUES[colIdx]}
-                          onChange={() => handleResponse(rowIdx, SCALE_VALUES[colIdx])}
+                          checked={responses[questionIdx] === SCALE_VALUES[colIdx]}
+                          onChange={() => handleResponse(questionIdx, SCALE_VALUES[colIdx])}
                         />
                       </label>
                     </td>
@@ -409,5 +569,3 @@ const handleSubmit = async (e: React.FormEvent) => {
 };
 
 export default Questionnaire;
-
-
