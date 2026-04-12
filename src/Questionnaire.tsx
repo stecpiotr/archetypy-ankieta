@@ -52,11 +52,11 @@ async function callRpc<T = any>(fn: string, body: Record<string, any>): Promise<
 }
 
 const scaleLabels = [
-  { label: "zdecydowanie nie", color: "#b91c1c", bg: "#fde8e8", border: "#f2a1a1" },
-  { label: "raczej nie", color: "#a16207", bg: "#fff7e6", border: "#f6c77a" },
-  { label: "ani tak, ani nie", color: "#166534", bg: "#eefdf1", border: "#98ddb0" },
-  { label: "raczej tak", color: "#0369a1", bg: "#ecf8ff", border: "#8bd5fb" },
-  { label: "zdecydowanie tak", color: "#1d4ed8", bg: "#eaf0ff", border: "#8faef5" },
+  { label: "zdecydowanie nie", color: "#d62828", bg: "#fdeaea", border: "#f2b8b8" },
+  { label: "raczej nie", color: "#d48806", bg: "#fff5e6", border: "#f0c98b" },
+  { label: "ani tak, ani nie", color: "#1f7a34", bg: "#eef8ef", border: "#a9d7b1" },
+  { label: "raczej tak", color: "#24aee4", bg: "#e9f7fd", border: "#9dd9f1" },
+  { label: "zdecydowanie tak", color: "#1468d4", bg: "#eaf1fd", border: "#99b5ee" },
 ];
 
 function shuffleIndices(arr: number[]): number[] {
@@ -297,82 +297,80 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
           </div>
         )}
 
-        <div className="single-nav-wrap">
-          {showProgress && (
-            <div className="single-progress-track">
-              <div className="single-progress-fill" style={{ width: `${singleProgress}%` }} />
+        <div className="single-shell">
+          <div className="single-nav-wrap">
+            {showProgress && (
+              <div className="single-progress-track">
+                <div className="single-progress-fill" style={{ width: `${singleProgress}%` }} />
+              </div>
+            )}
+            <div className="single-nav-row">
+              {allowBack ? (
+                <button
+                  type="button"
+                  className="single-back-btn"
+                  onClick={handleSingleBack}
+                  disabled={singleIndex === 0}
+                >
+                  ← Wstecz
+                </button>
+              ) : (
+                <span />
+              )}
+              {showProgress ? (
+                <span className="single-counter">{singleIndex + 1}/{totalQuestions}</span>
+              ) : (
+                <span />
+              )}
             </div>
-          )}
-          <div className="single-nav-row">
-            {allowBack ? (
+          </div>
+
+          <main className="single-main">
+            <section className="single-question-zone">
+              <p className="single-sublead">
+                Pamiętaj: Twoje odpowiedzi dotyczą {fullGen ?? ""} jako osoby publicznej ({politykWord}).
+              </p>
+              <p className="single-lead">
+                Czy zgadzasz się z poniższymi stwierdzeniami na temat {fullGen ?? ""}?
+              </p>
+              <h2 className="single-question-text">{currentQuestionText}</h2>
+            </section>
+
+            <section className="single-scale-zone">
+              <div className="single-scale-grid" role="radiogroup" aria-label="Skala odpowiedzi">
+                {scaleLabels.map((opt, idx) => {
+                  const value = SCALE_VALUES[idx];
+                  const selected = selectedCurrent === value;
+                  return (
+                    <button
+                      key={`${currentItem.id}-${value}`}
+                      type="button"
+                      className={`single-scale-btn ${selected ? "selected" : ""}`}
+                      style={{
+                        color: opt.color,
+                        background: selected ? opt.bg : "#f8fafc",
+                        borderColor: selected ? opt.border : "#d7dee8",
+                      }}
+                      onClick={() => handleResponse(currentOriginalIdx, value)}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <div className="single-footer-actions">
               <button
                 type="button"
-                className="single-back-btn"
-                onClick={handleSingleBack}
-                disabled={singleIndex === 0}
+                className="single-next-btn"
+                onClick={() => void handleSingleNext()}
+                disabled={selectedCurrent === null}
               >
-                ← Wstecz
+                {singleIndex >= totalQuestions - 1 ? "Wyślij" : "Dalej"}
               </button>
-            ) : (
-              <span />
-            )}
-            {showProgress ? (
-              <span className="single-counter">{singleIndex + 1}/{totalQuestions}</span>
-            ) : (
-              <span />
-            )}
-          </div>
-        </div>
-
-        <main className="single-main">
-          <section className="single-question-zone">
-            <p className="single-lead">
-              Czy zgadzasz się z poniższymi stwierdzeniami na temat <b>{fullGen ?? ""}</b>?
-            </p>
-            <p className="single-sublead">
-              Pamiętaj: Twoje odpowiedzi dotyczą <u>{fullGen ?? ""} jako osoby publicznej ({politykWord})</u>.
-            </p>
-            <h2 className="single-question-text">{currentQuestionText}</h2>
-          </section>
-
-          <section className="single-scale-zone">
-            <div className="single-scale-labels">
-              <span>Zdecydowanie się nie zgadzam</span>
-              <span>Zdecydowanie się zgadzam</span>
             </div>
-            <div className="single-scale-grid" role="radiogroup" aria-label="Skala odpowiedzi">
-              {scaleLabels.map((opt, idx) => {
-                const value = SCALE_VALUES[idx];
-                const selected = selectedCurrent === value;
-                return (
-                  <button
-                    key={`${currentItem.id}-${value}`}
-                    type="button"
-                    className={`single-scale-btn ${selected ? "selected" : ""}`}
-                    style={{
-                      color: opt.color,
-                      background: selected ? opt.bg : "#f8fafc",
-                      borderColor: selected ? opt.border : "#d7dee8",
-                    }}
-                    onClick={() => handleResponse(currentOriginalIdx, value)}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        </main>
-
-        <div className="single-footer-actions">
-          <button
-            type="button"
-            className="single-next-btn"
-            onClick={() => void handleSingleNext()}
-            disabled={selectedCurrent === null}
-          >
-            {singleIndex >= totalQuestions - 1 ? "Wyślij" : "Dalej"}
-          </button>
+          </main>
         </div>
       </div>
     );

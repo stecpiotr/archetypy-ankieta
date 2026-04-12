@@ -4,6 +4,12 @@
   background: #f1f3f6;
   color: #121826;
   font-family: "Segoe UI", "Roboto", Arial, sans-serif;
+}
+
+.single-shell {
+  width: min(980px, calc(100% - 24px));
+  min-height: 100vh;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
 }
@@ -22,7 +28,7 @@
 
 .single-nav-wrap {
   width: 100%;
-  padding: 10px 14px 0 14px;
+  padding: 10px 0 0 0;
   box-sizing: border-box;
 }
 
@@ -48,12 +54,12 @@
 }
 
 .single-back-btn {
-  border: 0;
+  border: 1px solid #d5dde6;
   border-radius: 10px;
-  background: #e5e8ee;
-  color: #111827;
-  font-size: 1.02rem;
-  font-weight: 800;
+  background: #edf1f5;
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 700;
   padding: 8px 14px;
   cursor: pointer;
 }
@@ -64,7 +70,7 @@
 }
 
 .single-counter {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   color: #8b9097;
   font-weight: 600;
 }
@@ -73,51 +79,49 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 0 14px;
+  justify-content: flex-start;
+  padding: 0;
   box-sizing: border-box;
 }
 
 .single-question-zone {
-  margin-top: 15vh;
+  margin-top: clamp(46px, 14vh, 148px);
   text-align: center;
+  padding: 0 12px;
 }
 
 .single-lead {
-  margin: 0;
-  font-size: 1.5rem;
+  margin: 0 auto;
+  max-width: 780px;
+  font-size: clamp(1.32rem, 2.4vw, 1.92rem);
   color: #1f2a37;
-  line-height: 1.28;
-  font-weight: 550;
+  line-height: 1.33;
+  font-weight: 700;
 }
 
 .single-sublead {
-  margin: 16px 0 0 0;
-  font-size: 1.13rem;
-  line-height: 1.4;
-  color: #223042;
+  margin: 0 auto 14px auto;
+  max-width: 780px;
+  font-size: clamp(0.96rem, 1.7vw, 1.05rem);
+  line-height: 1.35;
+  color: #7a8796;
+  font-weight: 500;
 }
 
 .single-question-text {
   margin: 24px auto 0 auto;
-  max-width: 980px;
-  font-size: clamp(2rem, 4.8vw, 3.2rem);
-  line-height: 1.2;
+  max-width: 780px;
+  font-size: clamp(2rem, 4.9vw, 3.45rem);
+  line-height: 1.12;
   color: #0f172a;
   font-weight: 800;
 }
 
 .single-scale-zone {
-  margin-top: 12px;
-}
-
-.single-scale-labels {
-  display: flex;
-  justify-content: space-between;
-  color: #757d88;
-  font-size: 1rem;
-  margin-bottom: 8px;
-  padding: 0 2px;
+  width: 100%;
+  max-width: 980px;
+  margin: 56px auto 0 auto;
+  padding: 0 0 8px 0;
 }
 
 .single-scale-grid {
@@ -130,11 +134,11 @@
   border: 1.5px solid #d7dee8;
   border-radius: 12px;
   background: #f8fafc;
-  min-height: 72px;
+  min-height: 58px;
   padding: 10px 6px;
   text-align: center;
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: 0.97rem;
   line-height: 1.18;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
@@ -153,62 +157,82 @@
 .single-footer-actions {
   display: flex;
   justify-content: flex-end;
-  padding: 20px 14px 18px 14px;
+  padding: 14px 0 22px 0;
 }
 
 .single-next-btn {
-  border: 0;
-  border-radius: 12px;
-  background: #0ca495;
-  color: #ffffff;
-  font-size: 1.3rem;
-  font-weight: 800;
-  padding: 11px 26px;
-  min-width: 168px;
+  border: 1px solid #d0d8e1;
+  border-radius: 10px;
+  background: #e8edf2;
+  color: #253447;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 9px 22px;
+  min-width: 132px;
   cursor: pointer;
-  box-shadow: 0 10px 18px rgba(10, 130, 117, 0.26);
+  box-shadow: none;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.single-next-btn:hover:enabled {
+  background: #dde5ee;
+  border-color: #b9c6d4;
 }
 
 .single-next-btn:disabled {
-  background: #99b7b2;
+  background: #edf1f5;
+  color: #9aa5b1;
+  border-color: #dde3ea;
   box-shadow: none;
   cursor: default;
 }
 
 @media (max-width: 900px) {
+  .single-shell {
+    width: calc(100% - 16px);
+  }
+
   .single-question-zone {
-    margin-top: 11vh;
+    margin-top: clamp(34px, 11vh, 88px);
   }
 
   .single-lead {
-    font-size: 1.26rem;
+    font-size: 1.14rem;
+    max-width: 520px;
   }
 
   .single-sublead {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    max-width: 520px;
   }
 
   .single-question-text {
-    font-size: clamp(1.55rem, 7vw, 2.15rem);
+    max-width: 560px;
+    font-size: clamp(1.7rem, 7vw, 2.35rem);
+    line-height: 1.18;
   }
 
-  .single-scale-grid {
-    gap: 6px;
+  .single-scale-zone {
+    margin-top: 38px;
   }
 
   .single-scale-btn {
-    min-height: 62px;
-    font-size: 0.9rem;
+    min-height: 56px;
+    font-size: 0.86rem;
     border-radius: 10px;
     padding: 8px 4px;
   }
 
   .single-back-btn {
-    font-size: 1.05rem;
-    padding: 7px 12px;
+    font-size: 0.95rem;
+    padding: 7px 11px;
   }
 
   .single-counter {
-    font-size: 1.3rem;
+    font-size: 1.12rem;
+  }
+
+  .single-footer-actions {
+    padding-bottom: 14px;
   }
 }
