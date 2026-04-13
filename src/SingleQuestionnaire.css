@@ -370,18 +370,18 @@
   }
 
   .single-question-zone {
-    margin-top: clamp(8px, 3.8vh, 22px);
+    margin-top: clamp(16px, 6.2vh, 34px);
     padding: 0 8px;
   }
 
   .single-sublead {
-    font-size: 0.62rem;
-    margin-bottom: 2px;
+    font-size: 0.72rem;
+    margin-bottom: 4px;
     max-width: 94vw;
   }
 
   .single-lead {
-    font-size: 0.78rem;
+    font-size: 0.94rem;
     max-width: 94vw;
   }
 
@@ -422,7 +422,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 44px);
+    top: calc(env(safe-area-inset-top, 0px) + 34px);
     left: auto;
     transform: none;
     width: auto;
@@ -461,18 +461,18 @@
   }
 
   .single-question-zone {
-    margin-top: clamp(8px, 4vh, 20px);
+    margin-top: clamp(14px, 5vh, 26px);
     padding: 0 8px;
   }
 
   .single-sublead {
-    font-size: 0.62rem;
-    margin-bottom: 2px;
+    font-size: 0.7rem;
+    margin-bottom: 4px;
     max-width: 94vw;
   }
 
   .single-lead {
-    font-size: 0.82rem;
+    font-size: 0.94rem;
     max-width: 94vw;
   }
 
@@ -513,7 +513,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 44px);
+    top: calc(env(safe-area-inset-top, 0px) + 34px);
     left: auto;
     transform: none;
     width: auto;

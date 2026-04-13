@@ -64,6 +64,9 @@ const SHORT_WORD_GLUE_RE = /\b(na|do|po|od|za|by|we|ze|no|to|ta|tu|co|mu|dla)\s+
 const PHRASE_GLUE_PATTERNS = [
   /\bgdzie\s+inni\b/gi,
   /\bnawet\s+jeśli\b/gi,
+  /\bktórych\s+reprezentuje\b/gi,
+  /\bjest\s+podstawą\b/gi,
+  /\bktórych\s+głos\b/gi,
 ];
 
 function withHardSpaces(text: string): string {
@@ -201,21 +204,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
             ? "portrait"
             : "landscape";
   const isMobileViewport = Math.min(viewport.width, viewport.height) <= 500;
-
-  if (!submitted && displayMode === "matrix" && isMobileViewport && orientation === "portrait") {
-    return (
-      <div className="orientation-warning">
-        <p>
-          <b>Prosimy, obróć telefon poziomo</b> <br />
-          <span style={{ fontSize: "1.08em" }}>
-            Ta tabela działa wygodnie tylko w układzie poziomym.
-            <br />
-            <span role="img" aria-label="rotate">🔄</span>
-          </span>
-        </p>
-      </div>
-    );
-  }
+  const showOrientationWarning =
+    !submitted && displayMode === "matrix" && isMobileViewport && orientation === "portrait";
 
   const markStartedOnce = () => {
     if (startedMarkedRef.current) return;
@@ -344,20 +334,52 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     if (displayMode !== "single" || submitted) return;
 
     const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key !== "Enter") return;
       if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
       if (ev.repeat) return;
       const target = ev.target as HTMLElement | null;
       const tag = (target?.tagName || "").toUpperCase();
       if (tag === "TEXTAREA" || tag === "SELECT") return;
-      ev.preventDefault();
-      if (selectedCurrent === null) return;
-      void handleSingleNext();
+
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        if (selectedCurrent === null) return;
+        void handleSingleNext();
+        return;
+      }
+
+      if (ev.key === "ArrowLeft") {
+        if (!allowBack || singleIndex <= 0) return;
+        ev.preventDefault();
+        handleSingleBack();
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [displayMode, submitted, selectedCurrent, handleSingleNext]);
+  }, [
+    displayMode,
+    submitted,
+    selectedCurrent,
+    allowBack,
+    singleIndex,
+    handleSingleNext,
+    handleSingleBack,
+  ]);
+
+  if (showOrientationWarning) {
+    return (
+      <div className="orientation-warning">
+        <p>
+          <b>Prosimy, obróć telefon poziomo</b> <br />
+          <span style={{ fontSize: "1.08em" }}>
+            Ta tabela działa wygodnie tylko w układzie poziomym.
+            <br />
+            <span role="img" aria-label="rotate">🔄</span>
+          </span>
+        </p>
+      </div>
+    );
+  }
 
   if (submitted) return <Thanks />;
 
