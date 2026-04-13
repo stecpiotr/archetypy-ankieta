@@ -62,6 +62,14 @@
   font-weight: 700;
   padding: 8px 14px;
   cursor: pointer;
+  font-family: inherit;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.single-back-btn:hover:enabled {
+  background: #e2e8f0;
+  border-color: #bac8d8;
+  color: #162336;
 }
 
 .single-back-btn:disabled {
@@ -70,7 +78,7 @@
 }
 
 .single-counter {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   color: #8b9097;
   font-weight: 600;
 }
@@ -85,7 +93,7 @@
 }
 
 .single-question-zone {
-  margin-top: clamp(46px, 14vh, 148px);
+  margin-top: clamp(28px, 9vh, 92px);
   text-align: center;
   padding: 0 12px;
 }
@@ -93,23 +101,23 @@
 .single-lead {
   margin: 0 auto;
   max-width: 780px;
-  font-size: clamp(1.32rem, 2.4vw, 1.92rem);
+  font-size: clamp(1.2rem, 2.1vw, 1.56rem);
   color: #1f2a37;
-  line-height: 1.33;
-  font-weight: 700;
+  line-height: 1.31;
+  font-weight: 590;
 }
 
 .single-sublead {
-  margin: 0 auto 14px auto;
+  margin: 0 auto 12px auto;
   max-width: 780px;
-  font-size: clamp(0.96rem, 1.7vw, 1.05rem);
+  font-size: clamp(0.82rem, 1.25vw, 0.92rem);
   line-height: 1.35;
   color: #7a8796;
   font-weight: 500;
 }
 
 .single-question-text {
-  margin: 24px auto 0 auto;
+  margin: 46px auto 0 auto;
   max-width: 780px;
   font-size: clamp(2rem, 4.9vw, 3.45rem);
   line-height: 1.12;
@@ -120,7 +128,7 @@
 .single-scale-zone {
   width: 100%;
   max-width: 980px;
-  margin: 56px auto 0 auto;
+  margin: 84px auto 0 auto;
   padding: 0 0 8px 0;
 }
 
@@ -138,10 +146,14 @@
   padding: 10px 6px;
   text-align: center;
   font-weight: 700;
-  font-size: 0.97rem;
-  line-height: 1.18;
+  font-size: 0.93rem;
+  line-height: 1.12;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  font-family: inherit;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .single-scale-btn:hover {
@@ -157,26 +169,28 @@
 .single-footer-actions {
   display: flex;
   justify-content: flex-end;
-  padding: 14px 0 22px 0;
+  margin-top: 26px;
+  padding: 24px 0 28px 0;
 }
 
 .single-next-btn {
-  border: 1px solid #d0d8e1;
+  border: 1px solid #10a493;
   border-radius: 10px;
-  background: #e8edf2;
-  color: #253447;
+  background: #14b8a6;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
   padding: 9px 22px;
   min-width: 132px;
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: 0 6px 14px rgba(20, 184, 166, 0.26);
   transition: background 0.14s ease, border-color 0.14s ease;
+  font-family: inherit;
 }
 
 .single-next-btn:hover:enabled {
-  background: #dde5ee;
-  border-color: #b9c6d4;
+  background: #0ea896;
+  border-color: #0d9488;
 }
 
 .single-next-btn:disabled {
@@ -193,46 +207,90 @@
   }
 
   .single-question-zone {
-    margin-top: clamp(34px, 11vh, 88px);
+    margin-top: clamp(12px, 6vh, 48px);
   }
 
   .single-lead {
-    font-size: 1.14rem;
+    font-size: 1.03rem;
+    font-weight: 590;
     max-width: 520px;
   }
 
   .single-sublead {
-    font-size: 0.9rem;
+    font-size: 0.77rem;
     max-width: 520px;
+    margin-bottom: 8px;
   }
 
   .single-question-text {
     max-width: 560px;
     font-size: clamp(1.7rem, 7vw, 2.35rem);
     line-height: 1.18;
-  }
-
-  .single-scale-zone {
     margin-top: 38px;
   }
 
+  .single-scale-zone {
+    margin-top: 60px;
+  }
+
   .single-scale-btn {
-    min-height: 56px;
-    font-size: 0.86rem;
+    min-height: 58px;
+    font-size: 0.74rem;
     border-radius: 10px;
-    padding: 8px 4px;
+    padding: 8px 3px;
+    line-height: 1.08;
   }
 
   .single-back-btn {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     padding: 7px 11px;
   }
 
   .single-counter {
-    font-size: 1.12rem;
+    font-size: 0.95rem;
+  }
+
+  .single-main {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 126px);
   }
 
   .single-footer-actions {
-    padding-bottom: 14px;
+    position: fixed;
+    right: 12px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    margin-top: 0;
+    padding: 0;
+    z-index: 25;
+  }
+
+  .single-next-btn {
+    min-width: 108px;
+    padding: 8px 18px;
+    font-size: 0.95rem;
+    box-shadow: 0 5px 12px rgba(20, 184, 166, 0.24);
+  }
+}
+
+@media (max-width: 430px) {
+  .single-scale-grid {
+    gap: 4px;
+  }
+
+  .single-scale-btn {
+    font-size: 0.69rem;
+    padding: 7px 2px;
+    min-height: 56px;
+  }
+
+  .single-question-text {
+    font-size: clamp(1.52rem, 8.4vw, 2.08rem);
+  }
+
+  .single-lead {
+    font-size: 0.98rem;
+  }
+
+  .single-sublead {
+    font-size: 0.74rem;
   }
 }
