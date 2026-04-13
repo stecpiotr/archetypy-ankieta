@@ -338,7 +338,7 @@
     width: auto;
     transform: none;
     box-sizing: border-box;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 132px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 150px);
     margin: 0;
     max-width: none;
     z-index: 24;
@@ -422,7 +422,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 46px);
+    top: calc(env(safe-area-inset-top, 0px) + 58px);
     left: auto;
     transform: none;
     width: auto;
@@ -513,7 +513,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 46px);
+    top: calc(env(safe-area-inset-top, 0px) + 58px);
     left: auto;
     transform: none;
     width: auto;

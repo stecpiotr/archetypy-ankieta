@@ -59,6 +59,15 @@ const scaleLabels = [
   { label: "zdecydowanie tak", color: "#1468d4", bg: "#eaf1fd", border: "#99b5ee" },
 ];
 
+const ONE_LETTER_GLUE_RE = /\b([AaIiOoUuWwZz])\s+(?=\S)/g;
+const TWO_LETTER_GLUE_RE = /\b(na|do|po|od|za|by|we|ze|no|to|ta|tu)\s+(?=\S)/gi;
+
+function withHardSpaces(text: string): string {
+  return text
+    .replace(TWO_LETTER_GLUE_RE, "$1\u00A0")
+    .replace(ONE_LETTER_GLUE_RE, "$1\u00A0");
+}
+
 function shuffleIndices(arr: number[]): number[] {
   const out = [...arr];
   for (let i = out.length - 1; i > 0; i -= 1) {
@@ -261,7 +270,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const totalQuestions = questions.length;
   const currentOriginalIdx = questionOrder[Math.min(singleIndex, totalQuestions - 1)] ?? 0;
   const currentItem = questions[currentOriginalIdx];
-  const currentQuestionText = gender === "F" ? currentItem.textF : currentItem.textM;
+  const currentQuestionTextRaw = gender === "F" ? currentItem.textF : currentItem.textM;
+  const currentQuestionText = withHardSpaces(currentQuestionTextRaw);
   const selectedCurrent = responses[currentOriginalIdx];
 
   const singleProgress = Math.max(0, Math.min(100, ((singleIndex + 1) / Math.max(1, totalQuestions)) * 100));
@@ -299,6 +309,18 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     ? `Badanie wizerunku i postrzegania ${fullGen}`
     : "Badanie wizerunku i postrzegania";
   const politykWord = gender === "F" ? "polityczki" : "polityka";
+  const singleSubleadText = withHardSpaces(
+    `Pamiętaj: Twoje odpowiedzi dotyczą ${fullGen ?? ""} jako osoby publicznej (${politykWord}).`,
+  );
+  const singleLeadText = withHardSpaces(
+    `Czy zgadzasz się z poniższymi stwierdzeniami na temat ${fullGen ?? ""}?`,
+  );
+  const matrixLeadText = withHardSpaces(
+    `Czy zgadzasz się z poniższymi stwierdzeniami na temat ${fullGen ?? ""}?`,
+  );
+  const matrixRememberText = withHardSpaces(
+    `Twoje odpowiedzi dotyczą ${fullGen ?? ""} jako osoby publicznej (${politykWord})`,
+  );
 
   if (displayMode === "single") {
     return (
@@ -340,12 +362,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
 
           <main className="single-main">
             <section className="single-question-zone">
-              <p className="single-sublead">
-                Pamiętaj: Twoje odpowiedzi dotyczą {fullGen ?? ""} jako osoby publicznej ({politykWord}).
-              </p>
-              <p className="single-lead">
-                Czy zgadzasz się z poniższymi stwierdzeniami na temat {fullGen ?? ""}?
-              </p>
+              <p className="single-sublead">{singleSubleadText}</p>
+              <p className="single-lead">{singleLeadText}</p>
               <h2 className="single-question-text">{currentQuestionText}</h2>
             </section>
 
@@ -402,13 +420,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
           marginTop: "40px",
         }}
       >
-        Czy zgadzasz się z poniższymi stwierdzeniami na temat <b>{fullGen ?? ""}</b>?
+        {matrixLeadText}
       </div>
 
       <div style={{ margin: "20px 0 15px 0", fontSize: "1.20rem" }}>
         <span style={{ color: "#c62828", fontWeight: 700 }}>Pamiętaj! </span>
         <span style={{ color: "#253347", fontWeight: 400 }}>
-          Twoje odpowiedzi dotyczą <u>{fullGen ?? ""} jako osoby publicznej ({politykWord})</u>{" "}
+          <u>{matrixRememberText}</u>{" "}
         </span>
       </div>
     </>
@@ -433,12 +451,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: isMobileViewport ? "flex-start" : "space-between",
           alignItems: "flex-start",
           marginBottom: 28,
+          gap: isMobileViewport ? 0 : 24,
         }}
       >
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
               fontWeight: 700,
@@ -499,7 +518,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
           <tbody>
             {questionOrder.map((questionIdx) => {
               const item = questions[questionIdx];
-              const questionText = gender === "F" ? item.textF : item.textM;
+              const questionTextRaw = gender === "F" ? item.textF : item.textM;
+              const questionText = withHardSpaces(questionTextRaw);
               const missing = missingRows.includes(questionIdx);
               return (
                 <tr
