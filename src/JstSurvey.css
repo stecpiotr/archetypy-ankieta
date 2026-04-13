@@ -351,22 +351,6 @@
   padding-top: 44px;
 }
 
-.jst-range-wrap::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 49px;
-  transform: translateY(-50%);
-  height: 12px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #d7e6ed 0%, #ccdde8 100%);
-  border: 1px solid #afc4d2;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  pointer-events: none;
-  z-index: 0;
-}
-
 .jst-slider-choice-bubble {
   position: absolute;
   left: var(--jst-bubble-pos, var(--jst-pos, 50%));
@@ -405,8 +389,6 @@
   margin: 0;
   padding: 0;
   outline: none;
-  position: relative;
-  z-index: 1;
 }
 
 .jst-range::-webkit-slider-runnable-track {
@@ -696,29 +678,18 @@
   }
 
   .jst-range::-webkit-slider-runnable-track {
-    height: 12px;
+    height: 10px;
     border-radius: 999px;
-    border: 1px solid #7fb0d3;
-    background: linear-gradient(90deg, #1f5e86 0%, #2f739d 100%);
-    box-shadow:
-      inset 0 0 0 1px rgba(205, 227, 246, 0.46),
-      0 0 0 1px rgba(7, 15, 28, 0.78);
+    border: 1px solid rgba(148, 181, 205, 0.35);
+    background: #24465d;
+    box-shadow: inset 0 0 0 1px rgba(196, 220, 238, 0.13);
   }
   .jst-range::-moz-range-track {
-    height: 12px;
+    height: 10px;
     border-radius: 999px;
-    border: 1px solid #7fb0d3;
-    background: linear-gradient(90deg, #1f5e86 0%, #2f739d 100%);
-    box-shadow:
-      inset 0 0 0 1px rgba(205, 227, 246, 0.46),
-      0 0 0 1px rgba(7, 15, 28, 0.78);
-  }
-  .jst-range-wrap::before {
-    background: linear-gradient(90deg, #1f5e86 0%, #2f739d 100%);
-    border-color: #7fb0d3;
-    box-shadow:
-      inset 0 0 0 1px rgba(205, 227, 246, 0.46),
-      0 0 0 1px rgba(7, 15, 28, 0.78);
+    border: 1px solid rgba(148, 181, 205, 0.35);
+    background: #24465d;
+    box-shadow: inset 0 0 0 1px rgba(196, 220, 238, 0.13);
   }
   .jst-range::-webkit-slider-thumb,
   .jst-range::-moz-range-thumb {
@@ -731,8 +702,8 @@
     border-color: #49baa8;
   }
   .jst-tick {
-    width: 2px;
-    height: 12px;
-    background: #d2e5f7;
+    width: 1px;
+    height: 10px;
+    background: #b7cbde;
   }
 }
