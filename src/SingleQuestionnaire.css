@@ -88,7 +88,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 0;
+  padding: 0 0 296px 0;
   box-sizing: border-box;
   position: relative;
 }
@@ -127,10 +127,15 @@
 }
 
 .single-scale-zone {
-  width: 100%;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(980px, calc(100% - 24px));
   max-width: 980px;
-  margin: 84px auto 0 auto;
+  bottom: 136px;
+  margin: 0;
   padding: 0 0 8px 0;
+  z-index: 22;
 }
 
 .single-scale-grid {
@@ -172,10 +177,16 @@
 }
 
 .single-footer-actions {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(980px, calc(100% - 24px));
   display: flex;
   justify-content: flex-end;
-  margin-top: 26px;
-  padding: 24px 0 28px 0;
+  margin-top: 0;
+  padding: 0;
+  bottom: 64px;
+  z-index: 23;
 }
 
 .single-next-btn {
@@ -263,6 +274,9 @@
     position: fixed;
     right: 12px;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    left: auto;
+    transform: none;
+    width: auto;
     margin-top: 0;
     padding: 0;
     z-index: 25;
@@ -322,6 +336,7 @@
     left: 10px;
     right: 10px;
     width: auto;
+    transform: none;
     box-sizing: border-box;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 132px);
     margin: 0;
@@ -386,6 +401,7 @@
     left: 10px;
     right: 10px;
     width: auto;
+    transform: none;
     box-sizing: border-box;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 58px);
     margin: 0;
@@ -406,7 +422,10 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 40px);
+    top: calc(env(safe-area-inset-top, 0px) + 20px);
+    left: auto;
+    transform: none;
+    width: auto;
     bottom: auto;
     z-index: 26;
   }

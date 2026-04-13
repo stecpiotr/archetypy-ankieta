@@ -12,6 +12,7 @@ import { getJstTokenMeta, isJstTokenCompleted, isTokenCompleted, markTokenStarte
 import JstSurvey from "./JstSurvey";
 
 const isMobile = window.innerWidth <= 600;
+const STARTED_HASH = "#q";
 
 const wrapperStyle: React.CSSProperties = {
   minHeight: "100vh",
@@ -32,6 +33,34 @@ const contentStyle: React.CSSProperties = {
   minHeight: "70vh",
   flex: 1,
 };
+
+async function tryEnterFullscreenMobile(): Promise<void> {
+  if (window.innerWidth > 1024) return;
+  try {
+    const docAny = document as Document & {
+      webkitFullscreenElement?: Element;
+      msFullscreenElement?: Element;
+    };
+    if (document.fullscreenElement || docAny.webkitFullscreenElement || docAny.msFullscreenElement) {
+      return;
+    }
+
+    const rootAny = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+      msRequestFullscreen?: () => Promise<void> | void;
+    };
+    const requestFs =
+      rootAny.requestFullscreen?.bind(rootAny)
+      || rootAny.webkitRequestFullscreen?.bind(rootAny)
+      || rootAny.msRequestFullscreen?.bind(rootAny);
+
+    if (requestFs) {
+      await Promise.resolve(requestFs());
+    }
+  } catch (e) {
+    console.warn("requestFullscreen rejected:", e);
+  }
+}
 
 function getTokenFromUrl(): string | null {
   const qs = window.location.search || "";
@@ -248,7 +277,7 @@ function buildJstSurveySettings(study: any): JstSurveySettings {
 }
 
 const App: React.FC = () => {
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(() => window.location.hash.toLowerCase() === STARTED_HASH);
 
   const [hasStudy, setHasStudy] = useState<boolean | null>(null);
   const [surveyKind, setSurveyKind] = useState<"personal" | "jst" | null>(null);
@@ -399,6 +428,20 @@ const App: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const base = `${window.location.pathname}${window.location.search}`;
+    if (started) {
+      if (window.location.hash.toLowerCase() !== STARTED_HASH) {
+        window.history.replaceState(null, "", `${base}${STARTED_HASH}`);
+      }
+      void tryEnterFullscreenMobile();
+      return;
+    }
+    if (window.location.hash.toLowerCase() === STARTED_HASH) {
+      window.history.replaceState(null, "", base);
+    }
+  }, [started]);
+
   const perceivedWord = gender === "F" ? "postrzegana" : "postrzegany";
   const himHer = gender === "F" ? "niej" : "niego";
   const showBlocker = hasStudy === false;
@@ -537,6 +580,7 @@ return (
               }}
               onClick={async () => {
                 if (showBlocker) return;
+                void tryEnterFullscreenMobile();
                 setStarted(true);
                 if (token) {
                   try { await markTokenStarted(token); } catch (e) { console.warn("markTokenStarted:", e); }
@@ -602,11 +646,13 @@ return (
         )}
       </>
     ) : (
-      <Questionnaire
-        settings={personalSettings}
-        initialGender={gender}
-        initialFullGen={personGen}
-      />
+      <AppErrorBoundary>
+        <Questionnaire
+          settings={personalSettings}
+          initialGender={gender}
+          initialFullGen={personGen}
+        />
+      </AppErrorBoundary>
     )}
   </div>
 );

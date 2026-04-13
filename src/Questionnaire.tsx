@@ -126,6 +126,31 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   }, []);
 
   useEffect(() => {
+    if (displayMode !== "matrix") return;
+
+    const RELOAD_GUARD_KEY = "matrix_orientation_reload_ts";
+    const onOrientationChange = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const nowLandscape = w > h;
+      const mobileViewportNow = Math.min(w, h) <= 500;
+      if (!nowLandscape || !mobileViewportNow) return;
+
+      const now = Date.now();
+      const last = Number(window.sessionStorage.getItem(RELOAD_GUARD_KEY) || "0");
+      if (now - last < 1800) return;
+      window.sessionStorage.setItem(RELOAD_GUARD_KEY, String(now));
+
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 140);
+    };
+
+    window.addEventListener("orientationchange", onOrientationChange);
+    return () => window.removeEventListener("orientationchange", onOrientationChange);
+  }, [displayMode]);
+
+  useEffect(() => {
     (async () => {
       const t = getTokenFromUrl();
       tokenRef.current = t || null;
