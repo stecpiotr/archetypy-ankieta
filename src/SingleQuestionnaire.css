@@ -328,7 +328,7 @@
   }
 
   .single-main {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 218px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 236px);
   }
 
   .single-scale-zone {
@@ -338,7 +338,7 @@
     width: auto;
     transform: none;
     box-sizing: border-box;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 150px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 174px);
     margin: 0;
     max-width: none;
     z-index: 24;
@@ -422,7 +422,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 58px);
+    top: calc(env(safe-area-inset-top, 0px) + 44px);
     left: auto;
     transform: none;
     width: auto;
@@ -513,7 +513,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 58px);
+    top: calc(env(safe-area-inset-top, 0px) + 44px);
     left: auto;
     transform: none;
     width: auto;

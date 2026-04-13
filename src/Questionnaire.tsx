@@ -60,12 +60,32 @@ const scaleLabels = [
 ];
 
 const ONE_LETTER_GLUE_RE = /\b([AaIiOoUuWwZz])\s+(?=\S)/g;
-const TWO_LETTER_GLUE_RE = /\b(na|do|po|od|za|by|we|ze|no|to|ta|tu)\s+(?=\S)/gi;
+const SHORT_WORD_GLUE_RE = /\b(na|do|po|od|za|by|we|ze|no|to|ta|tu|co|mu|dla)\s+(?=\S)/gi;
+const PHRASE_GLUE_PATTERNS = [
+  /\bgdzie\s+inni\b/gi,
+  /\bnawet\s+jeśli\b/gi,
+];
 
 function withHardSpaces(text: string): string {
-  return text
-    .replace(TWO_LETTER_GLUE_RE, "$1\u00A0")
+  let out = text;
+  for (const pattern of PHRASE_GLUE_PATTERNS) {
+    out = out.replace(pattern, (frag) => frag.replace(/\s+/g, "\u00A0"));
+  }
+  return out
+    .replace(SHORT_WORD_GLUE_RE, "$1\u00A0")
     .replace(ONE_LETTER_GLUE_RE, "$1\u00A0");
+}
+
+function readViewport() {
+  const vv = window.visualViewport;
+  if (vv && vv.width > 0 && vv.height > 0) {
+    return { width: Math.round(vv.width), height: Math.round(vv.height) };
+  }
+  const docEl = document.documentElement;
+  if (docEl.clientWidth > 0 && docEl.clientHeight > 0) {
+    return { width: docEl.clientWidth, height: docEl.clientHeight };
+  }
+  return { width: window.innerWidth, height: window.innerHeight };
 }
 
 function shuffleIndices(arr: number[]): number[] {
@@ -95,10 +115,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const [missingRows, setMissingRows] = useState<number[]>([]);
   const [singleIndex, setSingleIndex] = useState(0);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
-  const [viewport, setViewport] = useState(() => ({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  }));
+  const [viewport, setViewport] = useState(() => readViewport());
 
   const tokenRef = useRef<string | null>(null);
   const startedMarkedRef = useRef<boolean>(false);
@@ -116,23 +133,30 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
 
   useEffect(() => {
     const updateViewport = () => {
-      setViewport({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
+      setViewport(readViewport());
     };
 
     updateViewport();
     window.addEventListener("resize", updateViewport);
     window.addEventListener("orientationchange", updateViewport);
+    window.screen?.orientation?.addEventListener?.("change", updateViewport);
     window.visualViewport?.addEventListener("resize", updateViewport);
 
     return () => {
       window.removeEventListener("resize", updateViewport);
       window.removeEventListener("orientationchange", updateViewport);
+      window.screen?.orientation?.removeEventListener?.("change", updateViewport);
       window.visualViewport?.removeEventListener("resize", updateViewport);
     };
   }, []);
+
+  useEffect(() => {
+    if (displayMode !== "matrix") return;
+    const timer = window.setInterval(() => {
+      setViewport(readViewport());
+    }, 180);
+    return () => window.clearInterval(timer);
+  }, [displayMode]);
 
   useEffect(() => {
     (async () => {
@@ -162,7 +186,20 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     })();
   }, []);
 
-  const orientation = viewport.width > viewport.height ? "landscape" : "portrait";
+  const screenOrientationType = window.screen?.orientation?.type?.toLowerCase?.() || "";
+  const isLandscapeByDims = viewport.width > viewport.height + 6;
+  const isPortraitByDims = viewport.height > viewport.width + 6;
+  const orientation = isLandscapeByDims
+    ? "landscape"
+    : isPortraitByDims
+      ? "portrait"
+      : screenOrientationType.includes("landscape")
+        ? "landscape"
+        : screenOrientationType.includes("portrait")
+          ? "portrait"
+          : window.matchMedia("(orientation: portrait)").matches
+            ? "portrait"
+            : "landscape";
   const isMobileViewport = Math.min(viewport.width, viewport.height) <= 500;
 
   if (!submitted && displayMode === "matrix" && isMobileViewport && orientation === "portrait") {
@@ -302,6 +339,25 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     setSingleIndex((prev) => Math.max(0, prev - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (displayMode !== "single" || submitted) return;
+
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key !== "Enter") return;
+      if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if (ev.repeat) return;
+      const target = ev.target as HTMLElement | null;
+      const tag = (target?.tagName || "").toUpperCase();
+      if (tag === "TEXTAREA" || tag === "SELECT") return;
+      ev.preventDefault();
+      if (selectedCurrent === null) return;
+      void handleSingleNext();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [displayMode, submitted, selectedCurrent, handleSingleNext]);
 
   if (submitted) return <Thanks />;
 
