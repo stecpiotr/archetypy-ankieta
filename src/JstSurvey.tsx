@@ -170,6 +170,9 @@ const SLIDER_LABELS: Record<number, string> = {
   7: "B zdecydowanie ważniejsze",
 };
 
+// Tymczasowo wyłączamy wymuszanie obrotu dla JST (prośba UAT).
+const ENFORCE_JST_LANDSCAPE_ON_MOBILE = false;
+
 function shuffle<T>(arr: T[]): T[] {
   const out = [...arr];
   for (let i = out.length - 1; i > 0; i -= 1) {
@@ -227,6 +230,7 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
 
   const isMobile = window.innerWidth <= 900;
   const shouldRotate =
+    ENFORCE_JST_LANDSCAPE_ON_MOBILE &&
     isMobile &&
     orientation === "portrait" &&
     step !== "intro" &&
