@@ -88,7 +88,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 0 0 296px 0;
+  padding: 0 0 262px 0;
   box-sizing: border-box;
   position: relative;
 }
@@ -132,7 +132,7 @@
   transform: translateX(-50%);
   width: min(980px, calc(100% - 24px));
   max-width: 980px;
-  bottom: 136px;
+  bottom: clamp(180px, 24vh, 250px);
   margin: 0;
   padding: 0 0 8px 0;
   z-index: 22;
@@ -185,7 +185,7 @@
   justify-content: flex-end;
   margin-top: 0;
   padding: 0;
-  bottom: 64px;
+  bottom: clamp(104px, 14vh, 156px);
   z-index: 23;
 }
 
@@ -422,7 +422,98 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 20px);
+    top: calc(env(safe-area-inset-top, 0px) + 46px);
+    left: auto;
+    transform: none;
+    width: auto;
+    bottom: auto;
+    z-index: 26;
+  }
+
+  .single-next-btn {
+    min-width: 98px;
+    padding: 7px 14px;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .single-shell {
+    width: calc(100% - 12px);
+  }
+
+  .single-nav-wrap {
+    padding-top: 6px;
+  }
+
+  .single-nav-row {
+    margin-top: 8px;
+    min-height: 38px;
+    position: relative;
+  }
+
+  .single-counter {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 8px;
+    font-size: 0.88rem;
+  }
+
+  .single-question-zone {
+    margin-top: clamp(8px, 4vh, 20px);
+    padding: 0 8px;
+  }
+
+  .single-sublead {
+    font-size: 0.62rem;
+    margin-bottom: 2px;
+    max-width: 94vw;
+  }
+
+  .single-lead {
+    font-size: 0.82rem;
+    max-width: 94vw;
+  }
+
+  .single-question-text {
+    margin-top: 12px;
+    max-width: 94vw;
+    font-size: clamp(1.95rem, 4.2vw, 3rem);
+    line-height: 1.1;
+  }
+
+  .single-main {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 118px);
+  }
+
+  .single-scale-zone {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    transform: none;
+    box-sizing: border-box;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    margin: 0;
+    max-width: none;
+    z-index: 24;
+    padding-bottom: 0;
+  }
+
+  .single-scale-grid {
+    gap: 6px;
+  }
+
+  .single-scale-btn {
+    min-height: 50px;
+    font-size: 0.71rem;
+    padding: 6px 2px;
+  }
+
+  .single-footer-actions {
+    right: 10px;
+    top: calc(env(safe-area-inset-top, 0px) + 46px);
     left: auto;
     transform: none;
     width: auto;

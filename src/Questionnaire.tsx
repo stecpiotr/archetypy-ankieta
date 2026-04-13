@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./LikertTable.css";
 import "./SingleQuestionnaire.css";
 import Thanks from "./Thanks";
@@ -124,31 +124,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       window.visualViewport?.removeEventListener("resize", updateViewport);
     };
   }, []);
-
-  useEffect(() => {
-    if (displayMode !== "matrix") return;
-
-    const RELOAD_GUARD_KEY = "matrix_orientation_reload_ts";
-    const onOrientationChange = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const nowLandscape = w > h;
-      const mobileViewportNow = Math.min(w, h) <= 500;
-      if (!nowLandscape || !mobileViewportNow) return;
-
-      const now = Date.now();
-      const last = Number(window.sessionStorage.getItem(RELOAD_GUARD_KEY) || "0");
-      if (now - last < 1800) return;
-      window.sessionStorage.setItem(RELOAD_GUARD_KEY, String(now));
-
-      window.setTimeout(() => {
-        window.location.reload();
-      }, 140);
-    };
-
-    window.addEventListener("orientationchange", onOrientationChange);
-    return () => window.removeEventListener("orientationchange", onOrientationChange);
-  }, [displayMode]);
 
   useEffect(() => {
     (async () => {
@@ -289,10 +264,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const currentQuestionText = gender === "F" ? currentItem.textF : currentItem.textM;
   const selectedCurrent = responses[currentOriginalIdx];
 
-  const singleProgress = useMemo(
-    () => Math.max(0, Math.min(100, ((singleIndex + 1) / Math.max(1, totalQuestions)) * 100)),
-    [singleIndex, totalQuestions],
-  );
+  const singleProgress = Math.max(0, Math.min(100, ((singleIndex + 1) / Math.max(1, totalQuestions)) * 100));
 
   const handleSingleNext = async () => {
     if (selectedCurrent === null) {
