@@ -351,6 +351,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
         if (!allowBack || singleIndex <= 0) return;
         ev.preventDefault();
         handleSingleBack();
+        return;
+      }
+
+      if (ev.key === "ArrowRight") {
+        if (selectedCurrent === null) return;
+        ev.preventDefault();
+        void handleSingleNext();
       }
     };
 

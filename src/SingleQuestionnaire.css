@@ -316,11 +316,15 @@
 
 @media (max-width: 900px) and (orientation: portrait) {
   .single-question-zone {
-    margin-top: clamp(56px, 19vh, 210px);
+    margin-top: clamp(44px, 16.5vh, 180px);
   }
 
   .single-lead {
-    font-size: 1.1rem;
+    font-size: 1.18rem;
+  }
+
+  .single-sublead {
+    font-size: 0.86rem;
   }
 
   .single-question-text {
@@ -370,18 +374,18 @@
   }
 
   .single-question-zone {
-    margin-top: clamp(16px, 6.2vh, 34px);
+    margin-top: clamp(20px, 8vh, 42px);
     padding: 0 8px;
   }
 
   .single-sublead {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     margin-bottom: 4px;
     max-width: 94vw;
   }
 
   .single-lead {
-    font-size: 0.94rem;
+    font-size: 1.08rem;
     max-width: 94vw;
   }
 
@@ -422,7 +426,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 34px);
+    top: calc(env(safe-area-inset-top, 0px) + 22px);
     left: auto;
     transform: none;
     width: auto;
@@ -461,18 +465,18 @@
   }
 
   .single-question-zone {
-    margin-top: clamp(14px, 5vh, 26px);
+    margin-top: clamp(18px, 6.5vh, 34px);
     padding: 0 8px;
   }
 
   .single-sublead {
-    font-size: 0.7rem;
+    font-size: 0.76rem;
     margin-bottom: 4px;
     max-width: 94vw;
   }
 
   .single-lead {
-    font-size: 0.94rem;
+    font-size: 1.04rem;
     max-width: 94vw;
   }
 
@@ -513,7 +517,7 @@
 
   .single-footer-actions {
     right: 10px;
-    top: calc(env(safe-area-inset-top, 0px) + 34px);
+    top: calc(env(safe-area-inset-top, 0px) + 22px);
     left: auto;
     transform: none;
     width: auto;
