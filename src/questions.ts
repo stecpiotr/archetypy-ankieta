@@ -46,7 +46,7 @@ export const questions: Ap48Item[] = [
   // ODKRYWCA (29–32)
   { id: 29, textM: "Szuka nowych dróg, nawet jeśli są ryzykowne.", textF: "Szuka nowych dróg, nawet jeśli są ryzykowne." },
   { id: 30, textM: "Uwielbia zdobywać nowe doświadczenia.", textF: "Uwielbia zdobywać nowe doświadczenia." },
-  { id: 31, textM: "Rutyna go nudzi - potrzebuje zmienności.", textF: "Rutyna ją nudzi - potrzebuje zmienności." },
+  { id: 31, textM: "Rutyna go nudzi – potrzebuje zmienności.", textF: "Rutyna ją nudzi – potrzebuje zmienności." },
   { id: 32, textM: "Dąży do ciągłego rozwoju i przekraczania granic.", textF: "Dąży do ciągłego rozwoju i przekraczania granic." },
 
   // CZARODZIEJ (33–36)
@@ -70,6 +70,6 @@ export const questions: Ap48Item[] = [
   // BUNTOWNIK (45–48)
   { id: 45, textM: "Często kwestionuje istniejące normy i zasady.", textF: "Często kwestionuje istniejące normy i zasady." },
   { id: 46, textM: "Sprzeciwia się niesprawiedliwości, nawet jeśli jest to niepopularne.", textF: "Sprzeciwia się niesprawiedliwości, nawet jeśli jest to niepopularne." },
-  { id: 47, textM: "Ma odwagę mówić, to co myśli - nawet wbrew otoczeniu.", textF: "Ma odwagę mówić, to co myśli - nawet wbrew otoczeniu." },
+  { id: 47, textM: "Ma odwagę mówić, to co myśli – nawet wbrew otoczeniu.", textF: "Ma odwagę mówić, to co myśli – nawet wbrew otoczeniu." },
   { id: 48, textM: "Nie boi się etykietki buntownika.", textF: "Nie boi się etykietki buntowniczki." }
 ];
