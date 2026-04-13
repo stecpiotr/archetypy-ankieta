@@ -346,11 +346,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                       key={`${currentItem.id}-${value}`}
                       type="button"
                       className={`single-scale-btn ${selected ? "selected" : ""}`}
-                      style={{
-                        color: opt.color,
-                        background: selected ? opt.bg : "#f8fafc",
-                        borderColor: selected ? opt.border : "#d7dee8",
-                      }}
+                      style={
+                        {
+                          "--opt-color": opt.color,
+                          "--opt-bg": opt.bg,
+                          "--opt-border": opt.border,
+                        } as React.CSSProperties
+                      }
                       onClick={() => handleResponse(currentOriginalIdx, value)}
                     >
                       {opt.label}
