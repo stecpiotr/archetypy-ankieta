@@ -680,16 +680,20 @@
   .jst-range::-webkit-slider-runnable-track {
     height: 10px;
     border-radius: 999px;
-    border: 1px solid rgba(170, 203, 226, 0.42);
-    background: #315f7b;
-    box-shadow: inset 0 0 0 1px rgba(214, 233, 246, 0.18);
+    border: 1px solid rgba(203, 222, 236, 0.58);
+    background: #7394ac;
+    box-shadow: inset 0 0 0 1px rgba(232, 242, 250, 0.26);
   }
   .jst-range::-moz-range-track {
     height: 10px;
     border-radius: 999px;
-    border: 1px solid rgba(170, 203, 226, 0.42);
-    background: #315f7b;
-    box-shadow: inset 0 0 0 1px rgba(214, 233, 246, 0.18);
+    border: 1px solid rgba(203, 222, 236, 0.58);
+    background: #7394ac;
+    box-shadow: inset 0 0 0 1px rgba(232, 242, 250, 0.26);
+  }
+  .jst-range {
+    background: #7394ac;
+    box-shadow: inset 0 0 0 1px rgba(203, 222, 236, 0.52);
   }
   .jst-range::-webkit-slider-thumb,
   .jst-range::-moz-range-thumb {
@@ -704,6 +708,6 @@
   .jst-tick {
     width: 1px;
     height: 10px;
-    background: #b7cbde;
+    background: #d6e4ef;
   }
 }
