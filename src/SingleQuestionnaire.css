@@ -302,22 +302,24 @@
 
 @media (max-width: 900px) and (orientation: portrait) {
   .single-question-zone {
-    margin-top: clamp(42px, 15vh, 150px);
+    margin-top: clamp(56px, 19vh, 210px);
   }
 
   .single-question-text {
-    margin-top: clamp(42px, 8vh, 72px);
+    margin-top: clamp(48px, 9vh, 84px);
   }
 
   .single-main {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 206px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 218px);
   }
 
   .single-scale-zone {
     position: fixed;
-    left: 8px;
-    right: 8px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+    left: 10px;
+    right: 10px;
+    width: auto;
+    box-sizing: border-box;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 104px);
     margin: 0;
     max-width: none;
     z-index: 24;
@@ -335,36 +337,38 @@
   }
 
   .single-question-zone {
-    margin-top: clamp(8px, 4.5vh, 28px);
+    margin-top: clamp(8px, 3.8vh, 22px);
     padding: 0 8px;
   }
 
   .single-sublead {
-    font-size: 0.68rem;
-    margin-bottom: 4px;
+    font-size: 0.62rem;
+    margin-bottom: 2px;
     max-width: 94vw;
   }
 
   .single-lead {
-    font-size: 0.88rem;
+    font-size: 0.78rem;
     max-width: 94vw;
   }
 
   .single-question-text {
-    margin-top: 18px;
+    margin-top: 12px;
     max-width: 94vw;
-    font-size: clamp(1.35rem, 4vw, 2.05rem);
-    line-height: 1.16;
+    font-size: clamp(1.12rem, 3.25vw, 1.62rem);
+    line-height: 1.12;
   }
 
   .single-main {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 136px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 118px);
   }
 
   .single-scale-zone {
     position: fixed;
-    left: 8px;
-    right: 8px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    box-sizing: border-box;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 58px);
     margin: 0;
     max-width: none;
@@ -377,13 +381,21 @@
   }
 
   .single-scale-btn {
-    min-height: 54px;
-    font-size: 0.8rem;
-    padding: 7px 3px;
+    min-height: 50px;
+    font-size: 0.71rem;
+    padding: 6px 2px;
   }
 
   .single-footer-actions {
     right: 10px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    top: calc(env(safe-area-inset-top, 0px) + 52px);
+    bottom: auto;
+    z-index: 26;
+  }
+
+  .single-next-btn {
+    min-width: 98px;
+    padding: 7px 14px;
+    font-size: 0.88rem;
   }
 }
