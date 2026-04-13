@@ -86,9 +86,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const [missingRows, setMissingRows] = useState<number[]>([]);
   const [singleIndex, setSingleIndex] = useState(0);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
-  const [orientation, setOrientation] = useState(
-    window.innerWidth > window.innerHeight ? "landscape" : "portrait",
-  );
+  const [viewport, setViewport] = useState(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }));
 
   const tokenRef = useRef<string | null>(null);
   const startedMarkedRef = useRef<boolean>(false);
@@ -105,10 +106,23 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const questionOrder = questionOrderRef.current;
 
   useEffect(() => {
-    const onResize = () =>
-      setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const updateViewport = () => {
+      setViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    window.addEventListener("orientationchange", updateViewport);
+    window.visualViewport?.addEventListener("resize", updateViewport);
+
+    return () => {
+      window.removeEventListener("resize", updateViewport);
+      window.removeEventListener("orientationchange", updateViewport);
+      window.visualViewport?.removeEventListener("resize", updateViewport);
+    };
   }, []);
 
   useEffect(() => {
@@ -139,8 +153,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     })();
   }, []);
 
-  const isMobile = window.innerWidth < 800;
-  if (!submitted && displayMode === "matrix" && isMobile && orientation === "portrait") {
+  const orientation = viewport.width > viewport.height ? "landscape" : "portrait";
+  const isMobileViewport = Math.min(viewport.width, viewport.height) <= 500;
+
+  if (!submitted && displayMode === "matrix" && isMobileViewport && orientation === "portrait") {
     return (
       <div className="orientation-warning">
         <p>
@@ -451,17 +467,19 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
           {leadBlock}
         </div>
 
-        <img
-          src="/BadaniaPRO(r).png"
-          alt="Badania.pro logo"
-          style={{
-            height: 45,
-            width: "auto",
-            marginLeft: 24,
-            borderRadius: 7,
-            background: "#fff",
-          }}
-        />
+        {!isMobileViewport && (
+          <img
+            src="/BadaniaPRO(r).png"
+            alt="Badania.pro logo"
+            style={{
+              height: 45,
+              width: "auto",
+              marginLeft: 24,
+              borderRadius: 7,
+              background: "#fff",
+            }}
+          />
+        )}
       </div>
 
       <form onSubmit={(e) => void handleMatrixSubmit(e)}>
