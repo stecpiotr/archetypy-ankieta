@@ -459,6 +459,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                 {scaleLabels.map((opt, idx) => {
                   const value = SCALE_VALUES[idx];
                   const selected = selectedCurrent === value;
+                  const isNeutral = opt.label === "ani tak, ani nie";
+                  const isStrongNo = opt.label === "zdecydowanie nie";
+                  const isStrongYes = opt.label === "zdecydowanie tak";
                   return (
                     <button
                       key={`${currentItem.id}-${value}`}
@@ -473,11 +476,23 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                       }
                       onClick={() => handleResponse(currentOriginalIdx, value)}
                     >
-                      {opt.label === "ani tak, ani nie" ? (
+                      {isNeutral ? (
                         <>
                           ani tak,
                           <br />
                           ani nie
+                        </>
+                      ) : isStrongNo ? (
+                        <>
+                          zdecydowanie
+                          <br />
+                          nie
+                        </>
+                      ) : isStrongYes ? (
+                        <>
+                          zdecydowanie
+                          <br />
+                          tak
                         </>
                       ) : (
                         opt.label
