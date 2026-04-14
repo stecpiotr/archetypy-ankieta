@@ -459,9 +459,6 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                 {scaleLabels.map((opt, idx) => {
                   const value = SCALE_VALUES[idx];
                   const selected = selectedCurrent === value;
-                  const singleLabel = opt.label === "ani tak, ani nie"
-                    ? "ani tak,\nani nie"
-                    : opt.label;
                   return (
                     <button
                       key={`${currentItem.id}-${value}`}
@@ -476,7 +473,15 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                       }
                       onClick={() => handleResponse(currentOriginalIdx, value)}
                     >
-                      {singleLabel}
+                      {opt.label === "ani tak, ani nie" ? (
+                        <>
+                          ani tak,
+                          <br />
+                          ani nie
+                        </>
+                      ) : (
+                        opt.label
+                      )}
                     </button>
                   );
                 })}
