@@ -60,7 +60,7 @@ const scaleLabels = [
 ];
 
 const ONE_LETTER_GLUE_RE = /\b([AaIiOoUuWwZz])\s+(?=\S)/g;
-const SHORT_WORD_GLUE_RE = /\b(na|do|po|od|za|by|we|ze|no|to|ta|tu|co|mu|dla)\s+(?=\S)/gi;
+const SHORT_WORD_GLUE_RE = /(^|\s)(na|do|po|od|za|by|we|ze|no|to|ta|tu|co|mu|dla)\s+(?=\S)/gi;
 const PHRASE_GLUE_PATTERNS = [
   /\bgdzie\s+inni\b/gi,
   /\brozwiązać\s+pokojowo\b/gi,
@@ -78,7 +78,7 @@ function withHardSpaces(text: string): string {
     out = out.replace(pattern, (frag) => frag.replace(/\s+/g, "\u00A0"));
   }
   return out
-    .replace(SHORT_WORD_GLUE_RE, "$1\u00A0")
+    .replace(SHORT_WORD_GLUE_RE, (_m, prefix: string, shortWord: string) => `${prefix}${shortWord}\u00A0`)
     .replace(ONE_LETTER_GLUE_RE, "$1\u00A0");
 }
 
