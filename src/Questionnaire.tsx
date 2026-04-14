@@ -63,6 +63,7 @@ const ONE_LETTER_GLUE_RE = /\b([AaIiOoUuWwZz])\s+(?=\S)/g;
 const SHORT_WORD_GLUE_RE = /\b(na|do|po|od|za|by|we|ze|no|to|ta|tu|co|mu|dla)\s+(?=\S)/gi;
 const PHRASE_GLUE_PATTERNS = [
   /\bgdzie\s+inni\b/gi,
+  /\brozwiązać\s+pokojowo\b/gi,
   /\bnawet\s+jeśli\s+jest\b/gi,
   /\bnawet\s+jeśli\s+koszt\b/gi,
   /\bnawet\s+jeśli\b/gi,
