@@ -5,6 +5,7 @@ export type MetryczkaOption = {
   code: string;
   is_open: boolean;
   lock_randomization?: boolean;
+  value_emoji?: string;
 };
 
 export type MetryczkaQuestion = {
@@ -13,6 +14,7 @@ export type MetryczkaQuestion = {
   db_column: string;
   prompt: string;
   table_label: string;
+  variable_emoji?: string;
   required: boolean;
   multiple: boolean;
   randomize_options: boolean;
@@ -36,14 +38,15 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     db_column: "M_PLEC",
     prompt: "Proszę o podanie płci.",
     table_label: "Płeć",
+    variable_emoji: "👫",
     required: true,
     multiple: false,
     randomize_options: false,
     randomize_exclude_last: false,
     aliases: ["M_PLEC", "Płeć", "Plec"],
     options: [
-      { label: "kobieta", code: "kobieta", is_open: false },
-      { label: "mężczyzna", code: "mężczyzna", is_open: false },
+      { label: "kobieta", code: "kobieta", is_open: false, value_emoji: "👩" },
+      { label: "mężczyzna", code: "mężczyzna", is_open: false, value_emoji: "👨" },
     ],
   },
   M_WIEK: {
@@ -52,15 +55,16 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     db_column: "M_WIEK",
     prompt: "Jaki jest Pana/Pani wiek?",
     table_label: "Wiek",
+    variable_emoji: "🧭",
     required: true,
     multiple: false,
     randomize_options: false,
     randomize_exclude_last: false,
     aliases: ["M_WIEK", "Wiek"],
     options: [
-      { label: "15-39", code: "15-39", is_open: false },
-      { label: "40-59", code: "40-59", is_open: false },
-      { label: "60 i więcej", code: "60 i więcej", is_open: false },
+      { label: "15-39", code: "15-39", is_open: false, value_emoji: "🧑" },
+      { label: "40-59", code: "40-59", is_open: false, value_emoji: "🧑‍💼" },
+      { label: "60 i więcej", code: "60 i więcej", is_open: false, value_emoji: "🧓" },
     ],
   },
   M_WYKSZT: {
@@ -69,6 +73,7 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     db_column: "M_WYKSZT",
     prompt: "Jakie ma Pan/Pani wykształcenie?",
     table_label: "Wykształcenie",
+    variable_emoji: "🎓",
     required: true,
     multiple: false,
     randomize_options: false,
@@ -79,9 +84,10 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
         label: "podstawowe, gimnazjalne, zasadnicze zawodowe",
         code: "podstawowe, gimnazjalne, zasadnicze zawodowe",
         is_open: false,
+        value_emoji: "🛠️",
       },
-      { label: "średnie", code: "średnie", is_open: false },
-      { label: "wyższe", code: "wyższe", is_open: false },
+      { label: "średnie", code: "średnie", is_open: false, value_emoji: "📘" },
+      { label: "wyższe", code: "wyższe", is_open: false, value_emoji: "🎓" },
     ],
   },
   M_ZAWOD: {
@@ -90,19 +96,20 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     db_column: "M_ZAWOD",
     prompt: "Jaka jest Pana/Pani sytuacja zawodowa?",
     table_label: "Status zawodowy",
+    variable_emoji: "💼",
     required: true,
     multiple: false,
     randomize_options: false,
     randomize_exclude_last: false,
     aliases: ["M_ZAWOD", "Status zawodowy", "Sytuacja zawodowa"],
     options: [
-      { label: "pracownik umysłowy", code: "pracownik umysłowy", is_open: false },
-      { label: "pracownik fizyczny", code: "pracownik fizyczny", is_open: false },
-      { label: "prowadzę własną firmę", code: "prowadzę własną firmę", is_open: false },
-      { label: "student/uczeń", code: "student/uczeń", is_open: false },
-      { label: "bezrobotny", code: "bezrobotny", is_open: false },
-      { label: "rencista/emeryt", code: "rencista/emeryt", is_open: false },
-      { label: "inna (jaka?)", code: "inna (jaka?)", is_open: true },
+      { label: "pracownik umysłowy", code: "pracownik umysłowy", is_open: false, value_emoji: "🧠" },
+      { label: "pracownik fizyczny", code: "pracownik fizyczny", is_open: false, value_emoji: "🛠️" },
+      { label: "prowadzę własną firmę", code: "prowadzę własną firmę", is_open: false, value_emoji: "🏢" },
+      { label: "student/uczeń", code: "student/uczeń", is_open: false, value_emoji: "🧑‍🎓" },
+      { label: "bezrobotny", code: "bezrobotny", is_open: false, value_emoji: "🔎" },
+      { label: "rencista/emeryt", code: "rencista/emeryt", is_open: false, value_emoji: "🌿" },
+      { label: "inna (jaka?)", code: "inna (jaka?)", is_open: true, value_emoji: "🧩" },
     ],
   },
   M_MATERIAL: {
@@ -111,6 +118,7 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     db_column: "M_MATERIAL",
     prompt: "Jak ocenia Pan/Pani własną sytuację materialną?",
     table_label: "Sytuacja materialna",
+    variable_emoji: "💰",
     required: true,
     multiple: false,
     randomize_options: false,
@@ -121,12 +129,13 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
         label: "powodzi mi się bardzo źle, jestem w ciężkiej sytuacji materialnej",
         code: "powodzi mi się bardzo źle, jestem w ciężkiej sytuacji materialnej",
         is_open: false,
+        value_emoji: "😟",
       },
-      { label: "powodzi mi się raczej źle", code: "powodzi mi się raczej źle", is_open: false },
-      { label: "powodzi mi się przeciętnie, średnio", code: "powodzi mi się przeciętnie, średnio", is_open: false },
-      { label: "powodzi mi się raczej dobrze", code: "powodzi mi się raczej dobrze", is_open: false },
-      { label: "powodzi mi się bardzo dobrze", code: "powodzi mi się bardzo dobrze", is_open: false },
-      { label: "odmawiam udzielenia odpowiedzi", code: "odmawiam udzielenia odpowiedzi", is_open: false },
+      { label: "powodzi mi się raczej źle", code: "powodzi mi się raczej źle", is_open: false, value_emoji: "🙁" },
+      { label: "powodzi mi się przeciętnie, średnio", code: "powodzi mi się przeciętnie, średnio", is_open: false, value_emoji: "😐" },
+      { label: "powodzi mi się raczej dobrze", code: "powodzi mi się raczej dobrze", is_open: false, value_emoji: "🙂" },
+      { label: "powodzi mi się bardzo dobrze", code: "powodzi mi się bardzo dobrze", is_open: false, value_emoji: "😄" },
+      { label: "odmawiam udzielenia odpowiedzi", code: "odmawiam udzielenia odpowiedzi", is_open: false, value_emoji: "🤐" },
     ],
   },
 };
@@ -147,6 +156,67 @@ function safeBool(value: unknown, fallback: boolean): boolean {
   if (["1", "true", "t", "yes", "y", "on"].includes(txt)) return true;
   if (["0", "false", "f", "no", "n", "off"].includes(txt)) return false;
   return fallback;
+}
+
+function guessVariableEmoji(dbColumn: string, tableLabel = "", prompt = ""): string {
+  const key = toAsciiLower(`${dbColumn} ${tableLabel} ${prompt}`);
+  if (dbColumn === "M_PLEC" || key.includes("plec")) return "👫";
+  if (dbColumn === "M_WIEK" || key.includes("wiek")) return "🧭";
+  if (dbColumn === "M_WYKSZT" || key.includes("wykszt")) return "🎓";
+  if (dbColumn === "M_ZAWOD" || key.includes("zawod")) return "💼";
+  if (dbColumn === "M_MATERIAL" || key.includes("material")) return "💰";
+  if (["obszar", "miejsce", "zamiesz", "lokaliz", "wies", "miasto"].some((k) => key.includes(k))) return "📍";
+  if (["preferencj", "komitet", "wybor", "glos", "parti", "sejm"].some((k) => key.includes(k))) return "🗳️";
+  if (["orientac", "poglad", "politycz", "ideolog"].some((k) => key.includes(k))) return "🧭";
+  return "📌";
+}
+
+function guessValueEmoji(varLabel: string, code: string, dbColumn = ""): string {
+  const varToken = toAsciiLower(`${dbColumn} ${varLabel}`);
+  const codeToken = toAsciiLower(code);
+  if (!codeToken) return "";
+  if (dbColumn === "M_PLEC" || varToken.includes("plec")) {
+    if (codeToken.includes("kobiet")) return "👩";
+    if (codeToken.includes("mezczyzn")) return "👨";
+  }
+  if (dbColumn === "M_WIEK" || varToken.includes("wiek")) {
+    if (/\b60\b/.test(codeToken)) return "🧓";
+    if (/40\D*59/.test(codeToken)) return "🧑‍💼";
+    if (/15\D*39/.test(codeToken)) return "🧑";
+  }
+  if (dbColumn === "M_WYKSZT" || varToken.includes("wykszt")) {
+    if (codeToken.includes("wyzsze")) return "🎓";
+    if (codeToken.includes("srednie")) return "📘";
+    if (["podstaw", "gimnaz", "zawod"].some((k) => codeToken.includes(k))) return "🛠️";
+  }
+  if (dbColumn === "M_ZAWOD" || varToken.includes("zawod")) {
+    if (codeToken.includes("umysl")) return "🧠";
+    if (codeToken.includes("fizycz")) return "🛠️";
+    if (codeToken.includes("wlasn") && codeToken.includes("firm")) return "🏢";
+    if (codeToken.includes("student") || codeToken.includes("uczen")) return "🧑‍🎓";
+    if (codeToken.includes("bezrobot")) return "🔎";
+    if (codeToken.includes("renc") || codeToken.includes("emery")) return "🌿";
+    if (codeToken.includes("inna")) return "🧩";
+  }
+  if (dbColumn === "M_MATERIAL" || varToken.includes("material")) {
+    if (codeToken.includes("odmaw")) return "🤐";
+    if (codeToken.includes("bardzo dobra") || codeToken.includes("bardzo dobrze")) return "😄";
+    if (codeToken.includes("raczej dobra") || codeToken.includes("raczej dobrze")) return "🙂";
+    if (codeToken.includes("przeciet") || codeToken.includes("srednio")) return "😐";
+    if (codeToken.includes("raczej zla") || codeToken.includes("raczej zle")) return "🙁";
+    if (codeToken.includes("bardzo zla") || codeToken.includes("bardzo zle")) return "😟";
+  }
+  if (["obszar", "miejsce", "zamiesz", "lokaliz", "wies", "miasto"].some((k) => varToken.includes(k))) {
+    if (codeToken.includes("miasto")) return "🏙️";
+    if (codeToken.includes("wies")) return "🌾";
+    return "📍";
+  }
+  if (["preferencj", "komitet", "wybor", "glos", "parti", "sejm"].some((k) => varToken.includes(k))) {
+    if (codeToken.includes("odmow")) return "🤐";
+    if (codeToken.includes("nie wiem") || codeToken.includes("niezdecyd") || codeToken.includes("trudno")) return "❓";
+    return "🗳️";
+  }
+  return "";
 }
 
 function normalizeAliases(raw: unknown, fallback: string[]): string[] {
@@ -179,17 +249,23 @@ function normalizeOptions(raw: unknown, fallback: MetryczkaOption[], forceCodeEq
       safeBool((item as Record<string, unknown>).is_open, false)
       || toAsciiLower(label) === toAsciiLower(M_ZAWOD_OTHER_KEY);
     const lockRandomization = safeBool((item as Record<string, unknown>).lock_randomization, false);
+    const valueEmoji = safeText((item as Record<string, unknown>).value_emoji);
     if (!label || !code) continue;
     if (seenCodes.has(code)) continue;
     const lKey = label.toLowerCase();
     if (seenLabels.has(lKey)) continue;
     seenCodes.add(code);
     seenLabels.add(lKey);
-    out.push({ label, code, is_open: isOpen, lock_randomization: lockRandomization });
+    out.push({ label, code, is_open: isOpen, lock_randomization: lockRandomization, value_emoji: valueEmoji });
   }
   return out.length
     ? out
-    : fallback.map((opt) => ({ ...opt, is_open: !!opt.is_open, lock_randomization: !!opt.lock_randomization }));
+    : fallback.map((opt) => ({
+      ...opt,
+      is_open: !!opt.is_open,
+      lock_randomization: !!opt.lock_randomization,
+      value_emoji: safeText(opt.value_emoji),
+    }));
 }
 
 function applyLegacyExcludeLastLock(
@@ -212,6 +288,7 @@ function normalizeCoreQuestion(
 ): MetryczkaQuestion {
   const prompt = safeText(source?.prompt) || fallback.prompt;
   const tableLabel = safeText(source?.table_label) || fallback.table_label || prompt;
+  const variableEmoji = safeText(source?.variable_emoji) || safeText(fallback.variable_emoji) || guessVariableEmoji(fallback.db_column, tableLabel, prompt);
   const aliases = normalizeAliases(source?.aliases, fallback.aliases);
   const randomizeOptions = safeBool(source?.randomize_options, false);
   const legacyExcludeLast = safeBool(source?.randomize_exclude_last, false);
@@ -224,8 +301,12 @@ function normalizeCoreQuestion(
     ...fallback,
     prompt,
     table_label: tableLabel,
+    variable_emoji: variableEmoji,
     aliases,
-    options,
+    options: options.map((opt) => ({
+      ...opt,
+      value_emoji: safeText(opt.value_emoji) || guessValueEmoji(tableLabel, String(opt.code || opt.label || ""), fallback.db_column),
+    })),
     required: true,
     multiple: false,
     randomize_options: randomizeOptions,
@@ -248,6 +329,7 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
   const prompt = safeText(src.prompt);
   if (!prompt) return null;
   const tableLabel = safeText(src.table_label) || prompt;
+  const variableEmoji = safeText(src.variable_emoji) || guessVariableEmoji(dbColumn, tableLabel, prompt);
 
   const randomizeOptions = safeBool(src.randomize_options, false);
   const legacyExcludeLast = safeBool(src.randomize_exclude_last, false);
@@ -255,7 +337,10 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
     normalizeOptions(src.options, []),
     randomizeOptions,
     legacyExcludeLast,
-  );
+  ).map((opt) => ({
+    ...opt,
+    value_emoji: safeText(opt.value_emoji) || guessValueEmoji(tableLabel, String(opt.code || opt.label || ""), dbColumn),
+  }));
   if (!options.length) return null;
 
   usedColumns.add(dbColumn);
@@ -265,6 +350,7 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
     db_column: dbColumn,
     prompt,
     table_label: tableLabel,
+    variable_emoji: variableEmoji,
     required: safeBool(src.required, true),
     multiple: safeBool(src.multiple, false),
     randomize_options: randomizeOptions,
