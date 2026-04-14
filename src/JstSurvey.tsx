@@ -531,6 +531,118 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
     }
   };
 
+  const handleForwardKeyboard = async () => {
+    if (submitting) return;
+
+    if (step === "intro") {
+      goToStep("screening");
+      return;
+    }
+
+    if (step === "screening") {
+      await goNextFromScreening();
+      return;
+    }
+
+    if (step === "metryka") {
+      const ok = validateMetry();
+      if (!ok) return;
+      await ensureStarted();
+      goToStep("A");
+      return;
+    }
+
+    if (step === "A") {
+      if (!validateA()) return;
+      goToStep("B1");
+      return;
+    }
+
+    if (step === "B1") {
+      if (!validateB1()) return;
+      goToStep("B2");
+      return;
+    }
+
+    if (step === "B2") {
+      if (!selectedB2) {
+        setErrorMsg("Proszę wskazać jedną odpowiedź.");
+        return;
+      }
+      clearErrors();
+      goToStep("D");
+      return;
+    }
+
+    if (step === "D") {
+      if (!dAnswers[currentD.id]) {
+        setErrorMsg("Proszę wskazać jedną odpowiedź.");
+        return;
+      }
+      clearErrors();
+      try {
+        (document.activeElement as HTMLElement | null)?.blur();
+      } catch {
+        // ignore
+      }
+      if (dIndex < dOrder.length - 1) {
+        setDIndex((x) => x + 1);
+        setTimeout(() => forceScrollTop(), 0);
+      } else {
+        goToStep("D13");
+      }
+      return;
+    }
+
+    if (step === "D13") {
+      await submitAll();
+    }
+  };
+
+  useEffect(() => {
+    if (step === "thanks" || step === "rejected") return;
+
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if (ev.repeat) return;
+      const target = ev.target as HTMLElement | null;
+      const tag = (target?.tagName || "").toUpperCase();
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (ev.key === "ArrowLeft") {
+        if (!allowBack || step === "intro") return;
+        ev.preventDefault();
+        goBack();
+        return;
+      }
+
+      if (ev.key === "Enter" || ev.key === "ArrowRight") {
+        ev.preventDefault();
+        void handleForwardKeyboard();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    allowBack,
+    step,
+    submitting,
+    selectedB2,
+    dIndex,
+    dOrder.length,
+    currentD.id,
+    dAnswers,
+    goBack,
+    goNextFromScreening,
+    validateMetry,
+    ensureStarted,
+    validateA,
+    validateB1,
+    clearErrors,
+    submitAll,
+  ]);
+
   if (shouldRotate) {
     return (
       <div className="jst-root">
