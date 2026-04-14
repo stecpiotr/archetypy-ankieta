@@ -3,6 +3,15 @@ import { supabase } from "./supabaseClient";
 import { markJstTokenCompleted, markJstTokenRejected, markJstTokenStarted } from "./lib/tokens";
 import { buildJstTextContext, renderJstTemplate } from "./lib/jstStudies";
 import type { JstStudyRow } from "./lib/jstStudies";
+import {
+  buildMetryPayload,
+  findMetryQuestionByColumn,
+  findSelectedOptionLabel,
+  initMetryAnswers,
+  isMZawodOtherSelected,
+  normalizeMetryczkaConfig,
+  type MetryczkaQuestion,
+} from "./lib/metryczka";
 import "./JstSurvey.css";
 
 type Step = "intro" | "screening" | "metryka" | "A" | "B1" | "B2" | "D" | "D13" | "thanks" | "rejected";
@@ -23,31 +32,22 @@ const ARCHETYPES = [
   "Buntownik",
 ] as const;
 
-const METRY = {
-  M_PLEC: ["kobieta", "mężczyzna"],
-  M_WIEK: ["15-39", "40-59", "60 i więcej"],
-  M_WYKSZT: ["podstawowe, gimnazjalne, zasadnicze zawodowe", "średnie", "wyższe"],
-  M_ZAWOD: [
-    "pracownik umysłowy",
-    "pracownik fizyczny",
-    "prowadzę własną firmę",
-    "student/uczeń",
-    "bezrobotny",
-    "rencista/emeryt",
-    "inna (jaka?)",
-  ],
-  M_MATERIAL: [
-    "powodzi mi się bardzo źle, jestem w ciężkiej sytuacji materialnej",
-    "powodzi mi się raczej źle",
-    "powodzi mi się przeciętnie, średnio",
-    "powodzi mi się raczej dobrze",
-    "powodzi mi się bardzo dobrze",
-    "odmawiam udzielenia odpowiedzi",
-  ],
-} as const;
-
-const M_ZAWOD_OTHER_OPTION = "inna (jaka?)";
 const M_ZAWOD_OTHER_MIN_CHARS = 3;
+
+function normTextSimple(value: string): string {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/ą/g, "a")
+    .replace(/ć/g, "c")
+    .replace(/ę/g, "e")
+    .replace(/ł/g, "l")
+    .replace(/ń/g, "n")
+    .replace(/ó/g, "o")
+    .replace(/ś/g, "s")
+    .replace(/ż/g, "z")
+    .replace(/ź/g, "z")
+    .trim();
+}
 
 const A_ITEMS = [
   { id: "A1", left: "stabilność i przewidywalność", right: "otwartość na zmiany i nowości" },
@@ -205,15 +205,33 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   const [isResident, setIsResident] = useState<boolean | null>(null);
   const [missingAIds, setMissingAIds] = useState<string[]>([]);
 
-  const [metry, setMetry] = useState<Record<keyof typeof METRY, string>>({
-    M_PLEC: "",
-    M_WIEK: "",
-    M_WYKSZT: "",
-    M_ZAWOD: "",
-    M_MATERIAL: "",
-  });
+  const metryConfig = useMemo(() => normalizeMetryczkaConfig(study?.metryczka_config), [study?.metryczka_config]);
+  const metryQuestions = metryConfig.questions;
+  const [metryAnswers, setMetryAnswers] = useState<Record<string, string>>({});
+  useEffect(() => {
+    setMetryAnswers((prev) => initMetryAnswers(metryQuestions, prev));
+  }, [metryQuestions]);
   const [showOnlyMissingMetry, setShowOnlyMissingMetry] = useState(false);
   const [metryZawodOther, setMetryZawodOther] = useState("");
+
+  const plecQuestion = useMemo(
+    () => findMetryQuestionByColumn(metryQuestions, "M_PLEC"),
+    [metryQuestions],
+  );
+  const selectedPlecCode = plecQuestion ? metryAnswers[plecQuestion.id] || "" : "";
+  const selectedPlecLabel = findSelectedOptionLabel(plecQuestion, selectedPlecCode);
+  const panDat = normTextSimple(selectedPlecLabel) === "kobieta"
+    ? "Pani"
+    : normTextSimple(selectedPlecLabel) === "mezczyzna"
+      ? "Panu"
+      : "Panu/Pani";
+
+  const zawodQuestion = useMemo(
+    () => findMetryQuestionByColumn(metryQuestions, "M_ZAWOD"),
+    [metryQuestions],
+  );
+  const selectedZawodCode = zawodQuestion ? metryAnswers[zawodQuestion.id] || "" : "";
+  const needsZawodOther = isMZawodOtherSelected(zawodQuestion, selectedZawodCode);
 
   const [aOrder] = useState(() => shuffle(A_ITEMS.map((x) => x.id)));
   const [aAnswers, setAAnswers] = useState<Record<string, number | undefined>>({});
@@ -236,8 +254,6 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
     step !== "intro" &&
     step !== "thanks" &&
     step !== "rejected";
-
-  const panDat = metry.M_PLEC === "kobieta" ? "Pani" : metry.M_PLEC === "mężczyzna" ? "Panu" : "Panu/Pani";
 
   const scrollToTopAll = () => {
     const targets: (Window | HTMLElement)[] = [window];
@@ -358,9 +374,11 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   };
 
   const validateMetry = () => {
-    const missing = (Object.keys(METRY) as (keyof typeof METRY)[]).filter((k) => !metry[k]);
-    const needsOther = metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION;
-    const missingOther = needsOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
+    const missing = metryQuestions
+      .filter((q) => q.required !== false)
+      .filter((q) => !String(metryAnswers[q.id] || "").trim())
+      .map((q) => q.id);
+    const missingOther = needsZawodOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
     if (missing.length || missingOther) {
       if (!missing.length && missingOther) {
         setErrorMsg(`Proszę doprecyzować odpowiedź "inna (jaka?)" (min. ${M_ZAWOD_OTHER_MIN_CHARS} znaki).`);
@@ -470,14 +488,8 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
     try {
       await ensureStarted();
 
-      const payload: Record<string, unknown> = {
-        M_PLEC: metry.M_PLEC,
-        M_WIEK: metry.M_WIEK,
-        M_WYKSZT: metry.M_WYKSZT,
-        M_ZAWOD: metry.M_ZAWOD,
-        M_ZAWOD_OTHER: metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION ? metryZawodOther.trim() : "",
-        M_MATERIAL: metry.M_MATERIAL,
-      };
+      const payload: Record<string, unknown> = buildMetryPayload(metryQuestions, metryAnswers);
+      payload.M_ZAWOD_OTHER = needsZawodOther ? metryZawodOther.trim() : "";
 
       A_ITEMS.forEach((item) => {
         payload[item.id] = Number(aAnswers[item.id] || 0);
@@ -780,41 +792,36 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
         {step === "metryka" && (
           <section className="jst-card">
             <h2 className="jst-title jst-step-title jst-metry-step-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
-            {(Object.keys(METRY) as (keyof typeof METRY)[]).map((field) => {
-              const missingBase = !metry[field];
-              const missingOther = field === "M_ZAWOD" && metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
+            {metryQuestions.map((question: MetryczkaQuestion) => {
+              const selectedCode = metryAnswers[question.id] || "";
+              const missingBase = question.required !== false && !selectedCode;
+              const missingOther = question.id === zawodQuestion?.id && needsZawodOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
               const missing = missingBase || missingOther;
               return (
-                <div key={field} className={`jst-metry ${missing && showOnlyMissingMetry ? "missing" : ""}`}>
-                  <p className="jst-metry-title">
-                    {field === "M_PLEC" && "Proszę o podanie płci."}
-                    {field === "M_WIEK" && "Jaki jest Pana/Pani wiek?"}
-                    {field === "M_WYKSZT" && "Jakie ma Pan/Pani wykształcenie?"}
-                    {field === "M_ZAWOD" && "Jaka jest Pana/Pani sytuacja zawodowa?"}
-                    {field === "M_MATERIAL" && "Jak ocenia Pan/Pani własną sytuację materialną?"}
-                  </p>
+                <div key={question.id} className={`jst-metry ${missing && showOnlyMissingMetry ? "missing" : ""}`}>
+                  <p className="jst-metry-title">{question.prompt}</p>
                   <div className="jst-radio-grid">
-                    {METRY[field].map((opt) => (
+                    {question.options.map((opt) => (
                       <button
-                        key={opt}
+                        key={`${question.id}_${opt.code}`}
                         type="button"
-                        className={`jst-radio-opt ${metry[field] === opt ? "selected" : ""}`}
+                        className={`jst-radio-opt ${selectedCode === opt.code ? "selected" : ""}`}
                         onClick={() => {
-                          if (field === "M_ZAWOD" && opt !== M_ZAWOD_OTHER_OPTION) {
+                          if (question.id === zawodQuestion?.id && !isMZawodOtherSelected(question, opt.code)) {
                             setMetryZawodOther("");
                           }
-                          setMetry((prev) => ({ ...prev, [field]: opt }));
+                          setMetryAnswers((prev) => ({ ...prev, [question.id]: opt.code }));
                           clearErrors();
                         }}
                       >
-                        <span className={`jst-radio-mark ${metry[field] === opt ? "selected" : ""}`} aria-hidden>
+                        <span className={`jst-radio-mark ${selectedCode === opt.code ? "selected" : ""}`} aria-hidden>
                           <span className="jst-radio-dot" />
                         </span>
-                        <span>{opt}</span>
+                        <span>{opt.label}</span>
                       </button>
                     ))}
                   </div>
-                  {field === "M_ZAWOD" && metry.M_ZAWOD === M_ZAWOD_OTHER_OPTION && (
+                  {question.id === zawodQuestion?.id && needsZawodOther && (
                     <div className={`jst-other-wrap ${showOnlyMissingMetry && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS ? "missing" : ""}`}>
                       <label className="jst-other-label" htmlFor="jst-zawod-other">
                         Proszę doprecyzować odpowiedź (min. {M_ZAWOD_OTHER_MIN_CHARS} znaki):

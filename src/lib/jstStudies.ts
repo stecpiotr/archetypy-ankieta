@@ -33,6 +33,8 @@ export interface JstStudyRow {
   survey_auto_end_enabled?: boolean | null;
   survey_auto_end_at?: string | null;
   survey_auto_end_applied_at?: string | null;
+  metryczka_config?: unknown;
+  metryczka_config_version?: number | null;
 }
 
 export interface JstTextCtx {

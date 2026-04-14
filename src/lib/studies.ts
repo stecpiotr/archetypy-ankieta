@@ -21,6 +21,8 @@ export interface StudyRow {
   survey_auto_end_enabled?: boolean | null;
   survey_auto_end_at?: string | null;
   survey_auto_end_applied_at?: string | null;
+  metryczka_config?: unknown;
+  metryczka_config_version?: number | null;
 
   first_name: string;   // historyczne
   last_name: string;    // historyczne
@@ -100,6 +102,8 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
     "survey_auto_end_enabled",
     "survey_auto_end_at",
     "survey_auto_end_applied_at",
+    "metryczka_config",
+    "metryczka_config_version",
     ...baseFields,
   ];
 

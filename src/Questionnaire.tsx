@@ -9,9 +9,18 @@ import {
   buildDisplayFromStudy,
   getTokenFromUrl,
 } from "./lib/studies";
+import {
+  buildMetryPayload,
+  findMetryQuestionByColumn,
+  initMetryAnswers,
+  isMZawodOtherSelected,
+  normalizeMetryczkaConfig,
+  type MetryczkaQuestion,
+} from "./lib/metryczka";
 
 const SCALE_VALUES = [0, 1, 2, 3, 5] as const;
 type Answer = (typeof SCALE_VALUES)[number];
+const M_ZAWOD_OTHER_MIN_CHARS = 3;
 
 type QuestionnaireSettings = {
   displayMode?: "matrix" | "single";
@@ -129,6 +138,19 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const [slug, setSlug] = useState<string | null>(null);
   const [fullGen, setFullGen] = useState<string | null>(initialFullGen);
   const [gender, setGender] = useState<"M" | "F">(initialGender);
+  const [metryConfig, setMetryConfig] = useState(() => normalizeMetryczkaConfig(null));
+  const metryQuestions = metryConfig.questions;
+  const [metryAnswers, setMetryAnswers] = useState<Record<string, string>>({});
+  const [metryZawodOther, setMetryZawodOther] = useState("");
+  const [showMissingMetry, setShowMissingMetry] = useState(false);
+  const [metryCompleted, setMetryCompleted] = useState(false);
+
+  useEffect(() => {
+    setMetryAnswers((prev) => initMetryAnswers(metryQuestions, prev));
+  }, [metryQuestions]);
+
+  const zawodQuestion = findMetryQuestionByColumn(metryQuestions, "M_ZAWOD");
+  const needsZawodOther = isMZawodOtherSelected(zawodQuestion, zawodQuestion ? metryAnswers[zawodQuestion.id] || "" : "");
 
   const questionOrderRef = useRef<number[] | null>(null);
   if (!questionOrderRef.current) {
@@ -189,6 +211,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       const c = buildDisplayFromStudy(study);
       setGender(c.gender);
       setFullGen(c.fullGen);
+      setMetryConfig(normalizeMetryczkaConfig((study as any).metryczka_config));
+      setMetryCompleted(false);
     })();
   }, []);
 
@@ -208,7 +232,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
             : "landscape";
   const isMobileViewport = Math.min(viewport.width, viewport.height) <= 500;
   const showOrientationWarning =
-    !submitted && displayMode === "matrix" && isMobileViewport && orientation === "portrait";
+    !submitted && metryCompleted && displayMode === "matrix" && isMobileViewport && orientation === "portrait";
 
   const markStartedOnce = () => {
     if (startedMarkedRef.current) return;
@@ -233,6 +257,42 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const collectMissing = (): number[] =>
     responses.map((v, i) => (v === null ? i : -1)).filter((idx) => idx !== -1);
 
+  const validateMetry = (): boolean => {
+    const missing = metryQuestions
+      .filter((q) => q.required !== false)
+      .filter((q) => !String(metryAnswers[q.id] || "").trim())
+      .map((q) => q.id);
+    const missingOther = needsZawodOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
+    if (missing.length || missingOther) {
+      if (!missing.length && missingOther) {
+        setApiError(`Proszę doprecyzować odpowiedź "inna (jaka?)" (min. ${M_ZAWOD_OTHER_MIN_CHARS} znaki).`);
+      } else {
+        setApiError("Proszę uzupełnić wszystkie wymagane pola metryczki.");
+      }
+      setShowMissingMetry(true);
+      return false;
+    }
+    setShowMissingMetry(false);
+    setApiError("");
+    return true;
+  };
+
+  const buildMetryScoresPayload = (): Record<string, unknown> => {
+    const metryPayload = buildMetryPayload(metryQuestions, metryAnswers);
+    metryPayload.M_ZAWOD_OTHER = needsZawodOther ? metryZawodOther.trim() : "";
+    return { metryczka: metryPayload };
+  };
+
+  const handleMetryNext = (): void => {
+    if (!validateMetry()) return;
+    markStartedOnce();
+    setMetryCompleted(true);
+    setError(false);
+    setMissingRows([]);
+    setApiError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const submitResponses = async () => {
     if (!slug) {
       setApiError("Brak identyfikatora badania w linku (użyj adresu /slug, np. /lublin).");
@@ -249,7 +309,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       const { error: rpcError } = await callRpc("add_response_by_slug", {
         p_slug: slug,
         p_answers: payloadAnswers,
-        p_scores: null,
+        p_scores: buildMetryScoresPayload(),
         p_raw_total: null,
         p_respondent_code: null,
       });
@@ -334,7 +394,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   };
 
   useEffect(() => {
-    if (displayMode !== "single" || submitted) return;
+    if (displayMode !== "single" || submitted || !metryCompleted) return;
 
     const onKeyDown = (ev: KeyboardEvent) => {
       if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
@@ -369,12 +429,214 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   }, [
     displayMode,
     submitted,
+    metryCompleted,
     selectedCurrent,
     allowBack,
     singleIndex,
     handleSingleNext,
     handleSingleBack,
   ]);
+
+  if (!submitted && !metryCompleted) {
+    const title = fullGen
+      ? `Badanie wizerunku i postrzegania ${fullGen}`
+      : "Badanie wizerunku i postrzegania";
+    return (
+      <div
+        style={{
+          maxWidth: 1100,
+          margin: "0 auto",
+          padding: "28px 12px 40px 12px",
+          fontFamily: "'Roboto', Arial, sans-serif",
+        }}
+      >
+        {!!apiError && (
+          <div
+            style={{
+              position: "sticky",
+              top: 6,
+              zIndex: 60,
+              marginBottom: 14,
+              background: "#fee2e2",
+              border: "1px solid #fecaca",
+              color: "#991b1b",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontWeight: 600,
+            }}
+          >
+            {apiError}
+          </div>
+        )}
+
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: "2.1rem",
+            color: "#2c3e50",
+            textAlign: "left",
+            margin: "0 0 18px 0",
+            letterSpacing: 1,
+            lineHeight: 1.13,
+          }}
+        >
+          {title}
+        </div>
+
+        <hr
+          style={{
+            border: 0,
+            borderTop: "1.5px solid #ececec",
+            margin: "0 0 18px 0",
+          }}
+        />
+
+        <section
+          style={{
+            border: "1px solid #dbe3eb",
+            borderRadius: 12,
+            background: "#fff",
+            padding: "16px 16px 18px 16px",
+          }}
+        >
+          <h2 style={{ margin: "0 0 10px 0", color: "#0f172a", fontSize: "1.28rem" }}>
+            Na wstępie prosimy o podanie kilku danych demograficznych
+          </h2>
+
+          {metryQuestions.map((question: MetryczkaQuestion) => {
+            const selectedCode = metryAnswers[question.id] || "";
+            const missingBase = question.required !== false && !selectedCode;
+            const missingOther = question.id === zawodQuestion?.id
+              && needsZawodOther
+              && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
+            const missing = showMissingMetry && (missingBase || missingOther);
+            return (
+              <div
+                key={question.id}
+                style={{
+                  margin: "12px 0 14px 0",
+                  padding: "10px 10px 8px 10px",
+                  borderRadius: 10,
+                  border: missing ? "1px solid #fecaca" : "1px solid #edf2f7",
+                  background: missing ? "#fff7f7" : "#fbfdff",
+                }}
+              >
+                <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#243447" }}>{question.prompt}</p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                    gap: "8px",
+                  }}
+                >
+                  {question.options.map((opt) => {
+                    const selected = selectedCode === opt.code;
+                    return (
+                      <button
+                        key={`${question.id}_${opt.code}`}
+                        type="button"
+                        onClick={() => {
+                          if (question.id === zawodQuestion?.id && !isMZawodOtherSelected(question, opt.code)) {
+                            setMetryZawodOther("");
+                          }
+                          setMetryAnswers((prev) => ({ ...prev, [question.id]: opt.code }));
+                          setShowMissingMetry(false);
+                          setApiError("");
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 10,
+                          width: "100%",
+                          borderRadius: 8,
+                          border: selected ? "1px solid #60a5fa" : "1px solid #dbe3eb",
+                          background: selected ? "#eff6ff" : "#fff",
+                          color: "#1f2937",
+                          textAlign: "left",
+                          padding: "8px 10px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span>{opt.label}</span>
+                        <span
+                          aria-hidden
+                          style={{
+                            width: 14,
+                            height: 14,
+                            borderRadius: "50%",
+                            border: selected ? "4px solid #3b82f6" : "1.5px solid #9ca3af",
+                            boxSizing: "border-box",
+                            flex: "0 0 auto",
+                          }}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {question.id === zawodQuestion?.id && needsZawodOther && (
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      htmlFor="personal-metry-zawod-other"
+                      style={{ display: "block", marginBottom: 6, fontSize: "0.96rem", color: "#334155" }}
+                    >
+                      Proszę doprecyzować odpowiedź (min. {M_ZAWOD_OTHER_MIN_CHARS} znaki):
+                    </label>
+                    <input
+                      id="personal-metry-zawod-other"
+                      type="text"
+                      value={metryZawodOther}
+                      onChange={(e) => {
+                        setMetryZawodOther(e.target.value);
+                        setShowMissingMetry(false);
+                        setApiError("");
+                      }}
+                      maxLength={120}
+                      autoComplete="off"
+                      style={{
+                        width: "100%",
+                        borderRadius: 8,
+                        border: showMissingMetry && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS
+                          ? "1px solid #ef4444"
+                          : "1px solid #d1d5db",
+                        padding: "9px 10px",
+                        boxSizing: "border-box",
+                        fontSize: "1rem",
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={handleMetryNext}
+              style={{
+                minWidth: 180,
+                background: "#06b09c",
+                color: "#fff",
+                fontWeight: 700,
+                fontFamily: "'Roboto', Arial, sans-serif",
+                fontSize: "1.04rem",
+                border: "none",
+                borderRadius: 8,
+                padding: "0.62em 1.2em",
+                boxShadow: "0 2px 8px #ececec",
+                cursor: "pointer",
+                letterSpacing: "0.5px",
+              }}
+            >
+              Przejdź dalej
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   if (showOrientationWarning) {
     return (
