@@ -183,6 +183,20 @@ function shuffle<T>(arr: T[]): T[] {
   return out;
 }
 
+function shuffleMetryOptionsWithLocks(options: MetryczkaOption[]): MetryczkaOption[] {
+  const base = Array.isArray(options) ? [...options] : [];
+  if (base.length < 2) return base;
+  const movable = base.filter((opt) => opt.lock_randomization !== true);
+  const shuffled = shuffle(movable);
+  let cursor = 0;
+  return base.map((opt) => {
+    if (opt.lock_randomization === true) return opt;
+    const next = shuffled[cursor];
+    cursor += 1;
+    return next ?? opt;
+  });
+}
+
 type Props = {
   study: JstStudyRow;
   token: string | null;
@@ -244,12 +258,7 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
         out[q.id] = base;
         return;
       }
-      if (q.randomize_exclude_last === true && base.length >= 2) {
-        const frozen = base[base.length - 1];
-        out[q.id] = [...shuffle(base.slice(0, -1)), frozen];
-        return;
-      }
-      out[q.id] = shuffle(base);
+      out[q.id] = shuffleMetryOptionsWithLocks(base);
     });
     return out;
   }, [metryQuestions]);

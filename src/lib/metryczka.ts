@@ -4,6 +4,7 @@ export type MetryczkaOption = {
   label: string;
   code: string;
   is_open: boolean;
+  lock_randomization?: boolean;
 };
 
 export type MetryczkaQuestion = {
@@ -171,15 +172,32 @@ function normalizeOptions(raw: unknown, fallback: MetryczkaOption[], forceCodeEq
     const isOpen =
       safeBool((item as Record<string, unknown>).is_open, false)
       || toAsciiLower(label) === toAsciiLower(M_ZAWOD_OTHER_KEY);
+    const lockRandomization = safeBool((item as Record<string, unknown>).lock_randomization, false);
     if (!label || !code) continue;
     if (seenCodes.has(code)) continue;
     const lKey = label.toLowerCase();
     if (seenLabels.has(lKey)) continue;
     seenCodes.add(code);
     seenLabels.add(lKey);
-    out.push({ label, code, is_open: isOpen });
+    out.push({ label, code, is_open: isOpen, lock_randomization: lockRandomization });
   }
-  return out.length ? out : fallback.map((opt) => ({ ...opt, is_open: !!opt.is_open }));
+  return out.length
+    ? out
+    : fallback.map((opt) => ({ ...opt, is_open: !!opt.is_open, lock_randomization: !!opt.lock_randomization }));
+}
+
+function applyLegacyExcludeLastLock(
+  options: MetryczkaOption[],
+  randomizeOptions: boolean,
+  legacyExcludeLast: boolean,
+): MetryczkaOption[] {
+  const out = options.map((opt) => ({ ...opt, lock_randomization: !!opt.lock_randomization }));
+  if (!out.length) return out;
+  const hasLocked = out.some((opt) => opt.lock_randomization === true);
+  if (randomizeOptions && legacyExcludeLast && !hasLocked) {
+    out[out.length - 1] = { ...out[out.length - 1], lock_randomization: true };
+  }
+  return out;
 }
 
 function normalizeCoreQuestion(
@@ -188,7 +206,13 @@ function normalizeCoreQuestion(
 ): MetryczkaQuestion {
   const prompt = safeText(source?.prompt) || fallback.prompt;
   const aliases = normalizeAliases(source?.aliases, fallback.aliases);
-  const options = normalizeOptions(source?.options, fallback.options, true);
+  const randomizeOptions = safeBool(source?.randomize_options, false);
+  const legacyExcludeLast = safeBool(source?.randomize_exclude_last, false);
+  const options = applyLegacyExcludeLastLock(
+    normalizeOptions(source?.options, fallback.options, true),
+    randomizeOptions,
+    legacyExcludeLast,
+  );
   return {
     ...fallback,
     prompt,
@@ -196,8 +220,8 @@ function normalizeCoreQuestion(
     options,
     required: true,
     multiple: false,
-    randomize_options: safeBool(source?.randomize_options, false),
-    randomize_exclude_last: safeBool(source?.randomize_exclude_last, false) && safeBool(source?.randomize_options, false),
+    randomize_options: randomizeOptions,
+    randomize_exclude_last: false,
   };
 }
 
@@ -216,7 +240,13 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
   const prompt = safeText(src.prompt);
   if (!prompt) return null;
 
-  const options = normalizeOptions(src.options, []);
+  const randomizeOptions = safeBool(src.randomize_options, false);
+  const legacyExcludeLast = safeBool(src.randomize_exclude_last, false);
+  const options = applyLegacyExcludeLastLock(
+    normalizeOptions(src.options, []),
+    randomizeOptions,
+    legacyExcludeLast,
+  );
   if (!options.length) return null;
 
   usedColumns.add(dbColumn);
@@ -227,8 +257,8 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
     prompt,
     required: safeBool(src.required, true),
     multiple: safeBool(src.multiple, false),
-    randomize_options: safeBool(src.randomize_options, false),
-    randomize_exclude_last: safeBool(src.randomize_exclude_last, false) && safeBool(src.randomize_options, false),
+    randomize_options: randomizeOptions,
+    randomize_exclude_last: false,
     aliases: normalizeAliases(src.aliases, []),
     options,
   };
