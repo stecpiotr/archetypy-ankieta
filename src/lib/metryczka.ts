@@ -12,6 +12,7 @@ export type MetryczkaQuestion = {
   scope: MetryczkaScope;
   db_column: string;
   prompt: string;
+  table_label: string;
   required: boolean;
   multiple: boolean;
   randomize_options: boolean;
@@ -34,6 +35,7 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     scope: "core",
     db_column: "M_PLEC",
     prompt: "Proszę o podanie płci.",
+    table_label: "Płeć",
     required: true,
     multiple: false,
     randomize_options: false,
@@ -49,6 +51,7 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     scope: "core",
     db_column: "M_WIEK",
     prompt: "Jaki jest Pana/Pani wiek?",
+    table_label: "Wiek",
     required: true,
     multiple: false,
     randomize_options: false,
@@ -65,6 +68,7 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     scope: "core",
     db_column: "M_WYKSZT",
     prompt: "Jakie ma Pan/Pani wykształcenie?",
+    table_label: "Wykształcenie",
     required: true,
     multiple: false,
     randomize_options: false,
@@ -85,6 +89,7 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     scope: "core",
     db_column: "M_ZAWOD",
     prompt: "Jaka jest Pana/Pani sytuacja zawodowa?",
+    table_label: "Status zawodowy",
     required: true,
     multiple: false,
     randomize_options: false,
@@ -105,6 +110,7 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     scope: "core",
     db_column: "M_MATERIAL",
     prompt: "Jak ocenia Pan/Pani własną sytuację materialną?",
+    table_label: "Sytuacja materialna",
     required: true,
     multiple: false,
     randomize_options: false,
@@ -205,6 +211,7 @@ function normalizeCoreQuestion(
   fallback: MetryczkaQuestion,
 ): MetryczkaQuestion {
   const prompt = safeText(source?.prompt) || fallback.prompt;
+  const tableLabel = safeText(source?.table_label) || fallback.table_label || prompt;
   const aliases = normalizeAliases(source?.aliases, fallback.aliases);
   const randomizeOptions = safeBool(source?.randomize_options, false);
   const legacyExcludeLast = safeBool(source?.randomize_exclude_last, false);
@@ -216,6 +223,7 @@ function normalizeCoreQuestion(
   return {
     ...fallback,
     prompt,
+    table_label: tableLabel,
     aliases,
     options,
     required: true,
@@ -239,6 +247,7 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
 
   const prompt = safeText(src.prompt);
   if (!prompt) return null;
+  const tableLabel = safeText(src.table_label) || prompt;
 
   const randomizeOptions = safeBool(src.randomize_options, false);
   const legacyExcludeLast = safeBool(src.randomize_exclude_last, false);
@@ -255,6 +264,7 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
     scope: "custom",
     db_column: dbColumn,
     prompt,
+    table_label: tableLabel,
     required: safeBool(src.required, true),
     multiple: safeBool(src.multiple, false),
     randomize_options: randomizeOptions,
