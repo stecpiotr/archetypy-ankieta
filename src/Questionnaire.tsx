@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./LikertTable.css";
 import "./SingleQuestionnaire.css";
 import Thanks from "./Thanks";
@@ -11,16 +11,16 @@ import {
 } from "./lib/studies";
 import {
   buildMetryPayload,
-  findMetryQuestionByColumn,
   initMetryAnswers,
-  isMZawodOtherSelected,
+  isOpenOptionSelected,
   normalizeMetryczkaConfig,
   type MetryczkaQuestion,
+  type MetryczkaOption,
 } from "./lib/metryczka";
 
 const SCALE_VALUES = [0, 1, 2, 3, 5] as const;
 type Answer = (typeof SCALE_VALUES)[number];
-const M_ZAWOD_OTHER_MIN_CHARS = 3;
+const METRY_OPEN_MIN_CHARS = 1;
 
 type QuestionnaireSettings = {
   displayMode?: "matrix" | "single";
@@ -112,6 +112,15 @@ function shuffleIndices(arr: number[]): number[] {
   return out;
 }
 
+function shuffleOptions<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 const Questionnaire: React.FC<QuestionnaireProps> = ({
   settings,
   initialGender = "M",
@@ -141,16 +150,41 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const [metryConfig, setMetryConfig] = useState(() => normalizeMetryczkaConfig(null));
   const metryQuestions = metryConfig.questions;
   const [metryAnswers, setMetryAnswers] = useState<Record<string, string>>({});
-  const [metryZawodOther, setMetryZawodOther] = useState("");
+  const [metryOpenTexts, setMetryOpenTexts] = useState<Record<string, string>>({});
   const [showMissingMetry, setShowMissingMetry] = useState(false);
   const [metryCompleted, setMetryCompleted] = useState(false);
 
   useEffect(() => {
     setMetryAnswers((prev) => initMetryAnswers(metryQuestions, prev));
   }, [metryQuestions]);
+  useEffect(() => {
+    setMetryOpenTexts((prev) => {
+      const next: Record<string, string> = {};
+      metryQuestions.forEach((q) => {
+        next[q.id] = prev[q.id] || "";
+      });
+      return next;
+    });
+  }, [metryQuestions]);
 
-  const zawodQuestion = findMetryQuestionByColumn(metryQuestions, "M_ZAWOD");
-  const needsZawodOther = isMZawodOtherSelected(zawodQuestion, zawodQuestion ? metryAnswers[zawodQuestion.id] || "" : "");
+  const metryOptionsByQuestion = useMemo(() => {
+    const out: Record<string, MetryczkaOption[]> = {};
+    metryQuestions.forEach((q) => {
+      const base = Array.isArray(q.options) ? [...q.options] : [];
+      if (base.length < 2 || q.randomize_options !== true) {
+        out[q.id] = base;
+        return;
+      }
+      if (q.randomize_exclude_last === true && base.length >= 2) {
+        const frozen = base[base.length - 1];
+        const shuffledHead = shuffleOptions(base.slice(0, -1));
+        out[q.id] = [...shuffledHead, frozen];
+        return;
+      }
+      out[q.id] = shuffleOptions(base);
+    });
+    return out;
+  }, [metryQuestions]);
 
   const questionOrderRef = useRef<number[] | null>(null);
   if (!questionOrderRef.current) {
@@ -262,10 +296,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       .filter((q) => q.required !== false)
       .filter((q) => !String(metryAnswers[q.id] || "").trim())
       .map((q) => q.id);
-    const missingOther = needsZawodOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
-    if (missing.length || missingOther) {
-      if (!missing.length && missingOther) {
-        setApiError(`Proszę doprecyzować odpowiedź "inna (jaka?)" (min. ${M_ZAWOD_OTHER_MIN_CHARS} znaki).`);
+    const missingOpen = metryQuestions
+      .filter((q) => isOpenOptionSelected(q, metryAnswers[q.id] || ""))
+      .filter((q) => String(metryOpenTexts[q.id] || "").trim().length < METRY_OPEN_MIN_CHARS)
+      .map((q) => q.id);
+    if (missing.length || missingOpen.length) {
+      if (!missing.length && missingOpen.length) {
+        setApiError("Proszę uzupełnić pole tekstowe dla wybranej odpowiedzi otwartej.");
       } else {
         setApiError("Proszę uzupełnić wszystkie wymagane pola metryczki.");
       }
@@ -279,7 +316,16 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
 
   const buildMetryScoresPayload = (): Record<string, unknown> => {
     const metryPayload = buildMetryPayload(metryQuestions, metryAnswers);
-    metryPayload.M_ZAWOD_OTHER = needsZawodOther ? metryZawodOther.trim() : "";
+    metryQuestions.forEach((q) => {
+      const openKey = `${String(q.db_column || q.id).trim().toUpperCase()}_OTHER`;
+      const openValue = isOpenOptionSelected(q, metryAnswers[q.id] || "")
+        ? String(metryOpenTexts[q.id] || "").trim()
+        : "";
+      metryPayload[openKey] = openValue;
+      if (String(q.db_column || q.id).trim().toUpperCase() === "M_ZAWOD") {
+        metryPayload.M_ZAWOD_OTHER = openValue;
+      }
+    });
     return { metryczka: metryPayload };
   };
 
@@ -458,16 +504,16 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
 
             {metryQuestions.map((question: MetryczkaQuestion) => {
               const selectedCode = metryAnswers[question.id] || "";
+              const displayOptions = metryOptionsByQuestion[question.id] || question.options;
+              const needsOpen = isOpenOptionSelected(question, selectedCode);
               const missingBase = question.required !== false && !selectedCode;
-              const missingOther = question.id === zawodQuestion?.id
-                && needsZawodOther
-                && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
+              const missingOther = needsOpen && String(metryOpenTexts[question.id] || "").trim().length < METRY_OPEN_MIN_CHARS;
               const missing = showMissingMetry && (missingBase || missingOther);
               return (
                 <div key={question.id} className={`pm-metry-question ${missing ? "missing" : ""}`}>
                   <p className="pm-metry-question-title">{question.prompt}</p>
                   <div className="pm-metry-options">
-                    {question.options.map((opt) => {
+                    {displayOptions.map((opt) => {
                       const selected = selectedCode === opt.code;
                       return (
                         <button
@@ -475,8 +521,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                           type="button"
                           className={`pm-metry-option ${selected ? "selected" : ""}`}
                           onClick={() => {
-                            if (question.id === zawodQuestion?.id && !isMZawodOtherSelected(question, opt.code)) {
-                              setMetryZawodOther("");
+                            if (!isOpenOptionSelected(question, opt.code)) {
+                              setMetryOpenTexts((prev) => ({ ...prev, [question.id]: "" }));
                             }
                             setMetryAnswers((prev) => ({ ...prev, [question.id]: opt.code }));
                             setShowMissingMetry(false);
@@ -492,18 +538,18 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                     })}
                   </div>
 
-                  {question.id === zawodQuestion?.id && needsZawodOther && (
-                    <div className={`pm-metry-other-wrap ${showMissingMetry && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS ? "missing" : ""}`}>
-                      <label className="pm-metry-other-label" htmlFor="personal-metry-zawod-other">
-                        Proszę doprecyzować odpowiedź (min. {M_ZAWOD_OTHER_MIN_CHARS} znaki):
+                  {needsOpen && (
+                    <div className={`pm-metry-other-wrap ${showMissingMetry && String(metryOpenTexts[question.id] || "").trim().length < METRY_OPEN_MIN_CHARS ? "missing" : ""}`}>
+                      <label className="pm-metry-other-label" htmlFor={`personal-metry-open-${question.id}`}>
+                        Proszę doprecyzować odpowiedź:
                       </label>
                       <input
-                        id="personal-metry-zawod-other"
+                        id={`personal-metry-open-${question.id}`}
                         type="text"
                         className="pm-metry-other-input"
-                        value={metryZawodOther}
+                        value={metryOpenTexts[question.id] || ""}
                         onChange={(e) => {
-                          setMetryZawodOther(e.target.value);
+                          setMetryOpenTexts((prev) => ({ ...prev, [question.id]: e.target.value }));
                           setShowMissingMetry(false);
                           setApiError("");
                         }}

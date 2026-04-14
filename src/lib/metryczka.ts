@@ -3,6 +3,7 @@ export type MetryczkaScope = "core" | "custom";
 export type MetryczkaOption = {
   label: string;
   code: string;
+  is_open: boolean;
 };
 
 export type MetryczkaQuestion = {
@@ -12,6 +13,8 @@ export type MetryczkaQuestion = {
   prompt: string;
   required: boolean;
   multiple: boolean;
+  randomize_options: boolean;
+  randomize_exclude_last: boolean;
   aliases: string[];
   options: MetryczkaOption[];
 };
@@ -32,10 +35,12 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     prompt: "Proszę o podanie płci.",
     required: true,
     multiple: false,
+    randomize_options: false,
+    randomize_exclude_last: false,
     aliases: ["M_PLEC", "Płeć", "Plec"],
     options: [
-      { label: "kobieta", code: "kobieta" },
-      { label: "mężczyzna", code: "mężczyzna" },
+      { label: "kobieta", code: "kobieta", is_open: false },
+      { label: "mężczyzna", code: "mężczyzna", is_open: false },
     ],
   },
   M_WIEK: {
@@ -45,11 +50,13 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     prompt: "Jaki jest Pana/Pani wiek?",
     required: true,
     multiple: false,
+    randomize_options: false,
+    randomize_exclude_last: false,
     aliases: ["M_WIEK", "Wiek"],
     options: [
-      { label: "15-39", code: "15-39" },
-      { label: "40-59", code: "40-59" },
-      { label: "60 i więcej", code: "60 i więcej" },
+      { label: "15-39", code: "15-39", is_open: false },
+      { label: "40-59", code: "40-59", is_open: false },
+      { label: "60 i więcej", code: "60 i więcej", is_open: false },
     ],
   },
   M_WYKSZT: {
@@ -59,14 +66,17 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     prompt: "Jakie ma Pan/Pani wykształcenie?",
     required: true,
     multiple: false,
+    randomize_options: false,
+    randomize_exclude_last: false,
     aliases: ["M_WYKSZT", "Wykształcenie", "Wyksztalcenie"],
     options: [
       {
         label: "podstawowe, gimnazjalne, zasadnicze zawodowe",
         code: "podstawowe, gimnazjalne, zasadnicze zawodowe",
+        is_open: false,
       },
-      { label: "średnie", code: "średnie" },
-      { label: "wyższe", code: "wyższe" },
+      { label: "średnie", code: "średnie", is_open: false },
+      { label: "wyższe", code: "wyższe", is_open: false },
     ],
   },
   M_ZAWOD: {
@@ -76,15 +86,17 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     prompt: "Jaka jest Pana/Pani sytuacja zawodowa?",
     required: true,
     multiple: false,
+    randomize_options: false,
+    randomize_exclude_last: false,
     aliases: ["M_ZAWOD", "Status zawodowy", "Sytuacja zawodowa"],
     options: [
-      { label: "pracownik umysłowy", code: "pracownik umysłowy" },
-      { label: "pracownik fizyczny", code: "pracownik fizyczny" },
-      { label: "prowadzę własną firmę", code: "prowadzę własną firmę" },
-      { label: "student/uczeń", code: "student/uczeń" },
-      { label: "bezrobotny", code: "bezrobotny" },
-      { label: "rencista/emeryt", code: "rencista/emeryt" },
-      { label: "inna (jaka?)", code: "inna (jaka?)" },
+      { label: "pracownik umysłowy", code: "pracownik umysłowy", is_open: false },
+      { label: "pracownik fizyczny", code: "pracownik fizyczny", is_open: false },
+      { label: "prowadzę własną firmę", code: "prowadzę własną firmę", is_open: false },
+      { label: "student/uczeń", code: "student/uczeń", is_open: false },
+      { label: "bezrobotny", code: "bezrobotny", is_open: false },
+      { label: "rencista/emeryt", code: "rencista/emeryt", is_open: false },
+      { label: "inna (jaka?)", code: "inna (jaka?)", is_open: true },
     ],
   },
   M_MATERIAL: {
@@ -94,17 +106,20 @@ const CORE_DEFAULTS: Record<(typeof CORE_ORDER)[number], MetryczkaQuestion> = {
     prompt: "Jak ocenia Pan/Pani własną sytuację materialną?",
     required: true,
     multiple: false,
+    randomize_options: false,
+    randomize_exclude_last: false,
     aliases: ["M_MATERIAL", "Sytuacja materialna"],
     options: [
       {
         label: "powodzi mi się bardzo źle, jestem w ciężkiej sytuacji materialnej",
         code: "powodzi mi się bardzo źle, jestem w ciężkiej sytuacji materialnej",
+        is_open: false,
       },
-      { label: "powodzi mi się raczej źle", code: "powodzi mi się raczej źle" },
-      { label: "powodzi mi się przeciętnie, średnio", code: "powodzi mi się przeciętnie, średnio" },
-      { label: "powodzi mi się raczej dobrze", code: "powodzi mi się raczej dobrze" },
-      { label: "powodzi mi się bardzo dobrze", code: "powodzi mi się bardzo dobrze" },
-      { label: "odmawiam udzielenia odpowiedzi", code: "odmawiam udzielenia odpowiedzi" },
+      { label: "powodzi mi się raczej źle", code: "powodzi mi się raczej źle", is_open: false },
+      { label: "powodzi mi się przeciętnie, średnio", code: "powodzi mi się przeciętnie, średnio", is_open: false },
+      { label: "powodzi mi się raczej dobrze", code: "powodzi mi się raczej dobrze", is_open: false },
+      { label: "powodzi mi się bardzo dobrze", code: "powodzi mi się bardzo dobrze", is_open: false },
+      { label: "odmawiam udzielenia odpowiedzi", code: "odmawiam udzielenia odpowiedzi", is_open: false },
     ],
   },
 };
@@ -153,15 +168,18 @@ function normalizeOptions(raw: unknown, fallback: MetryczkaOption[], forceCodeEq
     const label = safeText((item as Record<string, unknown>).label);
     const codeSrc = safeText((item as Record<string, unknown>).code);
     const code = forceCodeEqualsLabel ? label : codeSrc;
+    const isOpen =
+      safeBool((item as Record<string, unknown>).is_open, false)
+      || toAsciiLower(label) === toAsciiLower(M_ZAWOD_OTHER_KEY);
     if (!label || !code) continue;
     if (seenCodes.has(code)) continue;
     const lKey = label.toLowerCase();
     if (seenLabels.has(lKey)) continue;
     seenCodes.add(code);
     seenLabels.add(lKey);
-    out.push({ label, code });
+    out.push({ label, code, is_open: isOpen });
   }
-  return out.length ? out : fallback.map((opt) => ({ ...opt }));
+  return out.length ? out : fallback.map((opt) => ({ ...opt, is_open: !!opt.is_open }));
 }
 
 function normalizeCoreQuestion(
@@ -178,6 +196,8 @@ function normalizeCoreQuestion(
     options,
     required: true,
     multiple: false,
+    randomize_options: safeBool(source?.randomize_options, false),
+    randomize_exclude_last: safeBool(source?.randomize_exclude_last, false) && safeBool(source?.randomize_options, false),
   };
 }
 
@@ -207,6 +227,8 @@ function normalizeCustomQuestion(raw: unknown, usedColumns: Set<string>): Metryc
     prompt,
     required: safeBool(src.required, true),
     multiple: safeBool(src.multiple, false),
+    randomize_options: safeBool(src.randomize_options, false),
+    randomize_exclude_last: safeBool(src.randomize_exclude_last, false) && safeBool(src.randomize_options, false),
     aliases: normalizeAliases(src.aliases, []),
     options,
   };
@@ -291,10 +313,19 @@ function toAsciiLower(value: string): string {
 
 export function isMZawodOtherSelected(question: MetryczkaQuestion | null, selectedCode: string): boolean {
   if (!question) return false;
+  if (isOpenOptionSelected(question, selectedCode)) return true;
   const isMZawod = safeText(question.db_column).toUpperCase() === "M_ZAWOD" || safeText(question.id).toUpperCase() === "M_ZAWOD";
   if (!isMZawod) return false;
   const label = findSelectedOptionLabel(question, selectedCode);
   return toAsciiLower(label) === toAsciiLower(M_ZAWOD_OTHER_KEY);
+}
+
+export function isOpenOptionSelected(question: MetryczkaQuestion | null, selectedCode: string): boolean {
+  if (!question) return false;
+  const code = safeText(selectedCode);
+  if (!code) return false;
+  const found = question.options.find((opt) => safeText(opt.code) === code);
+  return !!found?.is_open;
 }
 
 export function buildMetryPayload(questions: MetryczkaQuestion[], answers: Record<string, string>): Record<string, string> {

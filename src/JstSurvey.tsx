@@ -8,9 +8,10 @@ import {
   findMetryQuestionByColumn,
   findSelectedOptionLabel,
   initMetryAnswers,
-  isMZawodOtherSelected,
+  isOpenOptionSelected,
   normalizeMetryczkaConfig,
   type MetryczkaQuestion,
+  type MetryczkaOption,
 } from "./lib/metryczka";
 import "./JstSurvey.css";
 
@@ -32,7 +33,7 @@ const ARCHETYPES = [
   "Buntownik",
 ] as const;
 
-const M_ZAWOD_OTHER_MIN_CHARS = 3;
+const METRY_OPEN_MIN_CHARS = 1;
 
 function normTextSimple(value: string): string {
   return String(value || "")
@@ -211,8 +212,17 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   useEffect(() => {
     setMetryAnswers((prev) => initMetryAnswers(metryQuestions, prev));
   }, [metryQuestions]);
+  const [metryOpenTexts, setMetryOpenTexts] = useState<Record<string, string>>({});
+  useEffect(() => {
+    setMetryOpenTexts((prev) => {
+      const next: Record<string, string> = {};
+      metryQuestions.forEach((q) => {
+        next[q.id] = prev[q.id] || "";
+      });
+      return next;
+    });
+  }, [metryQuestions]);
   const [showOnlyMissingMetry, setShowOnlyMissingMetry] = useState(false);
-  const [metryZawodOther, setMetryZawodOther] = useState("");
 
   const plecQuestion = useMemo(
     () => findMetryQuestionByColumn(metryQuestions, "M_PLEC"),
@@ -226,12 +236,23 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
       ? "Panu"
       : "Panu/Pani";
 
-  const zawodQuestion = useMemo(
-    () => findMetryQuestionByColumn(metryQuestions, "M_ZAWOD"),
-    [metryQuestions],
-  );
-  const selectedZawodCode = zawodQuestion ? metryAnswers[zawodQuestion.id] || "" : "";
-  const needsZawodOther = isMZawodOtherSelected(zawodQuestion, selectedZawodCode);
+  const metryOptionsByQuestion = useMemo(() => {
+    const out: Record<string, MetryczkaOption[]> = {};
+    metryQuestions.forEach((q) => {
+      const base = Array.isArray(q.options) ? [...q.options] : [];
+      if (base.length < 2 || q.randomize_options !== true) {
+        out[q.id] = base;
+        return;
+      }
+      if (q.randomize_exclude_last === true && base.length >= 2) {
+        const frozen = base[base.length - 1];
+        out[q.id] = [...shuffle(base.slice(0, -1)), frozen];
+        return;
+      }
+      out[q.id] = shuffle(base);
+    });
+    return out;
+  }, [metryQuestions]);
 
   const [aOrder] = useState(() => shuffle(A_ITEMS.map((x) => x.id)));
   const [aAnswers, setAAnswers] = useState<Record<string, number | undefined>>({});
@@ -378,13 +399,13 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
       .filter((q) => q.required !== false)
       .filter((q) => !String(metryAnswers[q.id] || "").trim())
       .map((q) => q.id);
-    const missingOther = needsZawodOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
-    if (missing.length || missingOther) {
-      if (!missing.length && missingOther) {
-        setErrorMsg(`Proszę doprecyzować odpowiedź "inna (jaka?)" (min. ${M_ZAWOD_OTHER_MIN_CHARS} znaki).`);
-      } else {
-        setErrorMsg("Proszę udzielić odpowiedzi na wszystkie pytania");
-      }
+    const missingOpen = metryQuestions
+      .filter((q) => isOpenOptionSelected(q, metryAnswers[q.id] || ""))
+      .filter((q) => String(metryOpenTexts[q.id] || "").trim().length < METRY_OPEN_MIN_CHARS)
+      .map((q) => q.id);
+    if (missing.length || missingOpen.length) {
+      if (!missing.length && missingOpen.length) setErrorMsg("Proszę uzupełnić pole tekstowe dla wybranej odpowiedzi otwartej.");
+      else setErrorMsg("Proszę udzielić odpowiedzi na wszystkie pytania");
       setShowOnlyMissingMetry(true);
       return false;
     }
@@ -489,7 +510,16 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
       await ensureStarted();
 
       const payload: Record<string, unknown> = buildMetryPayload(metryQuestions, metryAnswers);
-      payload.M_ZAWOD_OTHER = needsZawodOther ? metryZawodOther.trim() : "";
+      metryQuestions.forEach((q) => {
+        const openKey = `${String(q.db_column || q.id).trim().toUpperCase()}_OTHER`;
+        const openValue = isOpenOptionSelected(q, metryAnswers[q.id] || "")
+          ? String(metryOpenTexts[q.id] || "").trim()
+          : "";
+        payload[openKey] = openValue;
+        if (String(q.db_column || q.id).trim().toUpperCase() === "M_ZAWOD") {
+          payload.M_ZAWOD_OTHER = openValue;
+        }
+      });
 
       A_ITEMS.forEach((item) => {
         payload[item.id] = Number(aAnswers[item.id] || 0);
@@ -794,21 +824,23 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
             <h2 className="jst-title jst-step-title jst-metry-step-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
             {metryQuestions.map((question: MetryczkaQuestion) => {
               const selectedCode = metryAnswers[question.id] || "";
+              const displayOptions = metryOptionsByQuestion[question.id] || question.options;
+              const needsOpen = isOpenOptionSelected(question, selectedCode);
               const missingBase = question.required !== false && !selectedCode;
-              const missingOther = question.id === zawodQuestion?.id && needsZawodOther && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
+              const missingOther = needsOpen && String(metryOpenTexts[question.id] || "").trim().length < METRY_OPEN_MIN_CHARS;
               const missing = missingBase || missingOther;
               return (
                 <div key={question.id} className={`jst-metry ${missing && showOnlyMissingMetry ? "missing" : ""}`}>
                   <p className="jst-metry-title">{question.prompt}</p>
                   <div className="jst-radio-grid">
-                    {question.options.map((opt) => (
+                    {displayOptions.map((opt) => (
                       <button
                         key={`${question.id}_${opt.code}`}
                         type="button"
                         className={`jst-radio-opt ${selectedCode === opt.code ? "selected" : ""}`}
                         onClick={() => {
-                          if (question.id === zawodQuestion?.id && !isMZawodOtherSelected(question, opt.code)) {
-                            setMetryZawodOther("");
+                          if (!isOpenOptionSelected(question, opt.code)) {
+                            setMetryOpenTexts((prev) => ({ ...prev, [question.id]: "" }));
                           }
                           setMetryAnswers((prev) => ({ ...prev, [question.id]: opt.code }));
                           clearErrors();
@@ -821,21 +853,21 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                       </button>
                     ))}
                   </div>
-                  {question.id === zawodQuestion?.id && needsZawodOther && (
-                    <div className={`jst-other-wrap ${showOnlyMissingMetry && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS ? "missing" : ""}`}>
-                      <label className="jst-other-label" htmlFor="jst-zawod-other">
-                        Proszę doprecyzować odpowiedź (min. {M_ZAWOD_OTHER_MIN_CHARS} znaki):
+                  {needsOpen && (
+                    <div className={`jst-other-wrap ${showOnlyMissingMetry && String(metryOpenTexts[question.id] || "").trim().length < METRY_OPEN_MIN_CHARS ? "missing" : ""}`}>
+                      <label className="jst-other-label" htmlFor={`jst-metry-open-${question.id}`}>
+                        Proszę doprecyzować odpowiedź:
                       </label>
                       <input
-                        id="jst-zawod-other"
+                        id={`jst-metry-open-${question.id}`}
                         type="text"
                         className="jst-other-input"
-                        value={metryZawodOther}
+                        value={metryOpenTexts[question.id] || ""}
                         onChange={(e) => {
-                          setMetryZawodOther(e.target.value);
+                          setMetryOpenTexts((prev) => ({ ...prev, [question.id]: e.target.value }));
                           clearErrors();
                         }}
-                        placeholder="Wpisz jaki zawód/sytuacja"
+                        placeholder="Wpisz odpowiedź"
                         maxLength={120}
                         autoComplete="off"
                       />
