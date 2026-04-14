@@ -316,7 +316,7 @@
 
 @media (max-width: 900px) and (orientation: portrait) {
   .single-question-zone {
-    margin-top: clamp(44px, 16.5vh, 180px);
+    margin-top: clamp(20px, 7.5vh, 72px);
   }
 
   .single-lead {
@@ -328,25 +328,42 @@
   }
 
   .single-question-text {
-    margin-top: clamp(48px, 9vh, 84px);
+    margin-top: clamp(34px, 7vh, 68px);
   }
 
   .single-main {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 236px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
   }
 
   .single-scale-zone {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    width: auto;
+    position: static;
+    left: auto;
+    right: auto;
+    width: 100%;
     transform: none;
     box-sizing: border-box;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 174px);
-    margin: 0;
+    bottom: auto;
+    margin: clamp(48px, 8vh, 80px) 0 0 0;
     max-width: none;
-    z-index: 24;
+    z-index: auto;
     padding-bottom: 0;
+  }
+
+  .single-scale-grid {
+    gap: 6px;
+  }
+
+  .single-footer-actions {
+    position: static;
+    left: auto;
+    right: auto;
+    transform: none;
+    width: 100%;
+    bottom: auto;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding: 0 2px calc(env(safe-area-inset-bottom, 0px) + 8px) 2px;
+    z-index: auto;
   }
 }
 

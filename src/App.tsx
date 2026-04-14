@@ -20,6 +20,7 @@ const wrapperStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   background: "#fff",
+  color: "#1f2937",
   fontFamily: "'Roboto', Arial, sans-serif",
 };
 
@@ -528,6 +529,7 @@ return (
               textAlign: "left",
               fontStyle: "italic",
               lineHeight: 1.7,
+              color: "#213547",
             }}
           >
             Witaj!
