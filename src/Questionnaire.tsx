@@ -442,198 +442,91 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       ? `Badanie wizerunku i postrzegania ${fullGen}`
       : "Badanie wizerunku i postrzegania";
     return (
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "28px 12px 40px 12px",
-          fontFamily: "'Roboto', Arial, sans-serif",
-        }}
-      >
+      <div className="pm-metry-root">
         {!!apiError && (
-          <div
-            style={{
-              position: "sticky",
-              top: 6,
-              zIndex: 60,
-              marginBottom: 14,
-              background: "#fee2e2",
-              border: "1px solid #fecaca",
-              color: "#991b1b",
-              borderRadius: 10,
-              padding: "10px 14px",
-              fontWeight: 600,
-            }}
-          >
+          <div className="pm-metry-alert">
             {apiError}
           </div>
         )}
 
-        <div
-          style={{
-            fontWeight: 700,
-            fontSize: "2.1rem",
-            color: "#2c3e50",
-            textAlign: "left",
-            margin: "0 0 18px 0",
-            letterSpacing: 1,
-            lineHeight: 1.13,
-          }}
-        >
-          {title}
-        </div>
+        <div className="pm-metry-wrap">
+          <h1 className="pm-metry-main-title">{title}</h1>
+          <hr className="pm-metry-sep" />
 
-        <hr
-          style={{
-            border: 0,
-            borderTop: "1.5px solid #ececec",
-            margin: "0 0 18px 0",
-          }}
-        />
+          <section className="pm-metry-card">
+            <h2 className="pm-metry-title">Na wstępie prosimy o podanie kilku danych demograficznych</h2>
 
-        <section
-          style={{
-            border: "1px solid #dbe3eb",
-            borderRadius: 12,
-            background: "#fff",
-            padding: "16px 16px 18px 16px",
-          }}
-        >
-          <h2 style={{ margin: "0 0 10px 0", color: "#0f172a", fontSize: "1.28rem" }}>
-            Na wstępie prosimy o podanie kilku danych demograficznych
-          </h2>
+            {metryQuestions.map((question: MetryczkaQuestion) => {
+              const selectedCode = metryAnswers[question.id] || "";
+              const missingBase = question.required !== false && !selectedCode;
+              const missingOther = question.id === zawodQuestion?.id
+                && needsZawodOther
+                && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
+              const missing = showMissingMetry && (missingBase || missingOther);
+              return (
+                <div key={question.id} className={`pm-metry-question ${missing ? "missing" : ""}`}>
+                  <p className="pm-metry-question-title">{question.prompt}</p>
+                  <div className="pm-metry-options">
+                    {question.options.map((opt) => {
+                      const selected = selectedCode === opt.code;
+                      return (
+                        <button
+                          key={`${question.id}_${opt.code}`}
+                          type="button"
+                          className={`pm-metry-option ${selected ? "selected" : ""}`}
+                          onClick={() => {
+                            if (question.id === zawodQuestion?.id && !isMZawodOtherSelected(question, opt.code)) {
+                              setMetryZawodOther("");
+                            }
+                            setMetryAnswers((prev) => ({ ...prev, [question.id]: opt.code }));
+                            setShowMissingMetry(false);
+                            setApiError("");
+                          }}
+                        >
+                          <span className={`pm-metry-mark ${selected ? "selected" : ""}`} aria-hidden>
+                            <span className="pm-metry-dot" />
+                          </span>
+                          <span>{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-          {metryQuestions.map((question: MetryczkaQuestion) => {
-            const selectedCode = metryAnswers[question.id] || "";
-            const missingBase = question.required !== false && !selectedCode;
-            const missingOther = question.id === zawodQuestion?.id
-              && needsZawodOther
-              && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS;
-            const missing = showMissingMetry && (missingBase || missingOther);
-            return (
-              <div
-                key={question.id}
-                style={{
-                  margin: "12px 0 14px 0",
-                  padding: "10px 10px 8px 10px",
-                  borderRadius: 10,
-                  border: missing ? "1px solid #fecaca" : "1px solid #edf2f7",
-                  background: missing ? "#fff7f7" : "#fbfdff",
-                }}
-              >
-                <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#243447" }}>{question.prompt}</p>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                    gap: "8px",
-                  }}
-                >
-                  {question.options.map((opt) => {
-                    const selected = selectedCode === opt.code;
-                    return (
-                      <button
-                        key={`${question.id}_${opt.code}`}
-                        type="button"
-                        onClick={() => {
-                          if (question.id === zawodQuestion?.id && !isMZawodOtherSelected(question, opt.code)) {
-                            setMetryZawodOther("");
-                          }
-                          setMetryAnswers((prev) => ({ ...prev, [question.id]: opt.code }));
+                  {question.id === zawodQuestion?.id && needsZawodOther && (
+                    <div className={`pm-metry-other-wrap ${showMissingMetry && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS ? "missing" : ""}`}>
+                      <label className="pm-metry-other-label" htmlFor="personal-metry-zawod-other">
+                        Proszę doprecyzować odpowiedź (min. {M_ZAWOD_OTHER_MIN_CHARS} znaki):
+                      </label>
+                      <input
+                        id="personal-metry-zawod-other"
+                        type="text"
+                        className="pm-metry-other-input"
+                        value={metryZawodOther}
+                        onChange={(e) => {
+                          setMetryZawodOther(e.target.value);
                           setShowMissingMetry(false);
                           setApiError("");
                         }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 10,
-                          width: "100%",
-                          borderRadius: 8,
-                          border: selected ? "1px solid #60a5fa" : "1px solid #dbe3eb",
-                          background: selected ? "#eff6ff" : "#fff",
-                          color: "#1f2937",
-                          textAlign: "left",
-                          padding: "8px 10px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <span>{opt.label}</span>
-                        <span
-                          aria-hidden
-                          style={{
-                            width: 14,
-                            height: 14,
-                            borderRadius: "50%",
-                            border: selected ? "4px solid #3b82f6" : "1.5px solid #9ca3af",
-                            boxSizing: "border-box",
-                            flex: "0 0 auto",
-                          }}
-                        />
-                      </button>
-                    );
-                  })}
+                        maxLength={120}
+                        autoComplete="off"
+                      />
+                    </div>
+                  )}
                 </div>
+              );
+            })}
 
-                {question.id === zawodQuestion?.id && needsZawodOther && (
-                  <div style={{ marginTop: 10 }}>
-                    <label
-                      htmlFor="personal-metry-zawod-other"
-                      style={{ display: "block", marginBottom: 6, fontSize: "0.96rem", color: "#334155" }}
-                    >
-                      Proszę doprecyzować odpowiedź (min. {M_ZAWOD_OTHER_MIN_CHARS} znaki):
-                    </label>
-                    <input
-                      id="personal-metry-zawod-other"
-                      type="text"
-                      value={metryZawodOther}
-                      onChange={(e) => {
-                        setMetryZawodOther(e.target.value);
-                        setShowMissingMetry(false);
-                        setApiError("");
-                      }}
-                      maxLength={120}
-                      autoComplete="off"
-                      style={{
-                        width: "100%",
-                        borderRadius: 8,
-                        border: showMissingMetry && metryZawodOther.trim().length < M_ZAWOD_OTHER_MIN_CHARS
-                          ? "1px solid #ef4444"
-                          : "1px solid #d1d5db",
-                        padding: "9px 10px",
-                        boxSizing: "border-box",
-                        fontSize: "1rem",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
-            <button
-              type="button"
-              onClick={handleMetryNext}
-              style={{
-                minWidth: 180,
-                background: "#06b09c",
-                color: "#fff",
-                fontWeight: 700,
-                fontFamily: "'Roboto', Arial, sans-serif",
-                fontSize: "1.04rem",
-                border: "none",
-                borderRadius: 8,
-                padding: "0.62em 1.2em",
-                boxShadow: "0 2px 8px #ececec",
-                cursor: "pointer",
-                letterSpacing: "0.5px",
-              }}
-            >
-              Przejdź dalej
-            </button>
-          </div>
-        </section>
+            <div className="pm-metry-action-row">
+              <button
+                type="button"
+                className="pm-metry-next-btn"
+                onClick={handleMetryNext}
+              >
+                Przejdź dalej
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
     );
   }

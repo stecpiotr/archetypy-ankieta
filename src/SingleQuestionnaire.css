@@ -7,6 +7,200 @@
   overflow-x: hidden;
 }
 
+.pm-metry-root {
+  min-height: 100vh;
+  width: 100%;
+  background: #f2f5f8;
+  color: #13263a;
+  font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+}
+
+.pm-metry-wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 22px 14px 36px;
+  box-sizing: border-box;
+}
+
+.pm-metry-alert {
+  position: sticky;
+  top: 8px;
+  z-index: 60;
+  margin: 0 auto 14px;
+  max-width: 980px;
+  border: 1px solid #f2b0b0;
+  background: #fff2f2;
+  color: #9e1f1f;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+}
+
+.pm-metry-main-title {
+  font-weight: 700;
+  font-size: clamp(1.55rem, 2.2vw, 2.15rem);
+  color: #2c3e50;
+  text-align: left;
+  margin: 0 0 18px 0;
+  letter-spacing: 1px;
+  line-height: 1.13;
+}
+
+.pm-metry-sep {
+  border: 0;
+  border-top: 1.5px solid #e5edf4;
+  margin: 0 0 18px 0;
+}
+
+.pm-metry-card {
+  background: #fff;
+  border: 1px solid #d8e1ea;
+  border-radius: 14px;
+  padding: 24px 22px 20px;
+}
+
+.pm-metry-title {
+  margin: 0 0 16px;
+  font-size: clamp(1.24rem, 1.8vw, 1.8rem);
+  line-height: 1.22;
+  color: #17314a;
+}
+
+.pm-metry-question {
+  border: 1px solid #d8e1ea;
+  border-radius: 12px;
+  padding: 15px 12px 12px;
+  margin-bottom: 14px;
+  background: #fbfcfd;
+}
+
+.pm-metry-question.missing {
+  border-color: #de7171;
+  background: #fff8f8;
+}
+
+.pm-metry-question-title {
+  margin: 0 0 12px;
+  font-weight: 700;
+  color: #243447;
+  font-size: 1.03rem;
+}
+
+.pm-metry-options {
+  display: grid;
+  gap: 9px;
+}
+
+.pm-metry-option {
+  border: 1px solid #bad0ec;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  color: #1e334a;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.pm-metry-option:hover {
+  background: #f5f9ff;
+  border-color: #84afe2;
+}
+
+.pm-metry-option.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px #2563eb;
+  font-weight: 700;
+}
+
+.pm-metry-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid #3f7be0;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+}
+
+.pm-metry-mark.selected {
+  border-color: #1d4ed8;
+}
+
+.pm-metry-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.pm-metry-mark.selected .pm-metry-dot {
+  background: #2563eb;
+}
+
+.pm-metry-other-wrap {
+  margin-top: 12px;
+}
+
+.pm-metry-other-wrap.missing .pm-metry-other-input {
+  border-color: #d44f4f;
+  background: #fff7f7;
+}
+
+.pm-metry-other-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #23405c;
+}
+
+.pm-metry-other-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #8eb8e6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  color: #15314c;
+  background: #fff;
+}
+
+.pm-metry-other-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+}
+
+.pm-metry-action-row {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pm-metry-next-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 20px;
+  min-width: 180px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+  transition: background 0.16s ease;
+}
+
+.pm-metry-next-btn:hover {
+  background: #1d4ed8;
+}
+
 .single-shell {
   width: min(980px, calc(100% - 24px));
   min-height: 100vh;
@@ -221,6 +415,37 @@
 }
 
 @media (max-width: 900px) {
+  .pm-metry-wrap {
+    padding: 14px 10px 22px;
+  }
+
+  .pm-metry-card {
+    padding: 18px 14px 16px;
+  }
+
+  .pm-metry-main-title {
+    font-size: 1.48rem;
+    letter-spacing: 0.4px;
+  }
+
+  .pm-metry-title {
+    font-size: 1.36rem;
+  }
+
+  .pm-metry-question-title {
+    font-size: 0.98rem;
+  }
+
+  .pm-metry-option {
+    font-size: 0.92rem;
+    padding: 9px 10px;
+  }
+
+  .pm-metry-next-btn {
+    min-width: 150px;
+    padding: 10px 16px;
+  }
+
   .single-shell {
     width: calc(100% - 18px);
   }
