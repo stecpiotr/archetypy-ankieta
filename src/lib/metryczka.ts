@@ -207,7 +207,7 @@ function guessValueEmoji(varLabel: string, code: string, dbColumn = ""): string 
     if (codeToken.includes("bardzo zla") || codeToken.includes("bardzo zle")) return "😟";
   }
   if (["obszar", "miejsce", "zamiesz", "lokaliz", "wies", "miasto"].some((k) => varToken.includes(k))) {
-    if (codeToken.includes("miasto")) return "🏙️";
+    if (codeToken.includes("miasto")) return "🏬";
     if (codeToken.includes("wies")) return "🌾";
     return "📍";
   }
