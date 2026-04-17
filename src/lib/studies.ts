@@ -15,6 +15,7 @@ export interface StudyRow {
   survey_show_progress?: boolean | null;
   survey_allow_back?: boolean | null;
   survey_randomize_questions?: boolean | null;
+  survey_fast_click_check_enabled?: boolean | null;
   survey_auto_start_enabled?: boolean | null;
   survey_auto_start_at?: string | null;
   survey_auto_start_applied_at?: string | null;
@@ -96,6 +97,7 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
     "survey_show_progress",
     "survey_allow_back",
     "survey_randomize_questions",
+    "survey_fast_click_check_enabled",
     "survey_auto_start_enabled",
     "survey_auto_start_at",
     "survey_auto_start_applied_at",
@@ -127,6 +129,7 @@ export async function loadStudyBySlug(slug: string): Promise<StudyRow | null> {
       || msg.includes("survey_show_progress")
       || msg.includes("survey_allow_back")
       || msg.includes("survey_randomize_questions")
+      || msg.includes("survey_fast_click_check_enabled")
       || msg.includes("survey_auto_start")
       || msg.includes("survey_auto_end");
     if (missingStatusCols) {

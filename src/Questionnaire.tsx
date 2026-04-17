@@ -21,12 +21,18 @@ import {
 const SCALE_VALUES = [0, 1, 2, 3, 5] as const;
 type Answer = (typeof SCALE_VALUES)[number];
 const METRY_OPEN_MIN_CHARS = 1;
+const FAST_CLICK_MIN_SECONDS = 3;
+const FAST_CLICK_TRIGGER_STREAK = 4;
+const FAST_CLICK_SUSPICIOUS_WARNINGS = 3;
+const FAST_CLICK_WARNING_MESSAGE =
+  "Udzielasz odpowiedzi zbyt szybko. Prosimy o uważniejsze czytanie pytań, aby odpowiedzi były rzetelne.";
 
 type QuestionnaireSettings = {
   displayMode?: "matrix" | "single";
   showProgress?: boolean;
   allowBack?: boolean;
   randomizeQuestions?: boolean;
+  fastClickCheckEnabled?: boolean;
 };
 
 type QuestionnaireProps = {
@@ -144,6 +150,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const showProgress = settings?.showProgress !== false;
   const allowBack = settings?.allowBack !== false;
   const randomizeQuestions = settings?.randomizeQuestions === true;
+  const fastClickCheckEnabled = settings?.fastClickCheckEnabled === true;
 
   const [responses, setResponses] = useState<(Answer | null)[]>(() => Array(questions.length).fill(null));
   const [hovered, setHovered] = useState<{ row: number | null; col: number | null }>({ row: null, col: null });
@@ -157,6 +164,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
 
   const tokenRef = useRef<string | null>(null);
   const startedMarkedRef = useRef<boolean>(false);
+  const qualityStartedAtRef = useRef<number | null>(null);
+  const fastClickLastActionAtRef = useRef<number | null>(null);
+  const fastClickShortStreakRef = useRef<number>(0);
+  const fastClickWarningCountRef = useRef<number>(0);
+  const metryAnsweredRef = useRef<Set<string>>(new Set());
 
   const [slug, setSlug] = useState<string | null>(null);
   const [fullGen, setFullGen] = useState<string | null>(initialFullGen);
@@ -179,6 +191,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       });
       return next;
     });
+    metryAnsweredRef.current = new Set();
   }, [metryQuestions]);
 
   const metryOptionsByQuestion = useMemo(() => {
@@ -286,8 +299,55 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     }
   };
 
+  const trackQualityAnswerAction = () => {
+    if (!fastClickCheckEnabled) return;
+    const now = Date.now();
+    if (qualityStartedAtRef.current === null) {
+      qualityStartedAtRef.current = now;
+    }
+    const prevTs = fastClickLastActionAtRef.current;
+    if (prevTs !== null) {
+      const deltaSec = (now - prevTs) / 1000;
+      if (deltaSec < FAST_CLICK_MIN_SECONDS) {
+        fastClickShortStreakRef.current += 1;
+        if (fastClickShortStreakRef.current >= FAST_CLICK_TRIGGER_STREAK) {
+          fastClickWarningCountRef.current += 1;
+          fastClickShortStreakRef.current = 0;
+          window.alert(FAST_CLICK_WARNING_MESSAGE);
+        }
+      } else {
+        fastClickShortStreakRef.current = 0;
+      }
+    }
+    fastClickLastActionAtRef.current = now;
+  };
+
+  const buildSurveyQualityPayload = (): Record<string, unknown> => {
+    const warningCount = fastClickCheckEnabled ? Math.max(0, fastClickWarningCountRef.current) : 0;
+    const suspicious = fastClickCheckEnabled && warningCount >= FAST_CLICK_SUSPICIOUS_WARNINGS;
+    const startedAt = qualityStartedAtRef.current;
+    const completionSeconds =
+      startedAt !== null ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : null;
+    return {
+      enabled: fastClickCheckEnabled,
+      min_interval_seconds: FAST_CLICK_MIN_SECONDS,
+      trigger_streak: FAST_CLICK_TRIGGER_STREAK,
+      suspicious_warning_threshold: FAST_CLICK_SUSPICIOUS_WARNINGS,
+      warning_count: warningCount,
+      suspicious,
+      completion_seconds: completionSeconds,
+      include_in_report: true,
+      reviewed_at: null,
+      updated_at: new Date().toISOString(),
+    };
+  };
+
   const handleResponse = (questionIdx: number, value: Answer) => {
     markStartedOnce();
+    const wasUnanswered = responses[questionIdx] === null;
+    if (wasUnanswered) {
+      trackQualityAnswerAction();
+    }
     const next = [...responses];
     next[questionIdx] = value;
     setResponses(next);
@@ -334,7 +394,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
         metryPayload.M_ZAWOD_OTHER = openValue;
       }
     });
-    return { metryczka: metryPayload };
+    return {
+      metryczka: metryPayload,
+      survey_quality: buildSurveyQualityPayload(),
+    };
   };
 
   const handleMetryNext = (): void => {
@@ -529,6 +592,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
                           type="button"
                           className={`pm-metry-option ${selected ? "selected" : ""}`}
                           onClick={() => {
+                            const firstAnswerForQuestion =
+                              !metryAnsweredRef.current.has(question.id) && !String(selectedCode || "").trim();
+                            if (firstAnswerForQuestion) {
+                              trackQualityAnswerAction();
+                              metryAnsweredRef.current.add(question.id);
+                            }
                             if (!isOpenOptionSelected(question, opt.code)) {
                               setMetryOpenTexts((prev) => ({ ...prev, [question.id]: "" }));
                             }

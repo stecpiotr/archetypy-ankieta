@@ -179,6 +179,7 @@ type PersonalSurveySettings = {
   showProgress: boolean;
   allowBack: boolean;
   randomizeQuestions: boolean;
+  fastClickCheckEnabled: boolean;
   autoStartEnabled: boolean;
   autoStartAt: string | null;
   autoEndEnabled: boolean;
@@ -188,6 +189,7 @@ type PersonalSurveySettings = {
 type JstSurveySettings = {
   showProgress: boolean;
   allowBack: boolean;
+  fastClickCheckEnabled: boolean;
   autoStartEnabled: boolean;
   autoStartAt: string | null;
   autoEndEnabled: boolean;
@@ -199,6 +201,7 @@ const DEFAULT_PERSONAL_SETTINGS: PersonalSurveySettings = {
   showProgress: true,
   allowBack: true,
   randomizeQuestions: false,
+  fastClickCheckEnabled: false,
   autoStartEnabled: false,
   autoStartAt: null,
   autoEndEnabled: false,
@@ -208,6 +211,7 @@ const DEFAULT_PERSONAL_SETTINGS: PersonalSurveySettings = {
 const DEFAULT_JST_SETTINGS: JstSurveySettings = {
   showProgress: true,
   allowBack: true,
+  fastClickCheckEnabled: false,
   autoStartEnabled: false,
   autoStartAt: null,
   autoEndEnabled: false,
@@ -259,6 +263,7 @@ function buildPersonalSurveySettings(study: any): PersonalSurveySettings {
     showProgress: asBool(study?.survey_show_progress, true),
     allowBack: asBool(study?.survey_allow_back, true),
     randomizeQuestions: asBool(study?.survey_randomize_questions, false),
+    fastClickCheckEnabled: asBool(study?.survey_fast_click_check_enabled, false),
     autoStartEnabled: asBool(study?.survey_auto_start_enabled, false),
     autoStartAt: asIsoOrNull(study?.survey_auto_start_at),
     autoEndEnabled: asBool(study?.survey_auto_end_enabled, false),
@@ -270,6 +275,7 @@ function buildJstSurveySettings(study: any): JstSurveySettings {
   return {
     showProgress: asBool(study?.survey_show_progress, true),
     allowBack: asBool(study?.survey_allow_back, true),
+    fastClickCheckEnabled: asBool(study?.survey_fast_click_check_enabled, false),
     autoStartEnabled: asBool(study?.survey_auto_start_enabled, false),
     autoStartAt: asIsoOrNull(study?.survey_auto_start_at),
     autoEndEnabled: asBool(study?.survey_auto_end_enabled, false),

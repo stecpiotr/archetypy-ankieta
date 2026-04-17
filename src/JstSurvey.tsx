@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { markJstTokenCompleted, markJstTokenRejected, markJstTokenStarted } from "./lib/tokens";
 import { buildJstTextContext, renderJstTemplate } from "./lib/jstStudies";
@@ -34,6 +34,11 @@ const ARCHETYPES = [
 ] as const;
 
 const METRY_OPEN_MIN_CHARS = 1;
+const FAST_CLICK_MIN_SECONDS = 3;
+const FAST_CLICK_TRIGGER_STREAK = 4;
+const FAST_CLICK_SUSPICIOUS_WARNINGS = 3;
+const FAST_CLICK_WARNING_MESSAGE =
+  "Udzielasz odpowiedzi zbyt szybko. Prosimy o uważniejsze czytanie pytań, aby odpowiedzi były rzetelne.";
 
 function normTextSimple(value: string): string {
   return String(value || "")
@@ -203,6 +208,7 @@ type Props = {
   navigation?: {
     showProgress?: boolean;
     allowBack?: boolean;
+    fastClickCheckEnabled?: boolean;
   };
 };
 
@@ -210,12 +216,19 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   const ctx = useMemo(() => buildJstTextContext(study), [study]);
   const showProgress = navigation?.showProgress !== false;
   const allowBack = navigation?.allowBack !== false;
+  const fastClickCheckEnabled =
+    (navigation?.fastClickCheckEnabled ?? study?.survey_fast_click_check_enabled) === true;
 
   const [step, setStep] = useState<Step>("intro");
   const [orientation, setOrientation] = useState(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
   const [errorMsg, setErrorMsg] = useState("");
   const [startedMarked, setStartedMarked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const qualityStartedAtRef = useRef<number | null>(null);
+  const fastClickLastActionAtRef = useRef<number | null>(null);
+  const fastClickShortStreakRef = useRef<number>(0);
+  const fastClickWarningCountRef = useRef<number>(0);
+  const metryAnsweredRef = useRef<Set<string>>(new Set());
 
   const [isResident, setIsResident] = useState<boolean | null>(null);
   const [missingAIds, setMissingAIds] = useState<string[]>([]);
@@ -235,6 +248,7 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
       });
       return next;
     });
+    metryAnsweredRef.current = new Set();
   }, [metryQuestions]);
   const [showOnlyMissingMetry, setShowOnlyMissingMetry] = useState(false);
 
@@ -373,6 +387,49 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
     } catch {
       // brak blokady badania
     }
+  };
+
+  const trackQualityAnswerAction = () => {
+    if (!fastClickCheckEnabled) return;
+    const now = Date.now();
+    if (qualityStartedAtRef.current === null) {
+      qualityStartedAtRef.current = now;
+    }
+    const prevTs = fastClickLastActionAtRef.current;
+    if (prevTs !== null) {
+      const deltaSec = (now - prevTs) / 1000;
+      if (deltaSec < FAST_CLICK_MIN_SECONDS) {
+        fastClickShortStreakRef.current += 1;
+        if (fastClickShortStreakRef.current >= FAST_CLICK_TRIGGER_STREAK) {
+          fastClickWarningCountRef.current += 1;
+          fastClickShortStreakRef.current = 0;
+          window.alert(FAST_CLICK_WARNING_MESSAGE);
+        }
+      } else {
+        fastClickShortStreakRef.current = 0;
+      }
+    }
+    fastClickLastActionAtRef.current = now;
+  };
+
+  const buildSurveyQualityPayload = (): Record<string, unknown> => {
+    const warningCount = fastClickCheckEnabled ? Math.max(0, fastClickWarningCountRef.current) : 0;
+    const suspicious = fastClickCheckEnabled && warningCount >= FAST_CLICK_SUSPICIOUS_WARNINGS;
+    const startedAt = qualityStartedAtRef.current;
+    const completionSeconds =
+      startedAt !== null ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : null;
+    return {
+      enabled: fastClickCheckEnabled,
+      min_interval_seconds: FAST_CLICK_MIN_SECONDS,
+      trigger_streak: FAST_CLICK_TRIGGER_STREAK,
+      suspicious_warning_threshold: FAST_CLICK_SUSPICIOUS_WARNINGS,
+      warning_count: warningCount,
+      suspicious,
+      completion_seconds: completionSeconds,
+      include_in_report: true,
+      reviewed_at: null,
+      updated_at: new Date().toISOString(),
+    };
   };
 
   const clearErrors = () => {
@@ -542,6 +599,7 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
       });
       const selectedD13 = D_ITEMS.find((x) => x.id === selectedD13Id);
       payload.D13 = selectedD13?.archetype || "";
+      payload.survey_quality = buildSurveyQualityPayload();
 
       const { data, error } = await supabase.rpc("add_jst_response_by_slug", {
         p_slug: study.slug,
@@ -808,10 +866,24 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
           <section className="jst-card">
             <h2 className="jst-title jst-step-title jst-screening-title">Czy jest Pan/Pani mieszkańcem/mieszkanką {ctx.fullGen}?</h2>
             <div className="jst-opt-list jst-screening-options">
-              <button className={`jst-opt ${isResident === true ? "selected" : ""}`} onClick={() => { setIsResident(true); clearErrors(); }}>
+              <button
+                className={`jst-opt ${isResident === true ? "selected" : ""}`}
+                onClick={() => {
+                  if (isResident === null) trackQualityAnswerAction();
+                  setIsResident(true);
+                  clearErrors();
+                }}
+              >
                 Tak
               </button>
-              <button className={`jst-opt ${isResident === false ? "selected" : ""}`} onClick={() => { setIsResident(false); clearErrors(); }}>
+              <button
+                className={`jst-opt ${isResident === false ? "selected" : ""}`}
+                onClick={() => {
+                  if (isResident === null) trackQualityAnswerAction();
+                  setIsResident(false);
+                  clearErrors();
+                }}
+              >
                 Nie
               </button>
             </div>
@@ -848,6 +920,12 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                         type="button"
                         className={`jst-radio-opt ${selectedCode === opt.code ? "selected" : ""}`}
                         onClick={() => {
+                          const firstAnswerForQuestion =
+                            !metryAnsweredRef.current.has(question.id) && !String(selectedCode || "").trim();
+                          if (firstAnswerForQuestion) {
+                            trackQualityAnswerAction();
+                            metryAnsweredRef.current.add(question.id);
+                          }
                           if (!isOpenOptionSelected(question, opt.code)) {
                             setMetryOpenTexts((prev) => ({ ...prev, [question.id]: "" }));
                           }
@@ -922,6 +1000,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
               const activateSlider = () => {
                 setActiveASliderId(id);
                 if (!selected) {
+                  trackQualityAnswerAction();
                   setAAnswers((prev) => ({ ...prev, [id]: 4 }));
                   setMissingAIds((prev) => prev.filter((x) => x !== id));
                   setErrorMsg("");
@@ -945,6 +1024,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                         onClick={activateSlider}
                         onChange={(e) => {
                           const val = Number(e.target.value);
+                          if (!selected) {
+                            trackQualityAnswerAction();
+                          }
                           setActiveASliderId(id);
                           setAAnswers((prev) => ({ ...prev, [id]: val }));
                           setMissingAIds((prev) => prev.filter((x) => x !== id));
@@ -1001,6 +1083,10 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                     type="button"
                     className={`jst-opt ${selected ? "selected" : ""}`}
                     onClick={() => {
+                      const shouldTrack = !selected && selectedB1.length < 3;
+                      if (shouldTrack) {
+                        trackQualityAnswerAction();
+                      }
                       setSelectedB1((prev) => {
                         if (prev.includes(archetype)) return prev.filter((x) => x !== archetype);
                         if (prev.length >= 3) return prev;
@@ -1040,6 +1126,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                     type="button"
                     className={`jst-opt ${selectedB2 === archetype ? "selected" : ""}`}
                     onClick={() => {
+                      if (!selectedB2) {
+                        trackQualityAnswerAction();
+                      }
                       setSelectedB2(archetype);
                       setErrorMsg("");
                     }}
@@ -1079,6 +1168,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
               <button
                 className={`jst-opt ${dAnswers[currentD.id] === "A" ? "selected" : ""}`}
                 onClick={() => {
+                  if (!dAnswers[currentD.id]) {
+                    trackQualityAnswerAction();
+                  }
                   setDAnswers((prev) => ({ ...prev, [currentD.id]: "A" }));
                   setErrorMsg("");
                 }}
@@ -1088,6 +1180,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
               <button
                 className={`jst-opt ${dAnswers[currentD.id] === "B" ? "selected" : ""}`}
                 onClick={() => {
+                  if (!dAnswers[currentD.id]) {
+                    trackQualityAnswerAction();
+                  }
                   setDAnswers((prev) => ({ ...prev, [currentD.id]: "B" }));
                   setErrorMsg("");
                 }}
@@ -1132,6 +1227,9 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
                   key={row.id}
                   className={`jst-opt ${selectedD13Id === row.id ? "selected" : ""}`}
                   onClick={() => {
+                    if (!selectedD13Id) {
+                      trackQualityAnswerAction();
+                    }
                     setSelectedD13Id(row.id);
                     setErrorMsg("");
                   }}

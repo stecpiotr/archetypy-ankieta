@@ -27,6 +27,7 @@ export interface JstStudyRow {
   survey_show_progress?: boolean | null;
   survey_allow_back?: boolean | null;
   survey_randomize_questions?: boolean | null;
+  survey_fast_click_check_enabled?: boolean | null;
   survey_auto_start_enabled?: boolean | null;
   survey_auto_start_at?: string | null;
   survey_auto_start_applied_at?: string | null;
