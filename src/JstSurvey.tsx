@@ -35,7 +35,7 @@ const ARCHETYPES = [
 
 const METRY_OPEN_MIN_CHARS = 1;
 const FAST_CLICK_MIN_SECONDS = 2;
-const FAST_CLICK_TRIGGER_STREAK = 4;
+const FAST_CLICK_TRIGGER_STREAK = 5;
 const FAST_CLICK_SUSPICIOUS_WARNINGS = 3;
 const FAST_CLICK_WARNING_MESSAGE =
   "Udzielasz odpowiedzi zbyt szybko. Prosimy o uważniejsze czytanie pytań, aby odpowiedzi były rzetelne.";
