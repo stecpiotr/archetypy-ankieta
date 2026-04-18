@@ -21,11 +21,12 @@ import {
 const SCALE_VALUES = [0, 1, 2, 3, 5] as const;
 type Answer = (typeof SCALE_VALUES)[number];
 const METRY_OPEN_MIN_CHARS = 1;
-const FAST_CLICK_MIN_SECONDS = 3;
+const FAST_CLICK_MIN_SECONDS = 2;
 const FAST_CLICK_TRIGGER_STREAK = 4;
 const FAST_CLICK_SUSPICIOUS_WARNINGS = 3;
 const FAST_CLICK_WARNING_MESSAGE =
   "Udzielasz odpowiedzi zbyt szybko. Prosimy o uważniejsze czytanie pytań, aby odpowiedzi były rzetelne.";
+const FAST_CLICK_WARNING_ACK_LABEL = "Rozumiem. Postaram się czytać uważniej.";
 
 type QuestionnaireSettings = {
   displayMode?: "matrix" | "single";
@@ -161,6 +162,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const [singleIndex, setSingleIndex] = useState(0);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const [viewport, setViewport] = useState(() => readViewport());
+  const [isFastClickModalOpen, setIsFastClickModalOpen] = useState(false);
+  const [fastClickAcknowledgeChecked, setFastClickAcknowledgeChecked] = useState(false);
 
   const tokenRef = useRef<string | null>(null);
   const startedMarkedRef = useRef<boolean>(false);
@@ -313,7 +316,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
         if (fastClickShortStreakRef.current >= FAST_CLICK_TRIGGER_STREAK) {
           fastClickWarningCountRef.current += 1;
           fastClickShortStreakRef.current = 0;
-          window.alert(FAST_CLICK_WARNING_MESSAGE);
+          setFastClickAcknowledgeChecked(false);
+          setIsFastClickModalOpen(true);
         }
       } else {
         fastClickShortStreakRef.current = 0;
@@ -484,6 +488,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const singleProgress = Math.max(0, Math.min(100, ((singleIndex + 1) / Math.max(1, totalQuestions)) * 100));
 
   const handleSingleNext = async () => {
+    if (isFastClickModalOpen) return;
     if (selectedCurrent === null) {
       setError(true);
       setMissingRows([currentOriginalIdx]);
@@ -502,6 +507,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   };
 
   const handleSingleBack = () => {
+    if (isFastClickModalOpen) return;
     if (singleIndex <= 0) return;
     setError(false);
     setMissingRows([]);
@@ -511,9 +517,10 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   };
 
   useEffect(() => {
-    if (displayMode !== "single" || submitted || !metryCompleted) return;
+    if (displayMode !== "single" || submitted || !metryCompleted || isFastClickModalOpen) return;
 
     const onKeyDown = (ev: KeyboardEvent) => {
+      if (isFastClickModalOpen) return;
       if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
       if (ev.repeat) return;
       const target = ev.target as HTMLElement | null;
@@ -547,6 +554,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     displayMode,
     submitted,
     metryCompleted,
+    isFastClickModalOpen,
     selectedCurrent,
     allowBack,
     singleIndex,
@@ -687,6 +695,44 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const matrixRememberText = withHardSpaces(
     `Twoje odpowiedzi dotyczą ${fullGen ?? ""} jako osoby publicznej (${politykWord})`,
   );
+  const fastClickModal = isFastClickModalOpen ? (
+    <div className="qc-fastclick-modal-overlay" role="presentation">
+      <div
+        className="qc-fastclick-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="qc-fastclick-title"
+        aria-describedby="qc-fastclick-text"
+      >
+        <p className="qc-fastclick-kicker">Kontrola jakości odpowiedzi</p>
+        <h3 id="qc-fastclick-title" className="qc-fastclick-title">Zatrzymajmy się na chwilę</h3>
+        <p id="qc-fastclick-text" className="qc-fastclick-text">{FAST_CLICK_WARNING_MESSAGE}</p>
+        <label className="qc-fastclick-check-row" htmlFor="qc-fastclick-check">
+          <input
+            id="qc-fastclick-check"
+            className="qc-fastclick-check-input"
+            type="checkbox"
+            checked={fastClickAcknowledgeChecked}
+            onChange={(event) => setFastClickAcknowledgeChecked(event.target.checked)}
+          />
+          <span>{FAST_CLICK_WARNING_ACK_LABEL}</span>
+        </label>
+        <div className="qc-fastclick-actions">
+          <button
+            type="button"
+            className="qc-fastclick-btn"
+            onClick={() => {
+              setIsFastClickModalOpen(false);
+              setFastClickAcknowledgeChecked(false);
+            }}
+            disabled={!fastClickAcknowledgeChecked}
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   if (displayMode === "single") {
     return (
@@ -794,6 +840,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
             </div>
           </main>
         </div>
+        {fastClickModal}
       </div>
     );
   }
@@ -988,6 +1035,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
           </div>
         )}
       </form>
+      {fastClickModal}
     </div>
   );
 };

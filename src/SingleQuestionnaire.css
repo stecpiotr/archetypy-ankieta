@@ -414,6 +414,99 @@
   cursor: default;
 }
 
+.qc-fastclick-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.qc-fastclick-modal {
+  width: min(540px, 100%);
+  background: linear-gradient(180deg, #f9fdff 0%, #ffffff 42%);
+  border: 1px solid #bfe2de;
+  border-radius: 16px;
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.34);
+  padding: 22px 22px 18px;
+  color: #15314c;
+}
+
+.qc-fastclick-kicker {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0b8a7d;
+}
+
+.qc-fastclick-title {
+  margin: 0;
+  font-size: clamp(1.1rem, 2vw, 1.46rem);
+  line-height: 1.22;
+  color: #10263e;
+}
+
+.qc-fastclick-text {
+  margin: 10px 0 0;
+  line-height: 1.45;
+  color: #24445f;
+}
+
+.qc-fastclick-check-row {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.95rem;
+  color: #133552;
+  cursor: pointer;
+}
+
+.qc-fastclick-check-input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: #0ca495;
+}
+
+.qc-fastclick-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.qc-fastclick-btn {
+  border: 1px solid #10a493;
+  border-radius: 10px;
+  background: #14b8a6;
+  color: #fff;
+  font-size: 0.97rem;
+  font-weight: 700;
+  padding: 9px 20px;
+  min-width: 116px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.qc-fastclick-btn:hover:enabled {
+  background: #0ea896;
+  border-color: #0d9488;
+}
+
+.qc-fastclick-btn:disabled {
+  cursor: not-allowed;
+  background: #dce9ee;
+  border-color: #cbdbdf;
+  color: #7a8f9c;
+}
+
 @media (max-width: 900px) {
   .pm-metry-wrap {
     padding: 14px 10px 22px;
@@ -444,6 +537,29 @@
   .pm-metry-next-btn {
     min-width: 150px;
     padding: 10px 16px;
+  }
+
+  .qc-fastclick-modal {
+    padding: 18px 16px 15px;
+    border-radius: 13px;
+  }
+
+  .qc-fastclick-title {
+    font-size: 1.14rem;
+  }
+
+  .qc-fastclick-text {
+    font-size: 0.95rem;
+  }
+
+  .qc-fastclick-check-row {
+    font-size: 0.9rem;
+    gap: 9px;
+  }
+
+  .qc-fastclick-btn {
+    min-width: 104px;
+    padding: 8px 16px;
   }
 
   .single-shell {

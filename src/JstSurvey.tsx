@@ -34,11 +34,12 @@ const ARCHETYPES = [
 ] as const;
 
 const METRY_OPEN_MIN_CHARS = 1;
-const FAST_CLICK_MIN_SECONDS = 3;
+const FAST_CLICK_MIN_SECONDS = 4;
 const FAST_CLICK_TRIGGER_STREAK = 4;
 const FAST_CLICK_SUSPICIOUS_WARNINGS = 3;
 const FAST_CLICK_WARNING_MESSAGE =
   "Udzielasz odpowiedzi zbyt szybko. Prosimy o uważniejsze czytanie pytań, aby odpowiedzi były rzetelne.";
+const FAST_CLICK_WARNING_ACK_LABEL = "Rozumiem. Postaram się czytać uważniej.";
 
 function normTextSimple(value: string): string {
   return String(value || "")
@@ -224,6 +225,8 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   const [errorMsg, setErrorMsg] = useState("");
   const [startedMarked, setStartedMarked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isFastClickModalOpen, setIsFastClickModalOpen] = useState(false);
+  const [fastClickAcknowledgeChecked, setFastClickAcknowledgeChecked] = useState(false);
   const qualityStartedAtRef = useRef<number | null>(null);
   const fastClickLastActionAtRef = useRef<number | null>(null);
   const fastClickShortStreakRef = useRef<number>(0);
@@ -403,7 +406,8 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
         if (fastClickShortStreakRef.current >= FAST_CLICK_TRIGGER_STREAK) {
           fastClickWarningCountRef.current += 1;
           fastClickShortStreakRef.current = 0;
-          window.alert(FAST_CLICK_WARNING_MESSAGE);
+          setFastClickAcknowledgeChecked(false);
+          setIsFastClickModalOpen(true);
         }
       } else {
         fastClickShortStreakRef.current = 0;
@@ -528,6 +532,7 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   const progressPct = Math.max(0, Math.min(100, (currentProgressStep / Math.max(1, totalProgressSteps)) * 100));
 
   const goBack = () => {
+    if (isFastClickModalOpen) return;
     clearErrors();
     if (step === "screening") {
       goToStep("intro");
@@ -641,6 +646,7 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   };
 
   const handleForwardKeyboard = async () => {
+    if (isFastClickModalOpen) return;
     if (submitting) return;
 
     if (step === "intro") {
@@ -709,9 +715,10 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   };
 
   useEffect(() => {
-    if (step === "thanks" || step === "rejected") return;
+    if (step === "thanks" || step === "rejected" || isFastClickModalOpen) return;
 
     const onKeyDown = (ev: KeyboardEvent) => {
+      if (isFastClickModalOpen) return;
       if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
       if (ev.repeat) return;
       const target = ev.target as HTMLElement | null;
@@ -736,6 +743,7 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
   }, [
     allowBack,
     step,
+    isFastClickModalOpen,
     submitting,
     selectedB2,
     dIndex,
@@ -751,6 +759,44 @@ const JstSurvey: React.FC<Props> = ({ study, token, navigation }) => {
     clearErrors,
     submitAll,
   ]);
+  const fastClickModal = isFastClickModalOpen ? (
+    <div className="jst-fastclick-modal-overlay" role="presentation">
+      <div
+        className="jst-fastclick-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jst-fastclick-title"
+        aria-describedby="jst-fastclick-text"
+      >
+        <p className="jst-fastclick-kicker">Kontrola jakości odpowiedzi</p>
+        <h3 id="jst-fastclick-title" className="jst-fastclick-title">Zatrzymajmy się na chwilę</h3>
+        <p id="jst-fastclick-text" className="jst-fastclick-text">{FAST_CLICK_WARNING_MESSAGE}</p>
+        <label className="jst-fastclick-check-row" htmlFor="jst-fastclick-check">
+          <input
+            id="jst-fastclick-check"
+            className="jst-fastclick-check-input"
+            type="checkbox"
+            checked={fastClickAcknowledgeChecked}
+            onChange={(event) => setFastClickAcknowledgeChecked(event.target.checked)}
+          />
+          <span>{FAST_CLICK_WARNING_ACK_LABEL}</span>
+        </label>
+        <div className="jst-fastclick-actions">
+          <button
+            type="button"
+            className="jst-fastclick-btn"
+            onClick={() => {
+              setIsFastClickModalOpen(false);
+              setFastClickAcknowledgeChecked(false);
+            }}
+            disabled={!fastClickAcknowledgeChecked}
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   if (shouldRotate) {
     return (
@@ -1253,6 +1299,7 @@ Zapewniamy, że niniejsze badanie ma charakter całkowicie anonimowy. Potrwa ok.
           </div>
         </footer>
       </div>
+      {fastClickModal}
     </main>
   );
 };
