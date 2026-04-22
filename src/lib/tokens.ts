@@ -8,8 +8,22 @@ export type JstTokenMeta = {
   study_slug: string;
   completed: boolean;
   rejected: boolean;
+  revoked: boolean;
   completed_at?: string | null;
   rejected_at?: string | null;
+  revoked_at?: string | null;
+};
+
+export type PersonalTokenMeta = {
+  found: boolean;
+  channel: "sms" | "email" | null;
+  contact: string;
+  study_id: string;
+  study_slug: string;
+  completed: boolean;
+  revoked: boolean;
+  completed_at?: string | null;
+  revoked_at?: string | null;
 };
 
 async function rpcBool(fn: string, token: string): Promise<boolean> {
@@ -36,6 +50,29 @@ export async function markTokenStarted(token: string): Promise<void> {
 
 export async function markTokenCompleted(token: string): Promise<void> {
   await rpcVoid("mark_token_completed", token);
+}
+
+export async function getTokenMeta(token: string): Promise<PersonalTokenMeta | null> {
+  if (!token) return null;
+  const { data, error } = await supabase.rpc("get_token_meta", { p_token: token });
+  if (error) throw error;
+  if (!data || typeof data !== "object") return null;
+
+  const d = data as Record<string, unknown>;
+  const channelRaw = String(d.channel || "").toLowerCase();
+  const channel = channelRaw === "sms" || channelRaw === "email" ? channelRaw : null;
+
+  return {
+    found: Boolean(d.found),
+    channel,
+    contact: String(d.contact || ""),
+    study_id: String(d.study_id || ""),
+    study_slug: String(d.study_slug || ""),
+    completed: Boolean(d.completed),
+    revoked: Boolean(d.revoked),
+    completed_at: d.completed_at ? String(d.completed_at) : null,
+    revoked_at: d.revoked_at ? String(d.revoked_at) : null,
+  };
 }
 
 /** JST */
@@ -73,7 +110,9 @@ export async function getJstTokenMeta(token: string): Promise<JstTokenMeta | nul
     study_slug: String(d.study_slug || ""),
     completed: Boolean(d.completed),
     rejected: Boolean(d.rejected),
+    revoked: Boolean(d.revoked),
     completed_at: d.completed_at ? String(d.completed_at) : null,
     rejected_at: d.rejected_at ? String(d.rejected_at) : null,
+    revoked_at: d.revoked_at ? String(d.revoked_at) : null,
   };
 }

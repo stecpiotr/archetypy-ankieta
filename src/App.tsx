@@ -8,7 +8,7 @@ import { getSlugFromUrl, loadStudyBySlug, buildDisplayFromStudy } from "./lib/st
 import { loadJstStudyBySlug } from "./lib/jstStudies";
 import type { JstStudyRow } from "./lib/jstStudies";
 import AlreadyCompleted from "./AlreadyCompleted";
-import { getJstTokenMeta, isJstTokenCompleted, isTokenCompleted, markTokenStarted } from "./lib/tokens";
+import { getJstTokenMeta, getTokenMeta, isJstTokenCompleted, isTokenCompleted, markTokenStarted } from "./lib/tokens";
 import JstSurvey from "./JstSurvey";
 
 const isMobile = window.innerWidth <= 600;
@@ -300,6 +300,9 @@ const App: React.FC = () => {
   const [alreadyDone, setAlreadyDone] = useState(false);
   const [alreadyDoneChannel, setAlreadyDoneChannel] = useState<"sms" | "email" | null>(null);
   const [alreadyDoneContact, setAlreadyDoneContact] = useState<string>("");
+  const [inactiveLink, setInactiveLink] = useState(false);
+  const [inactiveChannel, setInactiveChannel] = useState<"sms" | "email" | null>(null);
+  const [inactiveContact, setInactiveContact] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState<StudyLifecycleStatus>("active");
   const [statusBlock, setStatusBlock] = useState<{ title: string; text: string } | null>(null);
   const [personalSettings, setPersonalSettings] = useState<PersonalSurveySettings>(DEFAULT_PERSONAL_SETTINGS);
@@ -399,18 +402,39 @@ const App: React.FC = () => {
                   return;
                 }
                 const blockedByToken = tokenMeta.completed || tokenMeta.rejected;
-                if (!cancelled && blockedByToken) {
+                if (!cancelled && tokenMeta.revoked) {
+                  setInactiveLink(true);
+                  setInactiveChannel(tokenMeta.channel);
+                  setInactiveContact(tokenMeta.contact || "");
+                  setAlreadyDone(false);
+                } else if (!cancelled && blockedByToken) {
                   setAlreadyDone(true);
                   setAlreadyDoneChannel(tokenMeta.channel);
                   setAlreadyDoneContact(tokenMeta.contact || "");
+                  setInactiveLink(false);
                 }
               } else {
                 const done = await withTimeout(isJstTokenCompleted(urlToken), 2500, false);
                 if (!cancelled && done) setAlreadyDone(true);
               }
             } else {
-              const done = await withTimeout(isTokenCompleted(urlToken), 2500, false);
-              if (!cancelled && done) setAlreadyDone(true);
+              const tokenMeta = await withTimeout(getTokenMeta(urlToken), 3500, null);
+              if (tokenMeta?.found) {
+                if (!cancelled && tokenMeta.revoked) {
+                  setInactiveLink(true);
+                  setInactiveChannel(tokenMeta.channel);
+                  setInactiveContact(tokenMeta.contact || "");
+                  setAlreadyDone(false);
+                } else if (!cancelled && tokenMeta.completed) {
+                  setAlreadyDone(true);
+                  setAlreadyDoneChannel(tokenMeta.channel);
+                  setAlreadyDoneContact(tokenMeta.contact || "");
+                  setInactiveLink(false);
+                }
+              } else {
+                const done = await withTimeout(isTokenCompleted(urlToken), 2500, false);
+                if (!cancelled && done) setAlreadyDone(true);
+              }
             }
           } catch (e) {
             console.warn("isTokenCompleted error:", e);
@@ -453,7 +477,7 @@ const App: React.FC = () => {
   const himHer = gender === "F" ? "niej" : "niego";
   const showBlocker = hasStudy === false;
 
-  if (!checking && !alreadyDone && surveyKind === "jst" && jstStudy && studyStatus === "active" && !statusBlock) {
+  if (!checking && !alreadyDone && !inactiveLink && surveyKind === "jst" && jstStudy && studyStatus === "active" && !statusBlock) {
     return (
       <AppErrorBoundary>
         <JstSurvey study={jstStudy} token={token} navigation={jstSettings} />
@@ -494,6 +518,8 @@ return (
       <div style={{ maxWidth: 900, margin: "80px auto 0 auto", padding: "0 24px", color: "#334155" }}>
         Ładowanie ankiety...
       </div>
+    ) : inactiveLink ? (
+      <AlreadyCompleted variant="inactive" channel={inactiveChannel} contact={inactiveContact} />
     ) : alreadyDone ? (
       <AlreadyCompleted channel={alreadyDoneChannel} contact={alreadyDoneContact} />
     ) : !started ? (

@@ -3,16 +3,18 @@ import React from "react";
 type Props = {
   channel?: "sms" | "email" | null;
   contact?: string | null;
+  variant?: "completed" | "inactive";
 };
 
-const AlreadyCompleted: React.FC<Props> = ({ channel = null, contact = "" }) => {
+const AlreadyCompleted: React.FC<Props> = ({ channel = null, contact = "", variant = "completed" }) => {
   const trimmed = String(contact || "").trim();
   const channelLabel =
     channel === "sms" ? "numeru telefonu" : channel === "email" ? "adresu e-mail" : "";
-  const title =
-    trimmed && channelLabel
+  const title = variant === "inactive"
+    ? "Link do tej ankiety jest nieaktywny"
+    : (trimmed && channelLabel
       ? `Ankieta dla tego ${channelLabel} ${trimmed} została już wypełniona.`
-      : "Ta ankieta została już wypełniona.";
+      : "Ta ankieta została już wypełniona.");
 
   return (
     <main
