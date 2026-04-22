@@ -46,6 +46,15 @@ const AlreadyCompleted: React.FC<Props> = ({ channel = null, contact = "", varia
         {title}
       </h2>
 
+      <style>{`
+        .desktop-contact-break { display: none; }
+        .mobile-inline-space { display: inline; }
+        @media (min-width: 901px) {
+          .desktop-contact-break { display: inline; }
+          .mobile-inline-space { display: none; }
+        }
+      `}</style>
+
       <p
         style={{
           fontSize: "1.11rem",
@@ -55,7 +64,10 @@ const AlreadyCompleted: React.FC<Props> = ({ channel = null, contact = "", varia
           lineHeight: 1.55,
         }}
       >
-        Jeśli pojawiły się jakiekolwiek wątpliwości lub masz pytania, proszę o kontakt:
+        Jeśli pojawiły się jakiekolwiek wątpliwości lub masz pytania,
+        <span className="desktop-contact-break"><br /></span>
+        <span className="mobile-inline-space"> </span>
+        proszę o kontakt:
         <br />
         <b>Piotr Stec, Badania.pro®</b>
         <br />
