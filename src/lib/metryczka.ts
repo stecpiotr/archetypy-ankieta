@@ -25,6 +25,7 @@ export type MetryczkaQuestion = {
 
 export type MetryczkaConfig = {
   version: number;
+  enabled: boolean;
   questions: MetryczkaQuestion[];
 };
 
@@ -407,6 +408,7 @@ export function normalizeMetryczkaConfig(raw: unknown): MetryczkaConfig {
   if (!raw || typeof raw !== "object") {
     return {
       version: 1,
+      enabled: true,
       questions: CORE_ORDER.map((id) => deepClone(baseDefaults[id])),
     };
   }
@@ -414,6 +416,7 @@ export function normalizeMetryczkaConfig(raw: unknown): MetryczkaConfig {
   const src = raw as Record<string, unknown>;
   const versionRaw = Number.parseInt(String(src.version ?? "1"), 10);
   const version = Number.isFinite(versionRaw) && versionRaw > 0 ? versionRaw : 1;
+  const enabled = safeBool(src.enabled, true);
 
   const rawQuestions = Array.isArray(src.questions) ? src.questions : [];
   const byId = new Map<string, Record<string, unknown>>();
@@ -438,7 +441,7 @@ export function normalizeMetryczkaConfig(raw: unknown): MetryczkaConfig {
     if (custom) questions.push(custom);
   }
 
-  return { version, questions };
+  return { version, enabled, questions };
 }
 
 export function initMetryAnswers(

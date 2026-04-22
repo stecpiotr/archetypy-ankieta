@@ -177,11 +177,13 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   const [fullGen, setFullGen] = useState<string | null>(initialFullGen);
   const [gender, setGender] = useState<"M" | "F">(initialGender);
   const [metryConfig, setMetryConfig] = useState(() => normalizeMetryczkaConfig(null));
-  const metryQuestions = metryConfig.questions;
+  const metryEnabled = metryConfig.enabled !== false;
+  const metryQuestions = metryEnabled ? metryConfig.questions : [];
   const [metryAnswers, setMetryAnswers] = useState<Record<string, string>>({});
   const [metryOpenTexts, setMetryOpenTexts] = useState<Record<string, string>>({});
   const [showMissingMetry, setShowMissingMetry] = useState(false);
   const [metryCompleted, setMetryCompleted] = useState(false);
+  const metryStageDone = !metryEnabled || metryCompleted;
 
   useEffect(() => {
     setMetryAnswers((prev) => initMetryAnswers(metryQuestions, prev));
@@ -269,8 +271,9 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
       const c = buildDisplayFromStudy(study);
       setGender(c.gender);
       setFullGen(c.fullGen);
-      setMetryConfig(normalizeMetryczkaConfig((study as any).metryczka_config));
-      setMetryCompleted(false);
+      const normalizedMetry = normalizeMetryczkaConfig((study as any).metryczka_config);
+      setMetryConfig(normalizedMetry);
+      setMetryCompleted(normalizedMetry.enabled === false);
     })();
   }, []);
 
@@ -290,7 +293,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
             : "landscape";
   const isMobileViewport = Math.min(viewport.width, viewport.height) <= 500;
   const showOrientationWarning =
-    !submitted && metryCompleted && displayMode === "matrix" && isMobileViewport && orientation === "portrait";
+    !submitted && metryStageDone && displayMode === "matrix" && isMobileViewport && orientation === "portrait";
 
   const markStartedOnce = () => {
     if (startedMarkedRef.current) return;
@@ -387,6 +390,12 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   };
 
   const buildMetryScoresPayload = (): Record<string, unknown> => {
+    const payload: Record<string, unknown> = {
+      survey_quality: buildSurveyQualityPayload(),
+    };
+    if (!metryEnabled) {
+      return payload;
+    }
     const metryPayload = buildMetryPayload(metryQuestions, metryAnswers);
     metryQuestions.forEach((q) => {
       const openKey = `${String(q.db_column || q.id).trim().toUpperCase()}_OTHER`;
@@ -398,10 +407,8 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
         metryPayload.M_ZAWOD_OTHER = openValue;
       }
     });
-    return {
-      metryczka: metryPayload,
-      survey_quality: buildSurveyQualityPayload(),
-    };
+    payload.metryczka = metryPayload;
+    return payload;
   };
 
   const handleMetryNext = (): void => {
@@ -517,7 +524,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   };
 
   useEffect(() => {
-    if (displayMode !== "single" || submitted || !metryCompleted || isFastClickModalOpen) return;
+    if (displayMode !== "single" || submitted || !metryStageDone || isFastClickModalOpen) return;
 
     const onKeyDown = (ev: KeyboardEvent) => {
       if (isFastClickModalOpen) return;
@@ -553,7 +560,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
   }, [
     displayMode,
     submitted,
-    metryCompleted,
+    metryStageDone,
     isFastClickModalOpen,
     selectedCurrent,
     allowBack,
@@ -562,7 +569,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({
     handleSingleBack,
   ]);
 
-  if (!submitted && !metryCompleted) {
+  if (!submitted && !metryStageDone) {
     const title = fullGen
       ? `Badanie wizerunku i postrzegania ${fullGen}`
       : "Badanie wizerunku i postrzegania";
