@@ -43,17 +43,25 @@ type QuestionnaireProps = {
 };
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const supabaseApiKey = (
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  || import.meta.env.VITE_SUPABASE_ANON_KEY
+) as string;
 
 async function callRpc<T = any>(fn: string, body: Record<string, any>): Promise<{ data: T | null; error: any }> {
   try {
+    const headers: Record<string, string> = {
+      apikey: supabaseApiKey,
+      "Content-Type": "application/json",
+    };
+    // `sb_publishable_...` nie jest JWT, więc nie może iść jako Bearer.
+    if (supabaseApiKey.startsWith("eyJ")) {
+      headers.Authorization = `Bearer ${supabaseApiKey}`;
+    }
+
     const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
       method: "POST",
-      headers: {
-        apikey: supabaseAnonKey,
-        Authorization: `Bearer ${supabaseAnonKey}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
     });
     if (!res.ok) {
